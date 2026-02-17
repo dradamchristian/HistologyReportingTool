@@ -4,15 +4,20 @@
   "match": {
     "any": [
       "duoden",
-      "duodenum",
-      "coeliac",
-      "celiac",
-      "ttg",
-      "anti-ttg",
-      "intraepithelial",
-      "iel",
-      "villous",
-      "marsh"
+    "duod",
+    "small bowel",
+    "sb biopsy",
+    "duodenal mucosa",
+    "intraepithelial",
+    "iel",
+    "iels",
+    "villous",
+    "villi",
+    "coeliac",
+    "celiac",
+    "marsh",
+    "ttg",
+    "anti-ttg"
     ]
   },
   "pipeline": {
