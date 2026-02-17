@@ -2,7 +2,7 @@ DIAGNOSIS:
 Gallbladder: {{diagnosis}}.
 
 MICROSCOPY:
-{{#if wall_thickened}}Gallbladder wall is thickened.{{/if}}
+{{#if wall_thickened}}The sections show gallbladder with thickened wall.{{/if}}
 {{#if rokitansky_aschoff_sinuses}}There are Rokitansky–Aschoff sinuses.{{/if}}
 There is {{chronic_inflammation_extent}} chronic inflammation.
 {{#if acute_inflammation}}There is acute inflammation.{{/if}}
@@ -10,6 +10,7 @@ There is {{chronic_inflammation_extent}} chronic inflammation.
 {{#if (eq cholesterolosis "Widespread")}}There is widespread cholesterolosis.{{/if}}
 {{#if denuded_epithelium}}The epithelium is largely denuded.{{/if}}
 {{#if necrosis}}There is mural necrosis.{{/if}}
+{{#if adenomyomatosis}}Features of adenomyomatosis are present.{{/if}}
 
 NEOPLASIA:
 There is {{dysplasia}} dysplasia.
