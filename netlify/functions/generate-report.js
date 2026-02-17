@@ -315,6 +315,7 @@ if (routed.datasetId === "gallbladder_simple_v1") {
   } else {
     extracted.cholesterolosis = extracted.cholesterolosis || "None";
   }
+  extracted.adenomyomatosis = lt.includes("adenomyomatosis") || lt.includes("adenomyomat");
 
   // Denudation / necrosis
   extracted.denuded_epithelium = lt.includes("denuded");
