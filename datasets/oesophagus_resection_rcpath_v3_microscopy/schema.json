@@ -166,9 +166,9 @@
     "tnm_edition": {
       "type": "string",
       "enum": [
-        "UICC TNM 8"
+        "9"
       ],
-      "default": "UICC TNM 8"
+      "default": "9"
     },
     "pT": {
       "type": "string",
