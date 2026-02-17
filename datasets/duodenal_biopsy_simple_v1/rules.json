@@ -1,0 +1,4 @@
+{
+  "version": "v1-marsh",
+  "notes": "Marsh classification is inferred by the LLM guided by schema descriptions; template uses marsh_classification if set."
+}
