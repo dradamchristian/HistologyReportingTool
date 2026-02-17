@@ -1,0 +1,17 @@
+{
+  "id": "gallbladder_simple_v1",
+  "kind": "short",
+  "match": {
+    "any": [
+      "gallbladder",
+      "cholecyst",
+      "cholesterolosis",
+      "adenomyomat",
+      "rokitansky",
+      "aschoff"
+    ]
+  },
+  "pipeline": {
+    "mode": "keyword_short_report"
+  }
+}

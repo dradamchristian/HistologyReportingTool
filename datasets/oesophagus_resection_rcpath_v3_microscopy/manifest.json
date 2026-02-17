@@ -1,0 +1,25 @@
+{
+  "id": "oesophagus_resection_rcpath_v3_microscopy",
+  "kind": "rcpath",
+  "match": {
+    "any": [
+      "oesoph",
+      "esoph",
+      "ogj",
+      "gastro-oes",
+      "gastroes",
+      "cardia"
+    ]
+  },
+  "pipeline": {
+    "mode": "schema_extract_then_rules",
+    "tnm_edition": 9,
+    "deterministic_extract": [
+      "nodes",
+      "margins",
+      "crm",
+      "pt",
+      "mandard"
+    ]
+  }
+}

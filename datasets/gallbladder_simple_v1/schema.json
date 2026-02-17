@@ -1,0 +1,73 @@
+{
+  "title": "Gallbladder (Simple) - Canned Report v1",
+  "type": "object",
+  "properties": {
+    "diagnosis": {
+      "type": "string",
+      "enum": [
+        "Chronic cholecystitis",
+        "Acute cholecystitis",
+        "Acute on chronic cholecystitis"
+      ],
+      "default": "Chronic cholecystitis"
+    },
+    "wall_thickened": {
+      "type": "boolean",
+      "default": true
+    },
+    "rokitansky_aschoff_sinuses": {
+      "type": "boolean",
+      "default": true
+    },
+    "chronic_inflammation_extent": {
+      "type": "string",
+      "enum": [
+        "Focal",
+        "Patchy",
+        "Widespread"
+      ],
+      "default": "Focal"
+    },
+    "acute_inflammation": {
+      "type": "boolean",
+      "default": false
+    },
+    "cholesterolosis": {
+      "type": "string",
+      "enum": [
+        "None",
+        "Focal",
+        "Widespread"
+      ],
+      "default": "None"
+    },
+    "denuded_epithelium": {
+      "type": "boolean",
+      "default": false
+    },
+    "necrosis": {
+      "type": "boolean",
+      "default": false
+    },
+    "dysplasia": {
+      "type": "string",
+      "enum": [
+        "No",
+        "Yes"
+      ],
+      "default": "No"
+    },
+    "malignancy": {
+      "type": "string",
+      "enum": [
+        "No",
+        "Yes"
+      ],
+      "default": "No"
+    },
+    "adenomyomatosis": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}
