@@ -1,0 +1,54 @@
+DIAGNOSIS:
+{{specimen_type}}.
+
+MICROSCOPY:
+The sections show duodenal mucosa.
+Villous architecture: {{villous_architecture}}.
+Intraepithelial lymphocytes: {{iel_status}}.
+Crypt hyperplasia: {{crypt_hyperplasia}}.
+{{#if (eq gastric_metaplasia "Not identified")}}Gastric metaplasia: Not identified.{{/if}}
+{{#if (eq gastric_metaplasia "Focal")}}Gastric metaplasia: Focal gastric (foveolar) metaplasia.{{/if}}
+{{#if (eq gastric_metaplasia "Widespread")}}Gastric metaplasia: Widespread gastric (foveolar) metaplasia.{{/if}}
+There is {{dysplasia}} dysplasia and {{malignancy}} malignancy.
+
+CONCLUSION:
+{{#if (eq marsh_classification "Marsh 0")}}
+There are no features of coeliac disease (Marsh 0). The appearances are within normal limits.
+{{/if}}
+{{#if (eq marsh_classification "Marsh 1")}}
+The findings are in keeping with Marsh 1 change (increased intraepithelial lymphocytes with retained villous architecture). Correlate with anti‑tTG antibody (and clinical context) when considering coeliac disease.
+{{/if}}
+{{#if (eq marsh_classification "Marsh 2")}}
+The findings are in keeping with Marsh 2 change (increased intraepithelial lymphocytes with crypt hyperplasia and retained villous architecture). Correlate with anti‑tTG antibody (and clinical context) when considering coeliac disease.
+{{/if}}
+{{#if (eq marsh_classification "Marsh 3a")}}
+The findings are in keeping with Marsh 3a change (partial villous atrophy/blunting with increased intraepithelial lymphocytes and crypt hyperplasia). Correlate with anti‑tTG antibody (and clinical context) when considering coeliac disease.
+{{/if}}
+{{#if (eq marsh_classification "Marsh 3b")}}
+The findings are in keeping with Marsh 3b change (subtotal villous atrophy with increased intraepithelial lymphocytes and crypt hyperplasia). Correlate with anti‑tTG antibody (and clinical context) when considering coeliac disease.
+{{/if}}
+{{#if (eq marsh_classification "Marsh 3c")}}
+The findings are in keeping with Marsh 3c change (total villous atrophy/flat mucosa with increased intraepithelial lymphocytes and crypt hyperplasia). Correlate with anti‑tTG antibody (and clinical context) when considering coeliac disease.
+{{/if}}
+
+{{#if (eq marsh_classification "Not stated")}}
+  {{#if (eq iel_status "Focally increased")}}
+The sections show retained villous architecture with focally increased intraepithelial lymphocytes. Correlate with anti‑tTG antibody (and clinical context) when considering coeliac disease.
+  {{/if}}
+  {{#if (eq iel_status "Increased")}}
+The sections show retained villous architecture with increased intraepithelial lymphocytes. Correlate with anti‑tTG antibody (and clinical context) when considering coeliac disease.
+  {{/if}}
+  {{#if (eq iel_status "No increase")}}
+    {{#if (eq gastric_metaplasia "Not identified")}}
+There are no features of coeliac disease. The appearances are within normal limits.
+    {{/if}}
+    {{#if (eq gastric_metaplasia "Focal")}}
+There are focal features that may be in keeping with chronic/peptic-type injury (including focal gastric metaplasia). Correlate clinically.
+    {{/if}}
+    {{#if (eq gastric_metaplasia "Widespread")}}
+There are features that may be in keeping with chronic/peptic-type injury (including gastric metaplasia). Correlate clinically.
+    {{/if}}
+  {{/if}}
+{{/if}}
+
+{{#if comment_line}}{{comment_line}}{{/if}}
