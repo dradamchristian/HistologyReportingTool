@@ -49,6 +49,7 @@
       "type": "boolean",
       "default": false
     },
+    "adenomyomatosis": { "type": "boolean", "default": false },
     "dysplasia": {
       "type": "string",
       "enum": [
