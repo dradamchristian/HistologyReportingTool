@@ -1,0 +1,16 @@
+DIAGNOSIS:
+Gallbladder: {{diagnosis}}.
+
+MICROSCOPY:
+{{#if wall_thickened}}Gallbladder wall is thickened.{{/if}}
+{{#if rokitansky_aschoff_sinuses}}There are Rokitansky–Aschoff sinuses.{{/if}}
+There is {{chronic_inflammation_extent}} chronic inflammation.
+{{#if acute_inflammation}}There is acute inflammation.{{/if}}
+{{#if (eq cholesterolosis "Focal")}}There is focal cholesterolosis.{{/if}}
+{{#if (eq cholesterolosis "Widespread")}}There is widespread cholesterolosis.{{/if}}
+{{#if denuded_epithelium}}The epithelium is largely denuded.{{/if}}
+{{#if necrosis}}There is mural necrosis.{{/if}}
+
+NEOPLASIA:
+There is {{dysplasia}} dysplasia.
+There is {{malignancy}} malignancy.
