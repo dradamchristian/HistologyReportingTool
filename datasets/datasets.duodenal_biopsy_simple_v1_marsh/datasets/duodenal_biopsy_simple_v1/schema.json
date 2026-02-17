@@ -1,0 +1,88 @@
+{
+  "title": "Duodenal biopsy - simple canned report v1 (Marsh-aware)",
+  "type": "object",
+  "properties": {
+    "specimen_type": {
+      "type": "string",
+      "enum": [
+        "Duodenal biopsy"
+      ],
+      "default": "Duodenal biopsy"
+    },
+    "villous_architecture": {
+      "type": "string",
+      "enum": [
+        "Retained",
+        "Blunted",
+        "Subtotal villous atrophy",
+        "Total villous atrophy"
+      ],
+      "default": "Retained",
+      "description": "Overall villous architecture. Map phrases: 'normal/retained villi'->Retained; 'blunted/shortened villi'->Blunted; 'subtotal villous atrophy'->Subtotal; 'total villous atrophy/flat'->Total."
+    },
+    "iel_status": {
+      "type": "string",
+      "enum": [
+        "No increase",
+        "Focally increased",
+        "Increased"
+      ],
+      "default": "No increase",
+      "description": "Intraepithelial lymphocytes. Map: 'no increase/within normal'->No increase; 'focal/focally increased IEL'->Focally increased; 'increased IEL/raised IEL'->Increased."
+    },
+    "crypt_hyperplasia": {
+      "type": "string",
+      "enum": [
+        "Not identified",
+        "Present"
+      ],
+      "default": "Not identified",
+      "description": "Crypt hyperplasia. Map phrases: 'crypt hyperplasia present'->Present; otherwise Not identified."
+    },
+    "gastric_metaplasia": {
+      "type": "string",
+      "enum": [
+        "Not identified",
+        "Focal",
+        "Widespread"
+      ],
+      "default": "Not identified",
+      "description": "Gastric foveolar metaplasia. Map: 'focal gastric metaplasia/foveolar metaplasia'->Focal; 'widespread/diffuse gastric metaplasia'->Widespread."
+    },
+    "dysplasia": {
+      "type": "string",
+      "enum": [
+        "No",
+        "Yes"
+      ],
+      "default": "No"
+    },
+    "malignancy": {
+      "type": "string",
+      "enum": [
+        "No",
+        "Yes"
+      ],
+      "default": "No"
+    },
+    "marsh_classification": {
+      "type": "string",
+      "enum": [
+        "Not stated",
+        "Marsh 0",
+        "Marsh 1",
+        "Marsh 2",
+        "Marsh 3a",
+        "Marsh 3b",
+        "Marsh 3c"
+      ],
+      "default": "Not stated",
+      "description": "If the text explicitly states a Marsh grade, use it. Otherwise infer from features: Marsh 0 = normal villi + no increase IEL; Marsh 1 = increased IEL with retained villi; Marsh 2 = Marsh 1 + crypt hyperplasia; Marsh 3a = partial villous atrophy/blunting with crypt hyperplasia + increased IEL; Marsh 3b = subtotal villous atrophy with crypt hyperplasia + increased IEL; Marsh 3c = total villous atrophy/flat mucosa with crypt hyperplasia + increased IEL."
+    },
+    "comment_line": {
+      "type": "string",
+      "default": "",
+      "description": "Optional free-text comment line to append to the conclusion."
+    }
+  }
+}
