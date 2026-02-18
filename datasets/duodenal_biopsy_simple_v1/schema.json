@@ -65,7 +65,7 @@
         "Marsh 3c"
       ],
       "default": "Not stated",
-      "description": "If text explicitly states a Marsh grade, use it. Otherwise infer: Marsh 0=retained villi + no increase IEL. Marsh 1=increased IEL with retained villi. Marsh 2=Marsh 1 + crypt hyperplasia. Marsh 3a=blunted/partial villous atrophy + increased IEL + crypt hyperplasia. Marsh 3b=subtotal villous atrophy + increased IEL + crypt hyperplasia. Marsh 3c=total villous atrophy/flat + increased IEL + crypt hyperplasia."
+      "description": "If text explicitly states a Marsh grade, use it. Otherwise infer: Marsh 0=retained villi + no increase IEL. Marsh 1=increased IEL with retained villi. Marsh 2=Marsh 1 + crypt hyperplasia. Marsh 3a=blunted/partial villous atrophy + increased IEL + crypt hyperplasia. Marsh 3b=subtotal villous atrophy + increased IEL + crypt hyperplasia. Marsh 3c=total villous atrophy/flat + increased IEL + crypt hyperplasia. If villous architecture is Blunted (or worse) AND IELs are Increased/Focally increased, prefer Marsh 3a/3b/3c as appropriate rather than Marsh 1"
     },
     "dysplasia": {
       "type": "string",
