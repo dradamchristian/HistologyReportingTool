@@ -1,59 +1,22 @@
 MICROSCOPY:
-The sections show duodenal mucosa with
-{{#if (eq villous_architecture "Retained")}}retained villous architecture{{/if}}
-{{#if (eq villous_architecture "Blunted")}}villous blunting{{/if}}
-{{#if (eq villous_architecture "Subtotal villous atrophy")}}subtotal villous atrophy{{/if}}
-{{#if (eq villous_architecture "Total villous atrophy")}}total villous atrophy{{/if}}.
-Intraepithelial lymphocytes are
-{{#if (eq iel_status "No increase")}}not increased{{/if}}
-{{#if (eq iel_status "Focally increased")}}focally increased{{/if}}
-{{#if (eq iel_status "Increased")}}increased{{/if}}.
-{{#if (eq crypt_hyperplasia "Present")}}There is crypt hyperplasia.{{/if}}
-{{#if (eq gastric_metaplasia "Focal")}}There is focal gastric (foveolar) metaplasia.{{/if}}
-{{#if (eq gastric_metaplasia "Widespread")}}There is widespread gastric (foveolar) metaplasia.{{/if}}
-{{#if (eq inflammation "Mild")}}There is mild chronic inflammation in the lamina propria.{{/if}}
-{{#if (eq inflammation "Moderate")}}There is moderate chronic inflammation in the lamina propria.{{/if}}
-{{#if (eq inflammation "Marked")}}There is marked chronic inflammation in the lamina propria.{{/if}}
-There is no dysplasia or malignancy.
+The sections show duodenal mucosa with {{#if (eq villous_architecture "Retained")}}retained villous architecture{{/if}}{{#if (eq villous_architecture "Blunted")}}villous blunting{{/if}}{{#if (eq villous_architecture "Subtotal villous atrophy")}}subtotal villous atrophy{{/if}}{{#if (eq villous_architecture "Total villous atrophy")}}total villous atrophy{{/if}}. Intraepithelial lymphocytes are {{#if (eq iel_status "No increase")}}not increased{{/if}}{{#if (eq iel_status "Focally increased")}}focally increased{{/if}}{{#if (eq iel_status "Increased")}}increased{{/if}}.{{#if (eq crypt_hyperplasia "Present")}} There is crypt hyperplasia.{{/if}}{{#if (eq gastric_metaplasia "Focal")}} There is focal gastric (foveolar) metaplasia.{{/if}}{{#if (eq gastric_metaplasia "Widespread")}} There is widespread gastric (foveolar) metaplasia.{{/if}}{{#if (eq inflammation "Mild")}} There is mild chronic inflammation in the lamina propria.{{/if}}{{#if (eq inflammation "Moderate")}} There is moderate chronic inflammation in the lamina propria.{{/if}}{{#if (eq inflammation "Marked")}} There is marked chronic inflammation in the lamina propria.{{/if}} There is no dysplasia or malignancy.
 
 CONCLUSION:
 {{#if (ne marsh_classification "Not stated")}}
-{{#if (eq marsh_classification "Marsh 0")}}
-No features of coeliac disease (Marsh 0). Appearances are within normal limits.
-{{/if}}
-{{#if (eq marsh_classification "Marsh 1")}}
-Marsh 1 change (increased intraepithelial lymphocytes with retained villous architecture). Correlate with anti-tTG antibody (and clinical context) when considering coeliac disease.
-{{/if}}
-{{#if (eq marsh_classification "Marsh 2")}}
-Marsh 2 change (increased intraepithelial lymphocytes with crypt hyperplasia and retained villous architecture). Correlate with anti-tTG antibody (and clinical context) when considering coeliac disease.
-{{/if}}
-{{#if (eq marsh_classification "Marsh 3a")}}
-Marsh 3a change (partial villous atrophy with increased intraepithelial lymphocytes and crypt hyperplasia). Correlate with anti-tTG antibody (and clinical context) when considering coeliac disease.
-{{/if}}
-{{#if (eq marsh_classification "Marsh 3b")}}
-Marsh 3b change (subtotal villous atrophy with increased intraepithelial lymphocytes and crypt hyperplasia). Correlate with anti-tTG antibody (and clinical context) when considering coeliac disease.
-{{/if}}
-{{#if (eq marsh_classification "Marsh 3c")}}
-Marsh 3c change (total villous atrophy with increased intraepithelial lymphocytes and crypt hyperplasia). Correlate with anti-tTG antibody (and clinical context) when considering coeliac disease.
+{{#if (eq marsh_classification "Marsh 0")}}No features of coeliac disease (Marsh 0). Appearances are within normal limits.{{/if}}
+{{#if (eq marsh_classification "Marsh 1")}}Marsh 1 change (increased intraepithelial lymphocytes with retained villous architecture). Correlate with anti-tTG antibody (and clinical context) when considering coeliac disease.{{/if}}
+{{#if (eq marsh_classification "Marsh 2")}}Marsh 2 change (increased intraepithelial lymphocytes with crypt hyperplasia and retained villous architecture). Correlate with anti-tTG antibody (and clinical context) when considering coeliac disease.{{/if}}
+{{#if (eq marsh_classification "Marsh 3a")}}Marsh 3a change (partial villous atrophy/blunting with increased intraepithelial lymphocytes and crypt hyperplasia). Correlate with anti-tTG antibody (and clinical context) when considering coeliac disease.{{/if}}
+{{#if (eq marsh_classification "Marsh 3b")}}Marsh 3b change (subtotal villous atrophy with increased intraepithelial lymphocytes and crypt hyperplasia). Correlate with anti-tTG antibody (and clinical context) when considering coeliac disease.{{/if}}
+{{#if (eq marsh_classification "Marsh 3c")}}Marsh 3c change (total villous atrophy/flat mucosa with increased intraepithelial lymphocytes and crypt hyperplasia). Correlate with anti-tTG antibody (and clinical context) when considering coeliac disease.{{/if}}
 {{/if}}
 
-{{else}}
-
-{{#if (and (eq iel_status "No increase") (eq gastric_metaplasia "Not identified"))}}
-No features of coeliac disease. Appearances are within normal limits.
-{{/if}}
-
-{{#if (and (eq iel_status "No increase") (ne gastric_metaplasia "Not identified"))}}
-Features are in keeping with chronic/peptic-type duodenitis. No features of coeliac disease.
-{{/if}}
-
-{{#if (or (eq iel_status "Focally increased") (eq iel_status "Increased"))}}
-Increased intraepithelial lymphocytes with retained villous architecture. Correlate with anti-tTG antibody (and clinical context) when considering coeliac disease.
-{{/if}}
-
+{{#if (eq marsh_classification "Not stated")}}
+{{#if (and (eq iel_status "No increase") (eq gastric_metaplasia "Not identified"))}}No features of coeliac disease. Appearances are within normal limits.{{/if}}
+{{#if (and (eq iel_status "No increase") (ne gastric_metaplasia "Not identified"))}}Features are in keeping with chronic/peptic-type duodenitis. No features of coeliac disease.{{/if}}
+{{#if (or (eq iel_status "Focally increased") (eq iel_status "Increased"))}}Increased intraepithelial lymphocytes with retained villous architecture. Correlate with anti-tTG antibody (and clinical context) when considering coeliac disease.{{/if}}
 {{/if}}
 
 {{#if comment_line}}
-
 {{comment_line}}
 {{/if}}
