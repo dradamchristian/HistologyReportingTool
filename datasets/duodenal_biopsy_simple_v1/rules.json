@@ -1,4 +1,4 @@
 {
-  "version": "v2-llmtext",
-  "notes": "Minimal template; narrative is generated into microscopy_text and conclusion_text."
+  "version": "v3-llmtext",
+  "notes": "Template prints microscopy_text.text and conclusion_text.text to avoid [object Object]."
 }
