@@ -3,6 +3,3 @@ MICROSCOPY:
 
 CONCLUSION:
 {{conclusion_text}}
-{{#if comment_line}}
-{{comment_line}}
-{{/if}}
