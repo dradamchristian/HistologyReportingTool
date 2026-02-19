@@ -101,7 +101,6 @@ function enforceDuodenalConclusion(rawText) {
   const total = /total\s+villous\s+atrophy|flat\s+mucosa/.test(t);
   const cryptHyper = /crypt\s+hyperplasia/.test(t);
 
-  // IEL increased => ALWAYS Marsh + anti-tTG
   if (ielIncreased || (hasIEL && /\bincrease(d)?\b/.test(t))) {
     if (blunting) {
       let marsh = "Marsh 3a";
@@ -115,7 +114,6 @@ function enforceDuodenalConclusion(rawText) {
     return `Marsh 1 change (increased intraepithelial lymphocytes with retained villous architecture). Correlate with anti-tissue transglutaminase (anti-tTG) antibody and clinical context when considering coeliac disease.`;
   }
 
-  // Normal IELs
   if (hasGM || hasInflamm) {
     return `Features are in keeping with chronic (peptic-type) duodenitis. No features of coeliac disease.`;
   }
@@ -132,27 +130,53 @@ function stripHallucinatedDuodenalInflammation(rawText, microscopyText) {
     .replace(/no significant inflammatory changes[^.]*\.\s*/gi, "");
 }
 
+function polishDuodenalMicroscopy(rawText, microscopyText) {
+  let mt = String(microscopyText || "").trim();
+  const t = (rawText || "").toLowerCase();
+
+  // If empty or ultra-short, build a sensible microscopy sentence from keywords
+  const tooShort = mt.length < 25;
+
+  // If it looks like it's echoing the input (starts with "duodenal mucosa ...")
+  const looksLikeEcho =
+    /^duodenal\s+mucosa\b/i.test(mt) && !/^The sections show duodenal mucosa\b/i.test(mt);
+
+  if (tooShort || looksLikeEcho) {
+    const ielUp = /increased\s+(intraepithelial\s+lymph|iels?)|iel[s]?\s+increased/.test(t);
+    const blunting = /villous\s+blunt|villous\s+blunting|villous\s+atrophy|blunted\s+villi/.test(t);
+    const cryptHyper = /crypt\s+hyperplasia/.test(t);
+    const gm = /gastric\s+metaplasia|foveolar\s+metaplasia/.test(t);
+
+    let s = "The sections show duodenal mucosa";
+
+    if (blunting) s += " with villous blunting.";
+    else s += " with retained villous architecture.";
+
+    if (ielUp) s += " Intraepithelial lymphocytes are increased.";
+    else s += " There is no increase in intraepithelial lymphocytes.";
+
+    if (cryptHyper) s += " Crypt hyperplasia is present.";
+    if (gm) s += " There is focal gastric metaplasia.";
+
+    mt = s.trim();
+  }
+
+  return mt;
+}
+
 function ensureNoDysplasiaSentence(microscopyText) {
   let mt = String(microscopyText || "").trim();
 
-  // 1) Remove any partial/garbled "There is no dysplasia..." fragments
-  // Examples caught:
-  //  - "There is no dysplasia or."
-  //  - "There is no dysplasia."
-  //  - "There is no dysplasia or malignancy" (without period)
+  // Remove any partial/garbled "There is no dysplasia..." fragments (and duplicates)
   mt = mt.replace(/\bThere is no dysplasia\b[^.]*\.?/gi, "").trim();
-
-  // 2) Remove any duplicate correct sentence if it's already present
   mt = mt.replace(/\bThere is no dysplasia or malignancy\.\s*$/i, "").trim();
 
-  // 3) Append exactly one clean sentence
   if (mt && !mt.endsWith(".")) mt += ".";
   if (mt) mt += " ";
   mt += "There is no dysplasia or malignancy.";
 
   return mt.trim();
 }
-
 
 // Template renderer (supports {{var}} and {{#if var}}...{{/if}} and {{#if (eq var "X")}})
 function renderTemplate(template, data) {
@@ -351,7 +375,7 @@ exports.handler = async (event) => {
         schemaSummary[k] = {};
         if (Array.isArray(v.enum)) schemaSummary[k].enum = v.enum;
         if (typeof v.default !== "undefined") schemaSummary[k].default = v.default;
-        if (typeof v.description === "string") schemaSummary[k].description = v.description.slice(0, 140);
+        if (typeof v.description === "string") schemaSummary[k].description = v.description.slice(0, 180);
       }
 
       const payload = {
@@ -359,19 +383,19 @@ exports.handler = async (event) => {
         messages: [
           {
             role: "system",
-            content: "You are a pathology reporting assistant. Extract fields from free text. Output ONLY JSON. Omit fields not mentioned, but ALWAYS include any required fields as empty strings if not mentioned."
+            content: "You are a pathology reporting assistant. Output ONLY JSON. Always include all fields listed (use empty string if genuinely not mentioned)."
           },
           {
             role: "user",
             content:
-              "Return JSON using these field names. Use enum values where provided. Omit fields not mentioned.\nFIELDS:\n" +
+              "Return JSON using these field names. Use enum values where provided.\nFIELDS:\n" +
               JSON.stringify(schemaSummary) +
               "\n\nTEXT:\n" +
               rawText
           }
         ],
         temperature: 0.2,
-        max_tokens: 800
+        max_tokens: 900
       };
 
       const ac = new AbortController();
@@ -454,7 +478,9 @@ exports.handler = async (event) => {
         extracted.conclusion_text = toStringValue(extracted.conclusion_text);
 
         extracted.conclusion_text = enforceDuodenalConclusion(rawText);
+
         extracted.microscopy_text = stripHallucinatedDuodenalInflammation(rawText, extracted.microscopy_text);
+        extracted.microscopy_text = polishDuodenalMicroscopy(rawText, extracted.microscopy_text);
         extracted.microscopy_text = ensureNoDysplasiaSentence(extracted.microscopy_text);
       }
 
