@@ -1,92 +1,25 @@
 {
-  "title": "Duodenal biopsy - narrative canned report v1 (Marsh-aware)",
+  "title": "Duodenal biopsy - narrative canned report v2 (model-generated narrative)",
   "type": "object",
   "properties": {
-    "villous_architecture": {
+    "microscopy_text": {
       "type": "string",
-      "enum": [
-        "Retained",
-        "Blunted",
-        "Subtotal villous atrophy",
-        "Total villous atrophy"
-      ],
-      "default": "Retained",
-      "description": "Overall villous architecture. Map: 'normal/retained villi/retained villous architecture'->Retained; 'blunted/shortened villi/partial atrophy'->Blunted; 'subtotal villous atrophy'->Subtotal villous atrophy; 'total villous atrophy/flat mucosa'->Total villous atrophy."
+      "default": "",
+      "description": "Write ONE paragraph of microscopy text in natural report style. Always include villous architecture (default: retained villous architecture) and IEL status (default: not increased). Only mention inflammation/duodenitis if explicitly stated. Mention crypt hyperplasia, gastric/foveolar metaplasia, villous blunting/atrophy, IEL increase only if stated/implied. Always end with: 'There is no dysplasia or malignancy.'"
     },
-    "iel_status": {
+    "conclusion_text": {
       "type": "string",
-      "enum": [
-        "No increase",
-        "Focally increased",
-        "Increased"
-      ],
-      "default": "No increase",
-      "description": "Intraepithelial lymphocytes. Map: 'no increase/within normal'->No increase; 'focal/focally increased IEL/patchy increased IEL'->Focally increased; 'increased/raised IEL'->Increased."
-    },
-    "crypt_hyperplasia": {
-      "type": "string",
-      "enum": [
-        "Not identified",
-        "Present"
-      ],
-      "default": "Not identified",
-      "description": "Crypt hyperplasia. Map: 'crypt hyperplasia present'->Present; otherwise Not identified."
-    },
-    "gastric_metaplasia": {
-      "type": "string",
-      "enum": [
-        "Not identified",
-        "Focal",
-        "Widespread"
-      ],
-      "default": "Not identified",
-      "description": "Gastric (foveolar) metaplasia. If text mentions 'gastric metaplasia' or 'foveolar metaplasia' set to Focal unless it explicitly says widespread/diffuse."
-    },
-    "inflammation": {
-      "type": "string",
-      "enum": [
-        "Not mentioned",
-        "Mild",
-        "Moderate",
-        "Marked"
-      ],
-      "default": "Not mentioned",
-      "description": "Lamina propria inflammation/duodenitis. If text mentions 'inflammation' or 'duodenitis' without grade, set to Mild."
-    },
-    "marsh_classification": {
-      "type": "string",
-      "enum": [
-        "Not stated",
-        "Marsh 0",
-        "Marsh 1",
-        "Marsh 2",
-        "Marsh 3a",
-        "Marsh 3b",
-        "Marsh 3c"
-      ],
-      "default": "Not stated",
-      "description": "If text explicitly states a Marsh grade, use it. Otherwise infer: Marsh 0=retained villi + no increase IEL. Marsh 1=increased IEL with retained villi. Marsh 2=Marsh 1 + crypt hyperplasia. Marsh 3a=blunted/partial villous atrophy + increased IEL + crypt hyperplasia. Marsh 3b=subtotal villous atrophy + increased IEL + crypt hyperplasia. Marsh 3c=total villous atrophy/flat + increased IEL + crypt hyperplasia. If villous architecture is Blunted (or worse) AND IELs are Increased/Focally increased, prefer Marsh 3a/3b/3c as appropriate rather than Marsh 1"
-    },
-    "dysplasia": {
-      "type": "string",
-      "enum": [
-        "No",
-        "Yes"
-      ],
-      "default": "No"
-    },
-    "malignancy": {
-      "type": "string",
-      "enum": [
-        "No",
-        "Yes"
-      ],
-      "default": "No"
+      "default": "",
+      "description": "Write a short conclusion (1\u20132 sentences). MUST ALWAYS be non-empty. If features support Marsh classification, state 'Marsh X change' and advise correlation with anti\u2011tTG (and clinical context). Marsh mapping: Marsh 0 = retained/normal villi + no increase IEL; Marsh 1 = increased IEL with retained villi; Marsh 2 = Marsh 1 + crypt hyperplasia; Marsh 3a = villous blunting/partial atrophy + increased IEL + crypt hyperplasia; Marsh 3b = subtotal villous atrophy + increased IEL + crypt hyperplasia; Marsh 3c = total villous atrophy/flat + increased IEL + crypt hyperplasia. If gastric metaplasia and/or duodenitis is present with normal IELs, conclude chronic/peptic-type duodenitis and state no features of coeliac disease. If entirely normal, conclude no features of coeliac disease and within normal limits."
     },
     "comment_line": {
       "type": "string",
       "default": "",
-      "description": "Optional extra line at end of conclusion."
+      "description": "Optional extra line appended after the conclusion."
     }
-  }
+  },
+  "required": [
+    "microscopy_text",
+    "conclusion_text"
+  ]
 }
