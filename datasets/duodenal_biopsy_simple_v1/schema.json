@@ -1,16 +1,16 @@
 {
-  "title": "Duodenal biopsy \u2013 narrative canned report v5 (RCPath-style conclusions)",
+  "title": "Duodenal biopsy \u2013 narrative canned report v6",
   "type": "object",
   "properties": {
     "microscopy_text": {
       "type": "string",
       "default": "",
-      "description": "Write ONE paragraph of microscopy text in natural histopathology report style. Always include villous architecture (default: retained villous architecture) and IEL status (default: not increased). Only mention inflammation or duodenitis if explicitly stated. Mention crypt hyperplasia, gastric/foveolar metaplasia, villous blunting/atrophy, IEL increase only if stated or clearly implied. Always end with: 'There is no dysplasia or malignancy.'"
+      "description": "Plain text. One paragraph. Include villous architecture and IEL status. Only mention features if stated. End with: 'There is no dysplasia or malignancy.'"
     },
     "conclusion_text": {
       "type": "string",
       "default": "",
-      "description": "Write a SHORT, DECISIVE conclusion (1\u20132 sentences) using standard UK histopathology language. Do NOT use hedging terms such as 'may suggest', 'could represent', or 'warrants further investigation'. Conclusion rules (must follow): 1) If villous architecture is retained AND IELs are not increased AND no gastric metaplasia: state 'No features of coeliac disease. Appearances are within normal limits.' 2) If gastric metaplasia and/or chronic inflammation is present with normal IELs: state 'Features are in keeping with chronic (peptic-type) duodenitis. No features of coeliac disease.' 3) If increased IELs with retained villous architecture: state 'Features are in keeping with Marsh 1 change. Correlate with anti\u2011tissue transglutaminase (anti\u2011tTG) antibody and clinical context when considering coeliac disease.' 4) If increased IELs with crypt hyperplasia and retained villi: state 'Features are in keeping with Marsh 2 change. Correlate with anti\u2011tissue transglutaminase (anti\u2011tTG) antibody and clinical context.' 5) If villous blunting or atrophy WITH increased IELs: classify as Marsh 3 (3a partial, 3b subtotal, 3c total if specified; otherwise 3a) and state 'Features are in keeping with Marsh 3 change, in keeping with coeliac disease. Correlate with anti\u2011tissue transglutaminase (anti\u2011tTG) antibody and clinical findings.' The conclusion MUST ALWAYS mention Marsh classification when IELs are increased."
+      "description": "Plain text. Deterministic post-processing will enforce RCPath conclusion based on input text."
     }
   },
   "required": [

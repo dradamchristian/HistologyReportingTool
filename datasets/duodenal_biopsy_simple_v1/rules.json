@@ -1,4 +1,4 @@
 {
-  "version": "v5-rcpath-conclusion",
-  "notes": "Forces Marsh classification and anti\u2011tTG recommendation where appropriate; no hedging language."
+  "version": "v6",
+  "notes": "Conclusion is enforced server-side based on input text to avoid model drift; also hardens against [object Object]."
 }
