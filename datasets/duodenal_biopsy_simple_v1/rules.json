@@ -1,4 +1,4 @@
 {
-  "version": "v3-llmtext",
-  "notes": "Template prints microscopy_text.text and conclusion_text.text to avoid [object Object]."
+  "version": "v4-flat-strings",
+  "notes": "Flat string fields to match Mustache/Handlebars without dot-notation."
 }

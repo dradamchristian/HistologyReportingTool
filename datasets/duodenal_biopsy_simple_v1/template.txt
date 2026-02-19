@@ -1,8 +1,8 @@
 MICROSCOPY:
-{{microscopy_text.text}}
+{{microscopy_text}}
 
 CONCLUSION:
-{{conclusion_text.text}}
+{{conclusion_text}}
 {{#if comment_line}}
 {{comment_line}}
 {{/if}}

@@ -1,37 +1,21 @@
 {
-  "title": "Duodenal biopsy - narrative canned report v3 (object text fields)",
+  "title": "Duodenal biopsy - narrative canned report v4 (flat string fields)",
   "type": "object",
   "properties": {
     "microscopy_text": {
-      "type": "object",
-      "properties": {
-        "text": {
-          "type": "string",
-          "default": "",
-          "description": "Write ONE paragraph of microscopy text in natural report style. Always include villous architecture (default: retained villous architecture) and IEL status (default: not increased). Only mention inflammation/duodenitis if explicitly stated. Mention crypt hyperplasia, gastric/foveolar metaplasia, villous blunting/atrophy, IEL increase only if stated/implied. Always end with: 'There is no dysplasia or malignancy.'"
-        }
-      },
-      "required": [
-        "text"
-      ]
+      "type": "string",
+      "default": "",
+      "description": "Return PLAIN TEXT (not JSON) for the microscopy section. Write ONE paragraph in natural histopathology report style. Always include villous architecture (default: retained villous architecture) and IEL status (default: not increased). Only mention inflammation/duodenitis if explicitly stated in the input. Mention crypt hyperplasia, gastric/foveolar metaplasia, villous blunting/atrophy, IEL increase only if stated/implied. Always end with: 'There is no dysplasia or malignancy.'"
     },
     "conclusion_text": {
-      "type": "object",
-      "properties": {
-        "text": {
-          "type": "string",
-          "default": "",
-          "description": "Write a short conclusion (1\u20132 sentences). MUST ALWAYS be non-empty. If coeliac-type features are present, include Marsh classification and advise correlation with anti\u2011tTG (and clinical context). Marsh mapping (assume crypt hyperplasia may be present even if not explicitly stated): Marsh 0 = retained/normal villi + no increase IEL; Marsh 1 = increased IEL with retained villi; Marsh 2 = increased IEL + crypt hyperplasia with retained villi; Marsh 3a = villous blunting/partial atrophy + increased IEL; Marsh 3b = subtotal villous atrophy + increased IEL; Marsh 3c = total villous atrophy/flat mucosa + increased IEL. If gastric metaplasia and/or duodenitis is present with normal IELs, conclude chronic/peptic-type duodenitis and state no features of coeliac disease. If entirely normal, conclude no features of coeliac disease and within normal limits."
-        }
-      },
-      "required": [
-        "text"
-      ]
+      "type": "string",
+      "default": "",
+      "description": "Return PLAIN TEXT (not JSON). MUST ALWAYS be non-empty. Write a short conclusion (1\u20132 sentences). If coeliac-type features are present, include Marsh classification and advise correlation with anti\u2011tTG (and clinical context). Marsh mapping: Marsh 0 = retained/normal villi + no increase IEL; Marsh 1 = increased IEL with retained villi; Marsh 2 = increased IEL + crypt hyperplasia with retained villi; Marsh 3a = villous blunting/partial atrophy + increased IEL; Marsh 3b = subtotal villous atrophy + increased IEL; Marsh 3c = total villous atrophy/flat mucosa + increased IEL. If gastric metaplasia and/or duodenitis is present with normal IELs, conclude chronic/peptic-type duodenitis and state no features of coeliac disease. If entirely normal, conclude no features of coeliac disease and within normal limits."
     },
     "comment_line": {
       "type": "string",
       "default": "",
-      "description": "Optional extra line appended after the conclusion."
+      "description": "Optional extra line appended after the conclusion (plain text)."
     }
   },
   "required": [
