@@ -3,10 +3,10 @@
   "type": "object",
   "properties": {
     "microscopy_text": {
-      "type": "string",
-      "default": "",
-      "description": "Plain text. One paragraph. Include villous architecture and IEL status. Only mention features if stated. End with: 'There is no dysplasia or malignancy.'"
-    },
+  "type": "string",
+  "default": "",
+  "description": "Write ONE short paragraph in UK histopathology style (not a list, not copied input). DO NOT repeat the user’s words verbatim. Start with 'The sections show duodenal mucosa'. Then describe villous architecture and IELs in a full sentence: e.g. '...with retained villous architecture and no increase in intraepithelial lymphocytes.' If villous blunting/atrophy is present, say '...with villous blunting.' If IELs are increased, say 'Intraepithelial lymphocytes are increased.' Only mention chronic inflammation/duodenitis if explicitly stated in the input. Do not use phrases like 'may suggest' or 'warrants'. Always end with exactly: 'There is no dysplasia or malignancy.'"
+}
     "conclusion_text": {
       "type": "string",
       "default": "",
