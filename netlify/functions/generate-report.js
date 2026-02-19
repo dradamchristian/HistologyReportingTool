@@ -71,6 +71,77 @@ function applyDefaults(schema, obj) {
   return out;
 }
 
+// ------------------------
+// Duodenal hardening helpers
+// ------------------------
+function toStringValue(v) {
+  if (v === null || v === undefined) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "object") {
+    if (typeof v.text === "string") return v.text;
+    if (typeof v.value === "string") return v.value;
+    try { return JSON.stringify(v); } catch { return String(v); }
+  }
+  return String(v);
+}
+
+function enforceDuodenalConclusion(rawText) {
+  const t = (rawText || "").toLowerCase();
+
+  const hasGM = /gastric\s+metaplasia|foveolar\s+metaplasia/.test(t);
+  const hasInflamm = /\bduodenitis\b|\binflammation\b/.test(t);
+
+  const hasIEL = /\biel\b|intraepithelial\s+lymph/.test(t);
+  const ielIncreased =
+    /increased\s+(intraepithelial\s+lymph|iels?)|raise(d)?\s+(intraepithelial\s+lymph|iels?)|high\s+iels?/.test(t);
+
+  const blunting =
+    /villous\s+blunt|blunted\s+villi|villous\s+atrophy|partial\s+villous\s+atrophy|subtotal\s+villous\s+atrophy|total\s+villous\s+atrophy|flat\s+mucosa/.test(t);
+  const subtotal = /subtotal\s+villous\s+atrophy/.test(t);
+  const total = /total\s+villous\s+atrophy|flat\s+mucosa/.test(t);
+  const cryptHyper = /crypt\s+hyperplasia/.test(t);
+
+  // IEL increased => ALWAYS Marsh + anti-tTG
+  if (ielIncreased || (hasIEL && /\bincrease(d)?\b/.test(t))) {
+    if (blunting) {
+      let marsh = "Marsh 3a";
+      if (subtotal) marsh = "Marsh 3b";
+      if (total) marsh = "Marsh 3c";
+      return `${marsh} change (villous atrophy/blunting with increased intraepithelial lymphocytes). Features are in keeping with coeliac disease. Correlate with anti-tissue transglutaminase (anti-tTG) antibody and clinical findings.`;
+    }
+    if (cryptHyper) {
+      return `Marsh 2 change (increased intraepithelial lymphocytes with crypt hyperplasia and retained villous architecture). Correlate with anti-tissue transglutaminase (anti-tTG) antibody and clinical context when considering coeliac disease.`;
+    }
+    return `Marsh 1 change (increased intraepithelial lymphocytes with retained villous architecture). Correlate with anti-tissue transglutaminase (anti-tTG) antibody and clinical context when considering coeliac disease.`;
+  }
+
+  // Normal IELs
+  if (hasGM || hasInflamm) {
+    return `Features are in keeping with chronic (peptic-type) duodenitis. No features of coeliac disease.`;
+  }
+
+  return `No features of coeliac disease. Appearances are within normal limits.`;
+}
+
+function stripHallucinatedDuodenalInflammation(rawText, microscopyText) {
+  const t = (rawText || "").toLowerCase();
+  if (/\bduodenitis\b|\binflammation\b/.test(t)) return microscopyText;
+
+  return (microscopyText || "")
+    .replace(/There is (mild|moderate|marked) chronic inflammation[^.]*\.\s*/gi, "")
+    .replace(/no significant inflammatory changes[^.]*\.\s*/gi, "");
+}
+
+function ensureNoDysplasiaSentence(microscopyText) {
+  const mt = String(microscopyText || "").trim();
+  if (/There is no dysplasia or malignancy\.\s*$/i.test(mt)) return mt;
+  let out = mt;
+  if (out && !out.endsWith(".")) out += ".";
+  if (out) out += " ";
+  out += "There is no dysplasia or malignancy.";
+  return out.trim();
+}
+
 // Template renderer (supports {{var}} and {{#if var}}...{{/if}} and {{#if (eq var "X")}})
 function renderTemplate(template, data) {
   let out = template;
@@ -274,8 +345,18 @@ exports.handler = async (event) => {
       const payload = {
         model,
         messages: [
-          { role: "system", content: "You are a pathology reporting assistant. Extract fields from free text. Output ONLY JSON. Omit fields not mentioned." },
-          { role: "user", content: "Return JSON using these field names. Use enum values where provided. Omit fields not mentioned.\nFIELDS:\n" + JSON.stringify(schemaSummary) + "\n\nTEXT:\n" + rawText }
+          {
+            role: "system",
+            content: "You are a pathology reporting assistant. Extract fields from free text. Output ONLY JSON. Omit fields not mentioned, but ALWAYS include any required fields as empty strings if not mentioned."
+          },
+          {
+            role: "user",
+            content:
+              "Return JSON using these field names. Use enum values where provided. Omit fields not mentioned.\nFIELDS:\n" +
+              JSON.stringify(schemaSummary) +
+              "\n\nTEXT:\n" +
+              rawText
+          }
         ],
         temperature: 0.2,
         max_tokens: 800
@@ -351,6 +432,18 @@ exports.handler = async (event) => {
       extracted.has_positive_nodes = Number(extracted.nodes_positive || 0) > 0;
       if (extracted.has_positive_nodes && !String(extracted.positive_node_stations || "").trim()) {
         extracted.positive_node_stations = "[enter station(s)]";
+      }
+
+      // --------------------------
+      // Duodenal deterministic patch
+      // --------------------------
+      if (datasetId === "duodenal_biopsy_simple_v1") {
+        extracted.microscopy_text = toStringValue(extracted.microscopy_text);
+        extracted.conclusion_text = toStringValue(extracted.conclusion_text);
+
+        extracted.conclusion_text = enforceDuodenalConclusion(rawText);
+        extracted.microscopy_text = stripHallucinatedDuodenalInflammation(rawText, extracted.microscopy_text);
+        extracted.microscopy_text = ensureNoDysplasiaSentence(extracted.microscopy_text);
       }
 
     } else {
