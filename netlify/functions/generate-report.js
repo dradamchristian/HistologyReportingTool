@@ -133,14 +133,26 @@ function stripHallucinatedDuodenalInflammation(rawText, microscopyText) {
 }
 
 function ensureNoDysplasiaSentence(microscopyText) {
-  const mt = String(microscopyText || "").trim();
-  if (/There is no dysplasia or malignancy\.\s*$/i.test(mt)) return mt;
-  let out = mt;
-  if (out && !out.endsWith(".")) out += ".";
-  if (out) out += " ";
-  out += "There is no dysplasia or malignancy.";
-  return out.trim();
+  let mt = String(microscopyText || "").trim();
+
+  // 1) Remove any partial/garbled "There is no dysplasia..." fragments
+  // Examples caught:
+  //  - "There is no dysplasia or."
+  //  - "There is no dysplasia."
+  //  - "There is no dysplasia or malignancy" (without period)
+  mt = mt.replace(/\bThere is no dysplasia\b[^.]*\.?/gi, "").trim();
+
+  // 2) Remove any duplicate correct sentence if it's already present
+  mt = mt.replace(/\bThere is no dysplasia or malignancy\.\s*$/i, "").trim();
+
+  // 3) Append exactly one clean sentence
+  if (mt && !mt.endsWith(".")) mt += ".";
+  if (mt) mt += " ";
+  mt += "There is no dysplasia or malignancy.";
+
+  return mt.trim();
 }
+
 
 // Template renderer (supports {{var}} and {{#if var}}...{{/if}} and {{#if (eq var "X")}})
 function renderTemplate(template, data) {
