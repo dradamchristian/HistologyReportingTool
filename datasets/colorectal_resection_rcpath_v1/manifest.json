@@ -1,0 +1,26 @@
+{
+  "id": "colorectal_resection_rcpath_v1",
+  "kind": "rcpath",
+  "match": {
+    "any": [
+      "colorectal",
+      "colon",
+      "rectal",
+      "rectum",
+      "sigmoid",
+      "hemicolectomy",
+      "anterior resection",
+      "abdominoperineal",
+      "ape",
+      "hartmann",
+      "colectomy",
+      "colon cancer",
+      "rectal cancer",
+      "colorectal cancer",
+      "colorectal adenocarcinoma"
+    ]
+  },
+  "pipeline": {
+    "mode": "schema_extract_then_rules"
+  }
+}

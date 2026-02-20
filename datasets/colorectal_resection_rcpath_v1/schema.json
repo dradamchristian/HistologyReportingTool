@@ -1,0 +1,268 @@
+{
+  "title": "RCPath colorectal carcinoma resection \u2013 microscopy (minimal set)",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "tumour_type": {
+      "type": "string",
+      "enum": [
+        "Adenocarcinoma",
+        "Other/variant of adenocarcinoma"
+      ],
+      "default": "Adenocarcinoma",
+      "description": "Histological tumour type."
+    },
+    "tumour_type_other_specify": {
+      "type": "string",
+      "default": "",
+      "description": "If tumour_type is Other/variant, specify e.g. mucinous."
+    },
+    "differentiation_worst_area": {
+      "type": "string",
+      "enum": [
+        "Well/moderate",
+        "Poor",
+        "Not applicable"
+      ],
+      "default": "Well/moderate",
+      "description": "Differentiation by worst area."
+    },
+    "local_invasion_pT": {
+      "type": "string",
+      "enum": [
+        "pT0",
+        "pT1",
+        "pT2",
+        "pT3",
+        "pT4a",
+        "pT4b"
+      ],
+      "default": "pT2",
+      "description": "Local invasion category (use ypT if treated)."
+    },
+    "max_distance_beyond_muscularis_mm": {
+      "type": "string",
+      "default": "",
+      "description": "Maximum distance beyond muscularis propria in mm (blank unless provided)."
+    },
+    "tumour_regression_score": {
+      "type": "string",
+      "enum": [
+        "Not applicable",
+        "TRS 0",
+        "TRS 1",
+        "TRS 2",
+        "TRS 3"
+      ],
+      "default": "Not applicable",
+      "description": "Preoperative therapy response (tumour regression score)."
+    },
+    "y_prefix": {
+      "type": "boolean",
+      "default": false,
+      "description": "Set true if tumour_regression_score is not 'Not applicable'."
+    },
+    "longitudinal_margin_involved": {
+      "type": "string",
+      "enum": [
+        "Yes",
+        "No",
+        "N/A",
+        "N/S"
+      ],
+      "default": "No",
+      "description": "Carcinoma involvement of longitudinal margin."
+    },
+    "distal_margin_involved": {
+      "type": "string",
+      "enum": [
+        "Yes",
+        "No",
+        "N/A",
+        "N/S"
+      ],
+      "default": "No",
+      "description": "If explicitly stated, distal/longitudinal margin involved."
+    },
+    "circumferential_margin_involved": {
+      "type": "string",
+      "enum": [
+        "Yes",
+        "No",
+        "N/A",
+        "N/S"
+      ],
+      "default": "No",
+      "description": "Carcinoma involvement of circumferential margin (CRM)."
+    },
+    "distance_to_crm_mm": {
+      "type": "string",
+      "default": "",
+      "description": "Distance from carcinoma to CRM in mm (blank unless provided)."
+    },
+    "doughnuts_involved": {
+      "type": "string",
+      "enum": [
+        "Yes",
+        "No",
+        "N/A",
+        "N/S"
+      ],
+      "default": "N/A",
+      "description": "Carcinoma involvement of doughnuts."
+    },
+    "nodes_examined": {
+      "type": "integer",
+      "default": 0,
+      "description": "Total number of lymph nodes examined."
+    },
+    "nodes_positive": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of involved lymph nodes."
+    },
+    "highest_node_involved": {
+      "type": "string",
+      "enum": [
+        "No",
+        "Yes",
+        "Not stated"
+      ],
+      "default": "Not stated",
+      "description": "Highest node involved (if stated)."
+    },
+    "tumour_deposits": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of tumour deposits."
+    },
+    "venous_invasion_level": {
+      "type": "string",
+      "enum": [
+        "None",
+        "Intramural",
+        "Extramural"
+      ],
+      "default": "None",
+      "description": "Deepest level of venous invasion."
+    },
+    "lymphatic_invasion_level": {
+      "type": "string",
+      "enum": [
+        "None",
+        "Intramural",
+        "Extramural"
+      ],
+      "default": "None",
+      "description": "Deepest level of lymphatic invasion."
+    },
+    "perineural_invasion_level": {
+      "type": "string",
+      "enum": [
+        "None",
+        "Intramural",
+        "Extramural"
+      ],
+      "default": "None",
+      "description": "Deepest level of perineural invasion."
+    },
+    "distant_metastasis_confirmed": {
+      "type": "string",
+      "enum": [
+        "Yes (pM1)",
+        "No"
+      ],
+      "default": "No",
+      "description": "Pathologically confirmed distant metastatic disease."
+    },
+    "metastasis_site": {
+      "type": "string",
+      "default": "",
+      "description": "If pM1, specify site(s)."
+    },
+    "separate_abnormalities_polyp": {
+      "type": "string",
+      "enum": [
+        "No",
+        "Yes"
+      ],
+      "default": "No",
+      "description": "Separate abnormalities: Polyp(s)."
+    },
+    "separate_abnormalities_polyposis": {
+      "type": "string",
+      "enum": [
+        "No",
+        "Yes"
+      ],
+      "default": "No",
+      "description": "Separate abnormalities: Polyposis."
+    },
+    "separate_abnormalities_synchronous_carcinoma": {
+      "type": "string",
+      "enum": [
+        "No",
+        "Yes"
+      ],
+      "default": "No",
+      "description": "Separate abnormalities: Synchronous carcinoma(s)."
+    },
+    "separate_abnormalities_other": {
+      "type": "string",
+      "default": "",
+      "description": "Other separate abnormalities."
+    },
+    "tumour_block_placeholder": {
+      "type": "string",
+      "default": "[enter tumour block(s)]",
+      "description": "Placeholder for representative molecular block(s)."
+    },
+    "stage_pT": {
+      "type": "string",
+      "enum": [
+        "T0",
+        "T1",
+        "T2",
+        "T3",
+        "T4a",
+        "T4b",
+        "TX"
+      ],
+      "default": "TX",
+      "description": "TNM8 pT category (without y)."
+    },
+    "stage_pN": {
+      "type": "string",
+      "enum": [
+        "N0",
+        "N1a",
+        "N1b",
+        "N1c",
+        "N2a",
+        "N2b",
+        "NX"
+      ],
+      "default": "NX",
+      "description": "TNM8 pN category."
+    },
+    "stage_pM": {
+      "type": "string",
+      "enum": [
+        "M1",
+        "Not applicable"
+      ],
+      "default": "Not applicable",
+      "description": "TNM8 pM category."
+    },
+    "r_status": {
+      "type": "string",
+      "enum": [
+        "R0",
+        "R1",
+        "R2"
+      ],
+      "default": "R0",
+      "description": "Resection status."
+    }
+  }
+}

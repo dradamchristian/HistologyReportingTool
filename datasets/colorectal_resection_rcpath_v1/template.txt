@@ -1,0 +1,37 @@
+DIAGNOSIS:
+Colorectal resection: {{tumour_type}}{{#if tumour_type_other_specify}} ({{tumour_type_other_specify}}){{/if}}.
+
+MICROSCOPY:
+Tumour differentiation (worst area): {{differentiation_worst_area}}.
+Local invasion: {{local_invasion_pT}}.
+Maximum distance beyond muscularis propria: {{max_distance_beyond_muscularis_mm}} mm.
+Preoperative therapy response (tumour regression score): {{tumour_regression_score}}.
+
+MARGINS:
+Longitudinal margin involved: {{longitudinal_margin_involved}}.
+Circumferential margin (CRM) involved: {{circumferential_margin_involved}}.
+Distance from carcinoma to CRM: {{distance_to_crm_mm}} mm.
+Doughnuts involved: {{doughnuts_involved}}.
+
+LYMPH NODES:
+{{nodes_positive}} / {{nodes_examined}} involved.
+Highest node involved: {{highest_node_involved}}.
+Tumour deposits: {{tumour_deposits}}.
+
+INVASION:
+Venous invasion (deepest level): {{venous_invasion_level}}.
+Lymphatic invasion (deepest level): {{lymphatic_invasion_level}}.
+Perineural invasion (deepest level): {{perineural_invasion_level}}.
+
+METASTASIS:
+Pathologically confirmed distant metastatic disease: {{distant_metastasis_confirmed}}{{#if metastasis_site}} ({{metastasis_site}}){{/if}}.
+
+RESECTION STATUS:
+{{r_status}}.
+
+TNM (8th edition):
+{{#if y_prefix}}y{{/if}}pT {{stage_pT}}  {{#if y_prefix}}y{{/if}}pN {{stage_pN}}  {{#if y_prefix}}y{{/if}}pM {{stage_pM}}.
+
+TUMOUR BLOCKS:
+Representative molecular block(s): {{tumour_block_placeholder}}.
+Carcinoma content (to nearest 10%): [enter %].

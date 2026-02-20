@@ -1,0 +1,49 @@
+{
+  "pn_mapping_by_positive_nodes": [
+    {
+      "min": 0,
+      "max": 0,
+      "set": "N0"
+    },
+    {
+      "min": 1,
+      "max": 1,
+      "set": "N1a"
+    },
+    {
+      "min": 2,
+      "max": 3,
+      "set": "N1b"
+    },
+    {
+      "min": 4,
+      "max": 6,
+      "set": "N2a"
+    },
+    {
+      "min": 7,
+      "max": 9999,
+      "set": "N2b"
+    }
+  ],
+  "r_status_rules": {
+    "R1_if_any": [
+      {
+        "field": "longitudinal_margin_involved",
+        "equals": "Yes"
+      },
+      {
+        "field": "distal_margin_involved",
+        "equals": "Yes"
+      },
+      {
+        "field": "circumferential_margin_involved",
+        "equals": "Yes"
+      },
+      {
+        "field": "doughnuts_involved",
+        "equals": "Yes"
+      }
+    ]
+  }
+}
