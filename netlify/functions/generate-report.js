@@ -419,6 +419,24 @@ exports.handler = async (event) => {
 
       extracted = applyDefaults(schema, extracted0);
 
+// Colorectal guard: "highest node involved" should be No unless explicitly mentioned
+if (datasetId === "colorectal_resection_rcpath_v1") {
+  const t = rawText.toLowerCase();
+
+  // Only trust this field if the dictation actually mentions it
+  const mentionsHighest = /highest\s+node/i.test(t);
+
+  if (!mentionsHighest) {
+    extracted.highest_node_involved = "No";
+  } else {
+    // If mentioned, interpret yes/no if possible; otherwise keep default "No"
+    const windowMatch = t.match(/highest\s+node[^.\n]{0,120}/i)?.[0] || "";
+    if (/\b(yes|involved|positive)\b/i.test(windowMatch)) extracted.highest_node_involved = "Yes";
+    else if (/\b(no|not involved|negative|uninvolved)\b/i.test(windowMatch)) extracted.highest_node_involved = "No";
+    else extracted.highest_node_involved = "No";
+  }
+}
+      
       // Deterministic overrides from raw text
       const nodeParsed = parseNodes(rawText);
       if (nodeParsed) {
