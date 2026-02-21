@@ -9,13 +9,11 @@
         "Adenocarcinoma",
         "Other/variant of adenocarcinoma"
       ],
-      "default": "Adenocarcinoma",
-      "description": "Histological tumour type."
+      "default": "Adenocarcinoma"
     },
     "tumour_type_other_specify": {
       "type": "string",
-      "default": "",
-      "description": "If tumour_type is Other/variant, specify e.g. mucinous."
+      "default": ""
     },
     "differentiation_worst_area": {
       "type": "string",
@@ -24,8 +22,7 @@
         "Poor",
         "Not applicable"
       ],
-      "default": "Well/moderate",
-      "description": "Differentiation by worst area."
+      "default": "Well/moderate"
     },
     "local_invasion_pT": {
       "type": "string",
@@ -37,13 +34,11 @@
         "pT4a",
         "pT4b"
       ],
-      "default": "pT2",
-      "description": "Local invasion category (use ypT if treated)."
+      "default": "pT2"
     },
     "max_distance_beyond_muscularis_mm": {
       "type": "string",
-      "default": "",
-      "description": "Maximum distance beyond muscularis propria in mm (blank unless provided)."
+      "default": ""
     },
     "tumour_regression_score": {
       "type": "string",
@@ -54,13 +49,11 @@
         "TRS 2",
         "TRS 3"
       ],
-      "default": "Not applicable",
-      "description": "Preoperative therapy response (tumour regression score)."
+      "default": "Not applicable"
     },
     "y_prefix": {
       "type": "boolean",
-      "default": false,
-      "description": "Set true if tumour_regression_score is not 'Not applicable'."
+      "default": false
     },
     "longitudinal_margin_involved": {
       "type": "string",
@@ -70,8 +63,7 @@
         "N/A",
         "N/S"
       ],
-      "default": "No",
-      "description": "Carcinoma involvement of longitudinal margin."
+      "default": "No"
     },
     "distal_margin_involved": {
       "type": "string",
@@ -81,8 +73,7 @@
         "N/A",
         "N/S"
       ],
-      "default": "No",
-      "description": "If explicitly stated, distal/longitudinal margin involved."
+      "default": "No"
     },
     "circumferential_margin_involved": {
       "type": "string",
@@ -92,13 +83,11 @@
         "N/A",
         "N/S"
       ],
-      "default": "No",
-      "description": "Carcinoma involvement of circumferential margin (CRM)."
+      "default": "No"
     },
     "distance_to_crm_mm": {
       "type": "string",
-      "default": "",
-      "description": "Distance from carcinoma to CRM in mm (blank unless provided)."
+      "default": ""
     },
     "doughnuts_involved": {
       "type": "string",
@@ -108,18 +97,15 @@
         "N/A",
         "N/S"
       ],
-      "default": "N/A",
-      "description": "Carcinoma involvement of doughnuts."
+      "default": "N/A"
     },
     "nodes_examined": {
       "type": "integer",
-      "default": 0,
-      "description": "Total number of lymph nodes examined."
+      "default": 0
     },
     "nodes_positive": {
       "type": "integer",
-      "default": 0,
-      "description": "Number of involved lymph nodes."
+      "default": 0
     },
     "highest_node_involved": {
       "type": "string",
@@ -128,13 +114,11 @@
         "Yes",
         "Not stated"
       ],
-      "default": "Not stated",
-      "description": "Highest node involved (if stated)."
+      "default": "No"
     },
     "tumour_deposits": {
       "type": "integer",
-      "default": 0,
-      "description": "Number of tumour deposits."
+      "default": 0
     },
     "venous_invasion_level": {
       "type": "string",
@@ -143,8 +127,7 @@
         "Intramural",
         "Extramural"
       ],
-      "default": "None",
-      "description": "Deepest level of venous invasion."
+      "default": "None"
     },
     "lymphatic_invasion_level": {
       "type": "string",
@@ -153,8 +136,7 @@
         "Intramural",
         "Extramural"
       ],
-      "default": "None",
-      "description": "Deepest level of lymphatic invasion."
+      "default": "None"
     },
     "perineural_invasion_level": {
       "type": "string",
@@ -163,8 +145,7 @@
         "Intramural",
         "Extramural"
       ],
-      "default": "None",
-      "description": "Deepest level of perineural invasion."
+      "default": "None"
     },
     "distant_metastasis_confirmed": {
       "type": "string",
@@ -172,13 +153,11 @@
         "Yes (pM1)",
         "No"
       ],
-      "default": "No",
-      "description": "Pathologically confirmed distant metastatic disease."
+      "default": "No"
     },
     "metastasis_site": {
       "type": "string",
-      "default": "",
-      "description": "If pM1, specify site(s)."
+      "default": ""
     },
     "separate_abnormalities_polyp": {
       "type": "string",
@@ -186,8 +165,7 @@
         "No",
         "Yes"
       ],
-      "default": "No",
-      "description": "Separate abnormalities: Polyp(s)."
+      "default": "No"
     },
     "separate_abnormalities_polyposis": {
       "type": "string",
@@ -195,8 +173,7 @@
         "No",
         "Yes"
       ],
-      "default": "No",
-      "description": "Separate abnormalities: Polyposis."
+      "default": "No"
     },
     "separate_abnormalities_synchronous_carcinoma": {
       "type": "string",
@@ -204,18 +181,11 @@
         "No",
         "Yes"
       ],
-      "default": "No",
-      "description": "Separate abnormalities: Synchronous carcinoma(s)."
+      "default": "No"
     },
     "separate_abnormalities_other": {
       "type": "string",
-      "default": "",
-      "description": "Other separate abnormalities."
-    },
-    "tumour_block_placeholder": {
-      "type": "string",
-      "default": "[enter tumour block(s)]",
-      "description": "Placeholder for representative molecular block(s)."
+      "default": ""
     },
     "stage_pT": {
       "type": "string",
@@ -228,8 +198,7 @@
         "T4b",
         "TX"
       ],
-      "default": "TX",
-      "description": "TNM8 pT category (without y)."
+      "default": "TX"
     },
     "stage_pN": {
       "type": "string",
@@ -242,8 +211,7 @@
         "N2b",
         "NX"
       ],
-      "default": "NX",
-      "description": "TNM8 pN category."
+      "default": "NX"
     },
     "stage_pM": {
       "type": "string",
@@ -251,8 +219,7 @@
         "M1",
         "Not applicable"
       ],
-      "default": "Not applicable",
-      "description": "TNM8 pM category."
+      "default": "Not applicable"
     },
     "r_status": {
       "type": "string",
@@ -261,8 +228,7 @@
         "R1",
         "R2"
       ],
-      "default": "R0",
-      "description": "Resection status."
+      "default": "R0"
     }
   }
 }
