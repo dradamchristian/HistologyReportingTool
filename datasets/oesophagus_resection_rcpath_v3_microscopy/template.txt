@@ -30,3 +30,5 @@ pM: {{pM_display}}
 
 SUMMARY:
 {{#if y_prefix}}y{{/if}}p{{pT}} {{#if y_prefix}}y{{/if}}p{{pN}}{{#if pM}} p{{pM}}{{/if}} {{r_status}} (UICC TNM {{tnm_edition}}).
+
+TUMOUR BLOCK:
