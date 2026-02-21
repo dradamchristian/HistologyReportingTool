@@ -30,4 +30,4 @@ RESECTION STATUS:
 {{r_status}}.
 
 TNM (9th edition):
-{{#if y_prefix}}y{{/if}}pT{{stage_pT}}  {{#if y_prefix}}y{{/if}}pN{{stage_pN}}  {{#if y_prefix}}y{{/if}}pM{{stage_pM}}.
+{{#if y_prefix}}y{{/if}}p{{stage_pT}}  {{#if y_prefix}}y{{/if}}p{{stage_pN}}  {{#if y_prefix}}y{{/if}}pM: {{stage_pM}}.
