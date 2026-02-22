@@ -308,6 +308,7 @@ function buildCaveats(extracted, datasetId) {
   if (extracted.pT) c.push(`pT set as ${extracted.pT}.`);
   if (extracted.pN) c.push(`pN set as ${extracted.pN} from nodes positive (${extracted.nodes_positive}).`);
   if (extracted.y_prefix) c.push("y-prefix added because a tumour regression grade implies neoadjuvant therapy.");
+  if (extracted._gist_debug) c.push(extracted._gist_debug);
   return c;
 }
 
@@ -420,23 +421,28 @@ exports.handler = async (event) => {
       extracted = applyDefaults(schema, extracted0);
 // --- GIST deterministic staging + AFIP risk (prevents "Not appropriate" when inputs are present)
 if (datasetId === "gist_resection_rcpath_v1") {
-  // parse size in cm
- function firstNumber(x) {
-  const s = String(x ?? "").replace(",", "."); // handle "3,2"
-  const m = s.match(/-?\d+(\.\d+)?/);
-  return m ? Number(m[0]) : NaN;
-}
 
-// parse size in cm (works for "3", "3cm", "3 cm", "30 mm" if it comes through weirdly)
-let size = firstNumber(extracted.maximum_tumour_dimension_cm);
-const sizeRaw = String(extracted.maximum_tumour_dimension_cm ?? "").toLowerCase();
-if (Number.isFinite(size) && /\bmm\b/.test(sizeRaw)) size = size / 10; // mm → cm (rough but OK)
+  function firstNumber(x) {
+    const s = String(x ?? "").replace(",", ".");
+    const m = s.match(/-?\d+(\.\d+)?/);
+    return m ? Number(m[0]) : NaN;
+  }
 
-// parse mitoses per 5mm2 (works for "5", "5 /5 mm2", etc.)
-const mit = firstNumber(extracted.mitotic_count_per_5mm2);
+  // Normalise potentially weird model outputs
+  const sizeValRaw = toStringValue(extracted.maximum_tumour_dimension_cm ?? "");
+  const mitValRaw  = toStringValue(extracted.mitotic_count_per_5mm2 ?? "");
+  const siteValRaw = toStringValue(extracted.site_of_tumour ?? "");
+
+  // parse size in cm (accept "3", "3 cm", "3cm", "30 mm")
+  let size = firstNumber(sizeValRaw);
+  const sizeRawLower = String(sizeValRaw).toLowerCase();
+  if (Number.isFinite(size) && /\bmm\b/.test(sizeRawLower)) size = size / 10; // mm → cm
+
+  // parse mitoses per 5mm2 (accept "5", "5/5", "5 /5 mm2")
+  const mit = firstNumber(mitValRaw);
 
   // normalise site into AFIP buckets
-  const siteRaw = String(extracted.site_of_tumour ?? "").toLowerCase();
+  const siteRaw = String(siteValRaw).toLowerCase();
   let site = "";
   if (siteRaw.includes("stomach") || siteRaw.includes("gastric")) site = "gastric";
   else if (siteRaw.includes("duoden")) site = "duodenum";
@@ -453,7 +459,7 @@ const mit = firstNumber(extracted.mitotic_count_per_5mm2);
     extracted.tnm_pT = "TX";
   }
 
-  // TNM pN from nodes positive
+  // TNM pN from nodes positive (GIST schema uses lymph_nodes_positive)
   extracted.tnm_pN = (Number(extracted.lymph_nodes_positive || 0) > 0) ? "N1" : "N0";
 
   // TNM pM from metastasis flags
@@ -483,7 +489,7 @@ const mit = firstNumber(extracted.mitotic_count_per_5mm2);
     if (le5 && size > 5 && size <= 10) {
       if (site === "gastric") return "Low";
       if (site === "jej_ile") return "Moderate";
-      return "Not appropriate"; // duodenum/rectum per your schema bins
+      return "Not appropriate";
     }
 
     if (le5 && size > 10) {
@@ -512,16 +518,16 @@ const mit = firstNumber(extracted.mitotic_count_per_5mm2);
       return "Not appropriate";
     }
 
-    if (!le5 && size > 10) {
-      return "High";
-    }
+    if (!le5 && size > 10) return "High";
 
     return "Not appropriate";
   }
 
   extracted.afip_risk_category = afip(site, size, mit);
-}
 
+  // Debug breadcrumb (shows up in caveats box)
+  extracted._gist_debug = `GIST debug: site=${site || "?"} size_cm=${Number.isFinite(size) ? size : "NaN"} mitoses=${Number.isFinite(mit) ? mit : "NaN"} => AFIP=${extracted.afip_risk_category}`;
+}
       
 // Colorectal guard: "highest node involved" should be No unless explicitly mentioned
 if (datasetId === "colorectal_resection_rcpath_v1") {
