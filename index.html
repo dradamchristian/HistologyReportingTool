@@ -94,10 +94,7 @@ input[type="text"]{
     <textarea id="inputText" placeholder="Type or dictate: e.g. “Oesophageal SCC, through the wall, 2 of 12 nodes involved, margins clear, Mandard 2”"></textarea>
     <div class="row">
       <button class="primary" id="btnDictate">🎙️ Dictate (PC)</button>
-
-      <!-- NEW -->
       <button class="primary" id="btnPhone">📱 Phone dictation (QR)</button>
-
       <button class="good" id="btnGenerate">⚡ Generate report</button>
       <button class="bad" id="btnClear">🧹 Clear</button>
       <span class="pill" id="micState">Mic: idle</span>
@@ -120,7 +117,7 @@ input[type="text"]{
   </section>
 </main>
 
-<!-- NEW: Phone dictation modal -->
+<!-- Phone dictation modal -->
 <div class="modalOverlay" id="phoneModalOverlay" aria-hidden="true">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="phoneModalTitle">
     <div class="modalHeader">
@@ -171,7 +168,6 @@ input[type="text"]{
 </div>
 
 <script defer src="assets/app.js"></script>
-<!-- NEW -->
 <script defer src="assets/phone-bridge.js"></script>
 </body>
 </html>
