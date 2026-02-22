@@ -421,11 +421,19 @@ exports.handler = async (event) => {
 // --- GIST deterministic staging + AFIP risk (prevents "Not appropriate" when inputs are present)
 if (datasetId === "gist_resection_rcpath_v1") {
   // parse size in cm
-  const sizeStr = String(extracted.maximum_tumour_dimension_cm ?? "").trim();
-  const size = Number(sizeStr);
-  // parse mitoses per 5mm2
-  const mitStr = String(extracted.mitotic_count_per_5mm2 ?? "").trim();
-  const mit = Number(mitStr);
+ function firstNumber(x) {
+  const s = String(x ?? "").replace(",", "."); // handle "3,2"
+  const m = s.match(/-?\d+(\.\d+)?/);
+  return m ? Number(m[0]) : NaN;
+}
+
+// parse size in cm (works for "3", "3cm", "3 cm", "30 mm" if it comes through weirdly)
+let size = firstNumber(extracted.maximum_tumour_dimension_cm);
+const sizeRaw = String(extracted.maximum_tumour_dimension_cm ?? "").toLowerCase();
+if (Number.isFinite(size) && /\bmm\b/.test(sizeRaw)) size = size / 10; // mm → cm (rough but OK)
+
+// parse mitoses per 5mm2 (works for "5", "5 /5 mm2", etc.)
+const mit = firstNumber(extracted.mitotic_count_per_5mm2);
 
   // normalise site into AFIP buckets
   const siteRaw = String(extracted.site_of_tumour ?? "").toLowerCase();
