@@ -418,7 +418,103 @@ exports.handler = async (event) => {
       if (!extracted0) return jsonResp(500, { error: "Model did not return valid JSON.", model_output: content });
 
       extracted = applyDefaults(schema, extracted0);
+// --- GIST deterministic staging + AFIP risk (prevents "Not appropriate" when inputs are present)
+if (datasetId === "gist_resection_rcpath_v1") {
+  // parse size in cm
+  const sizeStr = String(extracted.maximum_tumour_dimension_cm ?? "").trim();
+  const size = Number(sizeStr);
+  // parse mitoses per 5mm2
+  const mitStr = String(extracted.mitotic_count_per_5mm2 ?? "").trim();
+  const mit = Number(mitStr);
 
+  // normalise site into AFIP buckets
+  const siteRaw = String(extracted.site_of_tumour ?? "").toLowerCase();
+  let site = "";
+  if (siteRaw.includes("stomach") || siteRaw.includes("gastric")) site = "gastric";
+  else if (siteRaw.includes("duoden")) site = "duodenum";
+  else if (siteRaw.includes("jejun") || siteRaw.includes("ile") || siteRaw.includes("small bowel") || siteRaw.includes("sb")) site = "jej_ile";
+  else if (siteRaw.includes("rect")) site = "rectum";
+
+  // TNM pT from size
+  if (Number.isFinite(size) && size > 0) {
+    if (size <= 2) extracted.tnm_pT = "T1";
+    else if (size <= 5) extracted.tnm_pT = "T2";
+    else if (size <= 10) extracted.tnm_pT = "T3";
+    else extracted.tnm_pT = "T4";
+  } else {
+    extracted.tnm_pT = "TX";
+  }
+
+  // TNM pN from nodes positive
+  extracted.tnm_pN = (Number(extracted.lymph_nodes_positive || 0) > 0) ? "N1" : "N0";
+
+  // TNM pM from metastasis flags
+  const m1 = (
+    String(extracted.peritoneal_metastasis || "").toLowerCase().includes("present") ||
+    String(extracted.liver_metastasis || "").toLowerCase().includes("present") ||
+    String(extracted.other_metastasis || "").toLowerCase().includes("present")
+  );
+  extracted.tnm_pM = m1 ? "M1" : "";
+  extracted.tnm_pM_display = m1 ? "M1" : "Not applicable";
+
+  // AFIP risk category (STRICT table)
+  function afip(site, size, mit) {
+    if (!site || !Number.isFinite(size) || !Number.isFinite(mit)) return "Not appropriate";
+
+    const le5 = mit <= 5;
+
+    if (le5 && size <= 2) return "None";
+
+    if (le5 && size > 2 && size <= 5) {
+      if (site === "gastric") return "Very low";
+      if (site === "duodenum") return "Low";
+      if (site === "jej_ile") return "Low";
+      if (site === "rectum") return "Low";
+    }
+
+    if (le5 && size > 5 && size <= 10) {
+      if (site === "gastric") return "Low";
+      if (site === "jej_ile") return "Moderate";
+      return "Not appropriate"; // duodenum/rectum per your schema bins
+    }
+
+    if (le5 && size > 10) {
+      if (site === "gastric") return "Moderate";
+      if (site === "duodenum") return "High";
+      if (site === "jej_ile") return "High";
+      if (site === "rectum") return "High";
+    }
+
+    // mitotic >5
+    if (!le5 && size <= 2) {
+      if (site === "rectum") return "High";
+      return "Not appropriate";
+    }
+
+    if (!le5 && size > 2 && size <= 5) {
+      if (site === "gastric") return "Moderate";
+      if (site === "duodenum") return "High";
+      if (site === "jej_ile") return "High";
+      if (site === "rectum") return "High";
+    }
+
+    if (!le5 && size > 5 && size <= 10) {
+      if (site === "gastric") return "High";
+      if (site === "jej_ile") return "High";
+      return "Not appropriate";
+    }
+
+    if (!le5 && size > 10) {
+      return "High";
+    }
+
+    return "Not appropriate";
+  }
+
+  extracted.afip_risk_category = afip(site, size, mit);
+}
+
+      
 // Colorectal guard: "highest node involved" should be No unless explicitly mentioned
 if (datasetId === "colorectal_resection_rcpath_v1") {
   const t = rawText.toLowerCase();
