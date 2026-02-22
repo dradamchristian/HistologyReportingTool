@@ -1,6 +1,6 @@
 (() => {
   // === CONFIG ===
-  // Set this to the base URL of your QR-pairing dictation bridge Netlify site
+  // Base URL of your QR-pairing dictation bridge Netlify site
   const BRIDGE_SITE = "https://venerable-begonia-075ce3.netlify.app";
 
   // === Elements ===
@@ -42,19 +42,20 @@
     statusEl.textContent = msg || "";
   }
 
+  function origin() {
+    return BRIDGE_SITE.replace(/\/+$/, "");
+  }
+
   function phoneUrl() {
-    const origin = BRIDGE_SITE.replace(/\/+$/, "");
-    return `${origin}/?mode=send&session=${encodeURIComponent(session)}`;
+    return `${origin()}/?mode=send&session=${encodeURIComponent(session)}`;
   }
 
   function pullUrl() {
-    const origin = BRIDGE_SITE.replace(/\/+$/, "");
-    return `${origin}/.netlify/functions/pull?session=${encodeURIComponent(session)}&t=${Date.now()}`;
+    return `${origin()}/.netlify/functions/pull?session=${encodeURIComponent(session)}&t=${Date.now()}`;
   }
 
   function pushUrl() {
-    const origin = BRIDGE_SITE.replace(/\/+$/, "");
-    return `${origin}/.netlify/functions/push?session=${encodeURIComponent(session)}`;
+    return `${origin()}/.netlify/functions/push?session=${encodeURIComponent(session)}`;
   }
 
   async function pullLatest() {
@@ -72,7 +73,7 @@
     if (!res.ok) throw new Error(await res.text());
   }
 
-  // QR render with fallbacks (some networks block certain domains)
+  // QR render with fallbacks
   function renderQR(url) {
     qrBox.innerHTML = "";
     qrHint.textContent = "";
@@ -114,12 +115,20 @@
     localStorage.setItem("rg_bridge_session", session);
   }
 
+  function flashInput() {
+    if (!inputEl) return;
+    const old = inputEl.style.boxShadow;
+    inputEl.style.boxShadow = "0 0 0 3px rgba(52,211,153,.25)";
+    setTimeout(() => { inputEl.style.boxShadow = old; }, 700);
+  }
+
   function updateUI() {
     ensureSession();
     const link = phoneUrl();
     sessionLabel.textContent = session;
     phoneLinkEl.value = link;
     renderQR(link);
+    setStatus("Scan QR (or open phone link). Then press Send on phone.");
   }
 
   async function importOnce({ onlyIfNew = true } = {}) {
@@ -127,23 +136,26 @@
 
     try {
       const data = await pullLatest();
+
       if (onlyIfNew && data?.rev && data.rev === lastRev) return;
       lastRev = data?.rev || null;
 
       inputEl.value = data?.text || "";
       inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+      flashInput();
 
       metaEl.textContent = data?.updated_at ? `Last update: ${data.updated_at}` : "";
-      setStatus("Imported ✓");
+      setStatus("Imported into the main Input box ✓");
 
       if (autoClearEl.checked) {
         await clearRemote();
         setStatus("Imported + cleared ✓");
       }
 
-      setTimeout(() => setStatus(""), 1200);
+      setTimeout(() => setStatus(""), 1400);
     } catch (e) {
-      if (overlay.style.display === "flex") setStatus("Import failed (see console)");
+      // Most common cause: CORS on the bridge functions
+      setStatus("Import failed. If the bridge is on a different site, it needs CORS enabled.");
       console.error(e);
     }
   }
@@ -163,16 +175,18 @@
     updateUI();
     overlay.style.display = "flex";
     overlay.setAttribute("aria-hidden", "false");
+    // Polling continues even if you close the modal (so you don't *need* to keep it open)
     startPolling();
   }
 
   function closeModal() {
     overlay.style.display = "none";
     overlay.setAttribute("aria-hidden", "true");
-    stopPolling();
+    // Keep polling in background so phone sends still land in the textbox.
+    // If you want it to stop when closed, swap this to stopPolling();
   }
 
-  // === Events ===
+  // Events
   btnOpen?.addEventListener("click", openModal);
   btnClose?.addEventListener("click", closeModal);
 
@@ -196,7 +210,7 @@
   btnCopyLink?.addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(phoneLinkEl.value);
-      setStatus("Phone link copied ✓");
+      setStatus("Phone link copied ✓ (open on iPhone)");
       setTimeout(() => setStatus(""), 1200);
     } catch {
       setStatus("Copy failed");
@@ -209,6 +223,6 @@
     else stopPolling();
   });
 
-  // Pre-generate session for convenience
+  // Pre-generate session
   ensureSession();
 })();
