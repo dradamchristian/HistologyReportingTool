@@ -1,0 +1,23 @@
+{
+  "id": "gist_resection_rcpath_v1",
+  "kind": "rcpath",
+  "match": {
+    "any": [
+      "gist",
+      "gastrointestinal stromal",
+      "gastric gist",
+      "small bowel gist",
+      "duodenal gist",
+      "jejunal gist",
+      "ileal gist",
+      "rectal gist",
+      "dog1",
+      "dog-1",
+      "cd117",
+      "kit"
+    ]
+  },
+  "pipeline": {
+    "mode": "schema_extract_then_rules"
+  }
+}
