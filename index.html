@@ -38,6 +38,48 @@ border-radius:12px;padding:12px;min-height:190px;font-size:13px;line-height:1.35
 .caveats{margin-top:10px;padding:10px;border-radius:12px;border:1px dashed rgba(255,255,255,.18);background:rgba(0,0,0,.18);}
 .caveats ul{margin:6px 0 0 18px;padding:0;}
 .small{font-size:12px;color:var(--muted)}
+
+/* --- Modal (Phone dictation QR) --- */
+.modalOverlay{
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.55);
+  display:none;
+  align-items:center; justify-content:center;
+  padding:18px;
+  z-index:9999;
+}
+.modal{
+  width:min(920px, 100%);
+  background:linear-gradient(180deg, rgba(16,27,51,.95), rgba(16,27,51,.85));
+  border:1px solid var(--border);
+  border-radius:16px;
+  box-shadow:0 25px 60px rgba(0,0,0,.45);
+  padding:14px;
+}
+.modalHeader{display:flex; justify-content:space-between; align-items:center; gap:12px;}
+.modalHeader h3{margin:0; font-size:14px; color:#dbe6ff;}
+.modalBody{display:grid; gap:14px; margin-top:12px; grid-template-columns:1fr;}
+@media(min-width:820px){ .modalBody{grid-template-columns:220px 1fr;} }
+.qrbox{
+  width:200px; height:200px;
+  border:1px dashed rgba(255,255,255,.18);
+  border-radius:14px;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,.18);
+  overflow:hidden;
+}
+.modal small{color:var(--muted);}
+.kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;}
+input[type="text"]{
+  width:100%;
+  background:rgba(0,0,0,.22);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px 12px;
+  color:var(--text);
+  outline:none;
+  font-size:13px;
+}
 </style>
 </head>
 <body>
@@ -52,6 +94,10 @@ border-radius:12px;padding:12px;min-height:190px;font-size:13px;line-height:1.35
     <textarea id="inputText" placeholder="Type or dictate: e.g. “Oesophageal SCC, through the wall, 2 of 12 nodes involved, margins clear, Mandard 2”"></textarea>
     <div class="row">
       <button class="primary" id="btnDictate">🎙️ Dictate (PC)</button>
+
+      <!-- NEW -->
+      <button class="primary" id="btnPhone">📱 Phone dictation (QR)</button>
+
       <button class="good" id="btnGenerate">⚡ Generate report</button>
       <button class="bad" id="btnClear">🧹 Clear</button>
       <span class="pill" id="micState">Mic: idle</span>
@@ -74,6 +120,58 @@ border-radius:12px;padding:12px;min-height:190px;font-size:13px;line-height:1.35
   </section>
 </main>
 
+<!-- NEW: Phone dictation modal -->
+<div class="modalOverlay" id="phoneModalOverlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="phoneModalTitle">
+    <div class="modalHeader">
+      <h3 id="phoneModalTitle">Phone dictation (QR pairing)</h3>
+      <button id="btnPhoneClose" class="bad" title="Close">✕</button>
+    </div>
+
+    <div class="modalBody">
+      <div>
+        <div class="qrbox" id="phoneQrBox"><span class="small">QR loading…</span></div>
+        <div class="small" style="margin-top:8px;">
+          Session: <span class="kbd" id="phoneSessionLabel"></span>
+        </div>
+        <div class="small" style="margin-top:6px;" id="phoneQrHint"></div>
+      </div>
+
+      <div>
+        <div class="small">Phone link (if QR blocked):</div>
+        <input type="text" id="phoneLink" readonly />
+
+        <div class="row">
+          <button id="btnPhoneNew" class="primary">New pairing</button>
+          <button id="btnPhoneCopyLink" class="primary">Copy phone link</button>
+          <label class="pill" style="gap:6px;">
+            <input type="checkbox" id="phoneAutoImport" checked />
+            Auto-import to textbox
+          </label>
+          <label class="pill" style="gap:6px;">
+            <input type="checkbox" id="phoneAutoClear" />
+            Auto-clear after import
+          </label>
+        </div>
+
+        <div class="status" id="phoneStatus"></div>
+        <div class="small" id="phoneMeta"></div>
+
+        <div class="caveats" style="margin-top:12px;">
+          <div style="font-weight:700;">How to use</div>
+          <ul>
+            <li>Open this modal on the PC.</li>
+            <li>Scan QR on your phone; dictate into the phone box; press <span class="kbd">Send</span>.</li>
+            <li>The text will land in the main input textbox, ready for <span class="kbd">Generate report</span>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script defer src="assets/app.js"></script>
+<!-- NEW -->
+<script defer src="assets/phone-bridge.js"></script>
 </body>
 </html>
