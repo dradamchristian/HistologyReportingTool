@@ -134,10 +134,7 @@ function polishDuodenalMicroscopy(rawText, microscopyText) {
   let mt = String(microscopyText || "").trim();
   const t = (rawText || "").toLowerCase();
 
-  // If empty or ultra-short, build a sensible microscopy sentence from keywords
   const tooShort = mt.length < 25;
-
-  // If it looks like it's echoing the input (starts with "duodenal mucosa ...")
   const looksLikeEcho =
     /^duodenal\s+mucosa\b/i.test(mt) && !/^The sections show duodenal mucosa\b/i.test(mt);
 
@@ -167,7 +164,6 @@ function polishDuodenalMicroscopy(rawText, microscopyText) {
 function ensureNoDysplasiaSentence(microscopyText) {
   let mt = String(microscopyText || "").trim();
 
-  // Remove any partial/garbled "There is no dysplasia..." fragments (and duplicates)
   mt = mt.replace(/\bThere is no dysplasia\b[^.]*\.?/gi, "").trim();
   mt = mt.replace(/\bThere is no dysplasia or malignancy\.\s*$/i, "").trim();
 
@@ -178,7 +174,9 @@ function ensureNoDysplasiaSentence(microscopyText) {
   return mt.trim();
 }
 
-// Template renderer (supports {{var}} and {{#if var}}...{{/if}} and {{#if (eq var "X")}})
+// ------------------------
+// Template renderer
+// ------------------------
 function renderTemplate(template, data) {
   let out = template;
   const ifRe = /\{\{#if\s+([^}]+?)\s*\}\}([\s\S]*?)\{\{\/if\}\}/g;
@@ -209,7 +207,9 @@ function renderTemplate(template, data) {
   return out.replace(/\n{3,}/g, "\n\n").trim() + "\n";
 }
 
-// Generic deterministic parsers used by RCPath-style datasets
+// ------------------------
+// Generic parsers
+// ------------------------
 function wordToNum(w){
   const m = { one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,
     eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20 };
@@ -308,11 +308,12 @@ function buildCaveats(extracted, datasetId) {
   if (extracted.pT) c.push(`pT set as ${extracted.pT}.`);
   if (extracted.pN) c.push(`pN set as ${extracted.pN} from nodes positive (${extracted.nodes_positive}).`);
   if (extracted.y_prefix) c.push("y-prefix added because a tumour regression grade implies neoadjuvant therapy.");
-  if (extracted._gist_debug) c.push(extracted._gist_debug);
   return c;
 }
 
-// Pipeline: keyword-based short report (gallbladder)
+// ------------------------
+// Keyword short report (gallbladder)
+// ------------------------
 function applyKeywordShortReport(extracted, rawText) {
   const lt = String(rawText || "").toLowerCase();
 
@@ -341,6 +342,33 @@ function applyKeywordShortReport(extracted, rawText) {
 
   extracted.dysplasia = (lt.includes("dysplasia") && !lt.includes("no dysplasia")) ? "Yes" : "No";
   extracted.malignancy = ((lt.includes("malign") || lt.includes("carcinoma") || lt.includes("cancer")) && !lt.includes("no malignancy")) ? "Yes" : "No";
+}
+
+// ------------------------
+// GIST deterministic helpers
+// ------------------------
+function firstNumber(x) {
+  const s = String(x ?? "").replace(",", ".");
+  const m = s.match(/-?\d+(\.\d+)?/);
+  return m ? Number(m[0]) : NaN;
+}
+
+function parseGistSiteFromText(rawText) {
+  const t = String(rawText || "").toLowerCase();
+  if (/(gastric|stomach)\b/.test(t)) return "stomach";
+  if (/duoden/.test(t)) return "duodenum";
+  if (/(jejun|ile|small bowel|\bsb\b)/.test(t)) return "jejunum/ileum";
+  if (/rect/.test(t)) return "rectum";
+  return "";
+}
+
+function gistSiteBucket(siteValue) {
+  const s = String(siteValue || "").toLowerCase();
+  if (s.includes("stomach") || s.includes("gastric")) return "gastric";
+  if (s.includes("duoden")) return "duodenum";
+  if (s.includes("jejun") || s.includes("ile") || s.includes("small bowel") || s.includes("sb")) return "jej_ile";
+  if (s.includes("rect")) return "rectum";
+  return "";
 }
 
 exports.handler = async (event) => {
@@ -419,135 +447,104 @@ exports.handler = async (event) => {
       if (!extracted0) return jsonResp(500, { error: "Model did not return valid JSON.", model_output: content });
 
       extracted = applyDefaults(schema, extracted0);
-// --- GIST deterministic staging + AFIP risk (prevents "Not appropriate" when inputs are present)
-if (datasetId === "gist_resection_rcpath_v1") {
 
-  function firstNumber(x) {
-    const s = String(x ?? "").replace(",", ".");
-    const m = s.match(/-?\d+(\.\d+)?/);
-    return m ? Number(m[0]) : NaN;
-  }
+      // ------------------------
+      // GIST deterministic staging + AFIP (fixes site=?)
+      // ------------------------
+      if (datasetId === "gist_resection_rcpath_v1") {
+        // If site is missing/blank, derive it from dictation
+        if (!String(extracted.site_of_tumour || "").trim()) {
+          const s = parseGistSiteFromText(rawText);
+          if (s) extracted.site_of_tumour = s;
+        }
 
-  // Normalise potentially weird model outputs
-  const sizeValRaw = toStringValue(extracted.maximum_tumour_dimension_cm ?? "");
-  const mitValRaw  = toStringValue(extracted.mitotic_count_per_5mm2 ?? "");
-  const siteValRaw = toStringValue(extracted.site_of_tumour ?? "");
+        // parse size (cm)
+        let size = firstNumber(extracted.maximum_tumour_dimension_cm);
+        const sizeRaw = String(extracted.maximum_tumour_dimension_cm ?? "").toLowerCase();
+        if (Number.isFinite(size) && /\bmm\b/.test(sizeRaw)) size = size / 10;
 
-  // parse size in cm (accept "3", "3 cm", "3cm", "30 mm")
-  let size = firstNumber(sizeValRaw);
-  const sizeRawLower = String(sizeValRaw).toLowerCase();
-  if (Number.isFinite(size) && /\bmm\b/.test(sizeRawLower)) size = size / 10; // mm → cm
+        // parse mitoses per 5mm2
+        const mit = firstNumber(extracted.mitotic_count_per_5mm2);
 
-  // parse mitoses per 5mm2 (accept "5", "5/5", "5 /5 mm2")
-  const mit = firstNumber(mitValRaw);
+        const bucket = gistSiteBucket(extracted.site_of_tumour);
 
-  // normalise site into AFIP buckets
-  const siteRaw = String(siteValRaw).toLowerCase();
-  let site = "";
-  if (siteRaw.includes("stomach") || siteRaw.includes("gastric")) site = "gastric";
-  else if (siteRaw.includes("duoden")) site = "duodenum";
-  else if (siteRaw.includes("jejun") || siteRaw.includes("ile") || siteRaw.includes("small bowel") || siteRaw.includes("sb")) site = "jej_ile";
-  else if (siteRaw.includes("rect")) site = "rectum";
+        // TNM pT from size
+        if (Number.isFinite(size) && size > 0) {
+          if (size <= 2) extracted.tnm_pT = "T1";
+          else if (size <= 5) extracted.tnm_pT = "T2";
+          else if (size <= 10) extracted.tnm_pT = "T3";
+          else extracted.tnm_pT = "T4";
+        } else {
+          extracted.tnm_pT = "TX";
+        }
 
-  // TNM pT from size
-  if (Number.isFinite(size) && size > 0) {
-    if (size <= 2) extracted.tnm_pT = "T1";
-    else if (size <= 5) extracted.tnm_pT = "T2";
-    else if (size <= 10) extracted.tnm_pT = "T3";
-    else extracted.tnm_pT = "T4";
-  } else {
-    extracted.tnm_pT = "TX";
-  }
+        // TNM pN from nodes positive
+        extracted.tnm_pN = (Number(extracted.lymph_nodes_positive || 0) > 0) ? "N1" : "N0";
 
-  // TNM pN from nodes positive (GIST schema uses lymph_nodes_positive)
-  extracted.tnm_pN = (Number(extracted.lymph_nodes_positive || 0) > 0) ? "N1" : "N0";
+        // TNM pM from metastasis flags
+        const m1 =
+          String(extracted.peritoneal_metastasis || "").toLowerCase().includes("present") ||
+          String(extracted.liver_metastasis || "").toLowerCase().includes("present") ||
+          String(extracted.other_metastasis || "").toLowerCase().includes("present");
 
-  // TNM pM from metastasis flags
-  const m1 = (
-    String(extracted.peritoneal_metastasis || "").toLowerCase().includes("present") ||
-    String(extracted.liver_metastasis || "").toLowerCase().includes("present") ||
-    String(extracted.other_metastasis || "").toLowerCase().includes("present")
-  );
-  extracted.tnm_pM = m1 ? "M1" : "";
-  extracted.tnm_pM_display = m1 ? "M1" : "Not applicable";
+        extracted.tnm_pM = m1 ? "M1" : "";
+        extracted.tnm_pM_display = m1 ? "M1" : "Not applicable";
 
-  // AFIP risk category (STRICT table)
-  function afip(site, size, mit) {
-    if (!site || !Number.isFinite(size) || !Number.isFinite(mit)) return "Not appropriate";
+        function afip(siteBucket, sizeCm, mitoses) {
+          if (!siteBucket || !Number.isFinite(sizeCm) || !Number.isFinite(mitoses)) return "Not appropriate";
 
-    const le5 = mit <= 5;
+          const le5 = mitoses <= 5;
 
-    if (le5 && size <= 2) return "None";
+          if (le5 && sizeCm <= 2) return "None";
 
-    if (le5 && size > 2 && size <= 5) {
-      if (site === "gastric") return "Very low";
-      if (site === "duodenum") return "Low";
-      if (site === "jej_ile") return "Low";
-      if (site === "rectum") return "Low";
-    }
+          if (le5 && sizeCm > 2 && sizeCm <= 5) {
+            if (siteBucket === "gastric") return "Very low";
+            if (siteBucket === "duodenum") return "Low";
+            if (siteBucket === "jej_ile") return "Low";
+            if (siteBucket === "rectum") return "Low";
+          }
 
-    if (le5 && size > 5 && size <= 10) {
-      if (site === "gastric") return "Low";
-      if (site === "jej_ile") return "Moderate";
-      return "Not appropriate";
-    }
+          if (le5 && sizeCm > 5 && sizeCm <= 10) {
+            if (siteBucket === "gastric") return "Low";
+            if (siteBucket === "jej_ile") return "Moderate";
+            return "Not appropriate";
+          }
 
-    if (le5 && size > 10) {
-      if (site === "gastric") return "Moderate";
-      if (site === "duodenum") return "High";
-      if (site === "jej_ile") return "High";
-      if (site === "rectum") return "High";
-    }
+          if (le5 && sizeCm > 10) {
+            if (siteBucket === "gastric") return "Moderate";
+            if (siteBucket === "duodenum") return "High";
+            if (siteBucket === "jej_ile") return "High";
+            if (siteBucket === "rectum") return "High";
+          }
 
-    // mitotic >5
-    if (!le5 && size <= 2) {
-      if (site === "rectum") return "High";
-      return "Not appropriate";
-    }
+          // mitotic >5
+          if (!le5 && sizeCm <= 2) {
+            if (siteBucket === "rectum") return "High";
+            return "Not appropriate";
+          }
 
-    if (!le5 && size > 2 && size <= 5) {
-      if (site === "gastric") return "Moderate";
-      if (site === "duodenum") return "High";
-      if (site === "jej_ile") return "High";
-      if (site === "rectum") return "High";
-    }
+          if (!le5 && sizeCm > 2 && sizeCm <= 5) {
+            if (siteBucket === "gastric") return "Moderate";
+            if (siteBucket === "duodenum") return "High";
+            if (siteBucket === "jej_ile") return "High";
+            if (siteBucket === "rectum") return "High";
+          }
 
-    if (!le5 && size > 5 && size <= 10) {
-      if (site === "gastric") return "High";
-      if (site === "jej_ile") return "High";
-      return "Not appropriate";
-    }
+          if (!le5 && sizeCm > 5 && sizeCm <= 10) {
+            if (siteBucket === "gastric") return "High";
+            if (siteBucket === "jej_ile") return "High";
+            return "Not appropriate";
+          }
 
-    if (!le5 && size > 10) return "High";
+          if (!le5 && sizeCm > 10) return "High";
 
-    return "Not appropriate";
-  }
+          return "Not appropriate";
+        }
 
-  extracted.afip_risk_category = afip(site, size, mit);
+        extracted.afip_risk_category = afip(bucket, size, mit);
+      }
 
-  // Debug breadcrumb (shows up in caveats box)
-  extracted._gist_debug = `GIST debug: site=${site || "?"} size_cm=${Number.isFinite(size) ? size : "NaN"} mitoses=${Number.isFinite(mit) ? mit : "NaN"} => AFIP=${extracted.afip_risk_category}`;
-}
-      
-// Colorectal guard: "highest node involved" should be No unless explicitly mentioned
-if (datasetId === "colorectal_resection_rcpath_v1") {
-  const t = rawText.toLowerCase();
-
-  // Only trust this field if the dictation actually mentions it
-  const mentionsHighest = /highest\s+node/i.test(t);
-
-  if (!mentionsHighest) {
-    extracted.highest_node_involved = "No";
-  } else {
-    // If mentioned, interpret yes/no if possible; otherwise keep default "No"
-    const windowMatch = t.match(/highest\s+node[^.\n]{0,120}/i)?.[0] || "";
-    if (/\b(yes|involved|positive)\b/i.test(windowMatch)) extracted.highest_node_involved = "Yes";
-    else if (/\b(no|not involved|negative|uninvolved)\b/i.test(windowMatch)) extracted.highest_node_involved = "No";
-    else extracted.highest_node_involved = "No";
-  }
-}
-      
-      // Deterministic overrides from raw text
+      // Deterministic overrides from raw text (global)
       const nodeParsed = parseNodes(rawText);
       if (nodeParsed) {
         extracted.nodes_positive = nodeParsed.pos;
@@ -562,20 +559,17 @@ if (datasetId === "colorectal_resection_rcpath_v1") {
       const crmDist = parseCrmDistanceMm(rawText);
       if (crmDist !== null && Number.isFinite(crmDist)) extracted.distance_to_crm_mm = crmDist;
 
-      // CRM enforcement <1mm
       const crmNum = Number(extracted.distance_to_crm_mm);
       if (Number.isFinite(crmNum)) {
         if (crmNum < 1) extracted.circumferential_margin_status = "Involved: carcinoma within 1 mm of CRM.";
         else extracted.circumferential_margin_status = "Not involved: carcinoma more than 1 mm from CRM.";
       }
 
-      // Staging + phrases
       extracted.pT = computePTFromText(rawText);
       extracted.depth_phrase = depthPhraseFromPT(extracted.pT);
       extracted.pN = computePNFromRules(rules, extracted.nodes_positive);
       extracted.r_status = computeRStatusFromRules(rules, extracted);
 
-      // Mandard => neoadjuvant + y-prefix
       extracted.mandard_descriptor = mandardDescriptor(rules, extracted.tumour_regression_grade);
       if (String(extracted.tumour_regression_grade || "").trim()) {
         extracted.neoadjuvant_therapy = "Yes";
@@ -587,20 +581,15 @@ if (datasetId === "colorectal_resection_rcpath_v1") {
         extracted.y_prefix = false;
       }
 
-      // pM display
       const pm1 = String(extracted.pm1_disease || "").toLowerCase();
       extracted.pM = (pm1 === "yes" || pm1 === "m1" || pm1 === "true") ? "M1" : "";
       extracted.pM_display = extracted.pM ? extracted.pM : "Not applicable";
 
-      // Node stations placeholder
       extracted.has_positive_nodes = Number(extracted.nodes_positive || 0) > 0;
       if (extracted.has_positive_nodes && !String(extracted.positive_node_stations || "").trim()) {
         extracted.positive_node_stations = "[enter station(s)]";
       }
 
-      // --------------------------
-      // Duodenal deterministic patch
-      // --------------------------
       if (datasetId === "duodenal_biopsy_simple_v1") {
         extracted.microscopy_text = toStringValue(extracted.microscopy_text);
         extracted.conclusion_text = toStringValue(extracted.conclusion_text);
