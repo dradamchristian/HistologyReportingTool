@@ -20,7 +20,6 @@
     return JSON.parse(text);
   }
   async function fetchDefaultCases() {
-    // Try to fetch testcases.json from same folder
     try {
       const res = await fetch("./testcases.json", { cache: "no-store" });
       if (!res.ok) throw new Error("HTTP " + res.status);
@@ -31,18 +30,27 @@
       return [];
     }
   }
-  function containsAll(text, checks) {
+
+  function evaluateChecks(text, checks) {
     const t = (text || "").toLowerCase();
     const missing = [];
-    for (const c of checks) {
-      const s = String(c).toLowerCase();
-      if (!t.includes(s)) missing.push(c);
+    for (const raw of (checks || [])) {
+      const s = String(raw);
+      if (s.startsWith("! ")) {
+        const needle = s.slice(2).toLowerCase();
+        if (needle && t.includes(needle)) missing.push(raw); // treat as failure: forbidden string present
+      } else {
+        const needle = s.toLowerCase();
+        if (needle && !t.includes(needle)) missing.push(raw);
+      }
     }
     return missing;
   }
+
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, (m) => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;" })[m]);
   }
+
   function renderCaseShell(c) {
     const el = document.createElement("div");
     el.className = "case";
@@ -52,29 +60,20 @@
         <span class="pill">${c.EXPECTED_DATASET}</span>
         <span class="status warn" id="status-${c.id}">PENDING</span>
       </h3>
-      <div class="small">Expected checks: ${(c.EXPECTED_CHECKS || []).length}</div>
-      <details>
-        <summary>Show input</summary>
-        <pre>${escapeHtml(c.INPUT || "")}</pre>
-      </details>
-      <details>
-        <summary>Show output</summary>
-        <pre id="out-${c.id}">(not run)</pre>
-      </details>
-      <details>
-        <summary>Show missing checks</summary>
-        <pre id="miss-${c.id}">(not run)</pre>
-      </details>
+      <div class="small">Checks: ${(c.EXPECTED_CHECKS || []).length}</div>
+      <details><summary>Show input</summary><pre>${escapeHtml(c.INPUT || "")}</pre></details>
+      <details><summary>Show output</summary><pre id="out-${c.id}">(not run)</pre></details>
+      <details><summary>Missing/failed checks</summary><pre id="miss-${c.id}">(not run)</pre></details>
     `;
     return el;
   }
+
   function updateKpi(passed, failed, warn) {
     $("kpi").textContent = `${passed} passed • ${failed} failed • ${warn} warnings`;
   }
 
   async function callFunction(url, input) {
     const body = JSON.stringify({ text: input });
-    console.log("Calling function:", url);
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -94,7 +93,7 @@
     if (!cases.length) {
       cases = await fetchDefaultCases();
       if (!cases.length) {
-        alert("No test cases loaded. Upload a testcases.json or place one next to tests.html.");
+        alert("No test cases loaded. Upload testcases.json or place one next to tests.html.");
         setRunState("No cases");
         $("runBtn").disabled = false;
         $("stopBtn").disabled = true;
@@ -102,9 +101,7 @@
       }
     }
 
-    const baseUrl = $("baseUrl").value;
-    const fnPath = $("fnPath").value;
-    const fnUrl = normalizeUrl(baseUrl, fnPath);
+    const fnUrl = normalizeUrl($("baseUrl").value, $("fnPath").value);
 
     const results = $("results");
     for (const c of cases) results.appendChild(renderCaseShell(c));
@@ -127,11 +124,8 @@
 
         $("out-"+sid).textContent = report;
 
-        const missing = containsAll(report, c.EXPECTED_CHECKS || []);
+        const missing = evaluateChecks(report, c.EXPECTED_CHECKS || []);
         $("miss-"+sid).textContent = missing.length ? missing.join("\n") : "(none)";
-
-        const datasetId = (resp?.json?.dataset_id || "").toLowerCase();
-        const expected = String(c.EXPECTED_DATASET || "").toLowerCase();
 
         const ok = missing.length === 0;
         if (!ok) {
@@ -144,7 +138,10 @@
           statusEl.className = "status good";
         }
 
-        if (datasetId && expected && !datasetId.includes(expected.split(" ")[0])) {
+        // Optional dataset warning (soft)
+        const datasetId = (resp?.json?.dataset_id || "").toLowerCase();
+        const expected = String(c.EXPECTED_DATASET || "").toLowerCase();
+        if (datasetId && expected && !datasetId.includes(expected)) {
           warn += 1;
           statusEl.textContent = ok ? "PASS (dataset?)" : "FAIL (dataset?)";
           statusEl.className = "status warn";
@@ -168,7 +165,6 @@
   }
 
   async function init() {
-    // Try to preload cases from ./testcases.json
     cases = await fetchDefaultCases();
     setRunState(cases.length ? `Ready (${cases.length} cases)` : "Ready (no cases loaded)");
 
