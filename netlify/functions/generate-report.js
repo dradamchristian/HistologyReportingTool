@@ -582,22 +582,55 @@ exports.handler = async (event) => {
       // --------------------------
       const nodeParsed = parseNodes(rawText);
       if (nodeParsed) {
-        extracted.nodes_positive = nodeParsed.pos;
-        extracted.nodes_examined = nodeParsed.total;
+        // Support both naming styles across datasets
+        if ("nodes_positive" in extracted) extracted.nodes_positive = nodeParsed.pos;
+        if ("nodes_examined" in extracted) extracted.nodes_examined = nodeParsed.total;
+
+        if ("lymph_nodes_positive" in extracted) extracted.lymph_nodes_positive = nodeParsed.pos;
+        if ("lymph_nodes_examined" in extracted) extracted.lymph_nodes_examined = nodeParsed.total;
       }
 
+      // Margin status (support oesophagus + colorectal + gastrectomy variants)
       const prox = parseMarginStatus(rawText, "proximal");
       const dist = parseMarginStatus(rawText, "distal");
-      if (prox) extracted.proximal_margin_status = prox;
-      if (dist) extracted.distal_margin_status = dist;
 
+      const proxKey =
+        ("proximal_margin" in extracted) ? "proximal_margin" :
+        (("proximal_margin_status" in extracted) ? "proximal_margin_status" : null);
+
+      const distKey =
+        ("distal_margin" in extracted) ? "distal_margin" :
+        (("distal_margin_status" in extracted) ? "distal_margin_status" : null);
+
+      // parseMarginStatus returns "Normal" or "Involved" (historic). Convert where needed.
+      const normalToNotInvolved = (v) => (v === "Normal" ? "Not involved" : v);
+
+      if (proxKey && prox) extracted[proxKey] = normalToNotInvolved(prox);
+      if (distKey && dist) extracted[distKey] = normalToNotInvolved(dist);
+
+      // CRM distance only if explicitly present (avoid Number(null) -> 0)
       const crmDist = parseCrmDistanceMm(rawText);
       if (crmDist !== null && Number.isFinite(crmDist)) extracted.distance_to_crm_mm = crmDist;
 
-      const crmNum = Number(extracted.distance_to_crm_mm);
-      if (Number.isFinite(crmNum)) {
-        if (crmNum < 1) extracted.circumferential_margin_status = "Involved: carcinoma within 1 mm of CRM.";
-        else extracted.circumferential_margin_status = "Not involved: carcinoma more than 1 mm from CRM.";
+      const hasCrmDist =
+        extracted.distance_to_crm_mm !== null &&
+        extracted.distance_to_crm_mm !== undefined &&
+        extracted.distance_to_crm_mm !== "" &&
+        Number.isFinite(Number(extracted.distance_to_crm_mm));
+
+      if (hasCrmDist) {
+        const crmNum = Number(extracted.distance_to_crm_mm);
+
+        // Prefer schema enum strings when available, otherwise fall back.
+        const crmEnum = schema?.properties?.circumferential_margin_status?.enum || [];
+        const involvedStr =
+          crmEnum.find(s => String(s).toLowerCase().includes("within 1 mm") || String(s).toLowerCase().includes("equal or less than 1 mm"))
+          || "Involved: carcinoma within 1 mm of CRM";
+        const notInvolvedStr =
+          crmEnum.find(s => String(s).toLowerCase().includes("more than 1 mm"))
+          || "Not involved: carcinoma more than 1 mm from CRM";
+
+        extracted.circumferential_margin_status = (crmNum < 1) ? involvedStr : notInvolvedStr;
       }
 
       // Staging + phrases (oesoph etc.)
