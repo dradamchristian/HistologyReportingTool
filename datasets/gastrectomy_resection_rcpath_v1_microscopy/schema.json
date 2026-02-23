@@ -5,7 +5,7 @@
   "properties": {
     "dataset_id": {
       "type": "string",
-      "const": "gastrectomy_resection_rcpath_v1_1_microscopy"
+      "const": "gastrectomy_resection_rcpath_v1_microscopy"
     },
     "tumour_type": {
       "type": "string",
