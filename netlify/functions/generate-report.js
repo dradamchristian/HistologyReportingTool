@@ -367,13 +367,27 @@ function parseCrmDistanceMmColorectal(text) {
 }
 function computePTFromText(text) {
   const t = (text || "").toLowerCase();
+
+  // Oesophagus-specific advanced invasion triggers (TNM 9 style)
+  // T4a: pleura / pericardium / diaphragm
+  if (t.includes("pleura") || t.includes("pericard") || t.includes("diaphragm")) return "T4a";
+
+  // T4b: invasion of adjacent structures (common dictation cues)
+  if (t.includes("aorta") || t.includes("trachea") || t.includes("bronch") || t.includes("vertebr") || t.includes("heart")) return "T4b";
+
+  // Generic: through the wall / beyond muscularis propria etc.
   if (t.includes("beyond muscularis propria") || t.includes("through the wall") || t.includes("through wall") ||
       t.includes("beyond the wall") || t.includes("through muscularis propria") || t.includes("adventitia")) return "T3";
+
   if (t.includes("within the wall") || t.includes("into the wall") || t.includes("muscularis propria")) return "T2";
+
   return "TX";
 }
 
+
 function depthPhraseFromPT(pT) {
+  if (pT === "T4b") return "Tumour invades adjacent structures.";
+  if (pT === "T4a") return "Tumour invades pleura/pericardium/diaphragm.";
   if (pT === "T3") return "Invasion beyond muscularis propria.";
   if (pT === "T2") return "Invasion into muscularis propria.";
   return "Depth of invasion cannot be assessed from the description.";
