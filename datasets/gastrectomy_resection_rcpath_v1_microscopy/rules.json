@@ -1,5 +1,5 @@
 {
-  "dataset_id": "gastrectomy_resection_rcpath_v1_1_microscopy",
+  "dataset_id": "gastrectomy_resection_rcpath_v1_microscopy",
   "defaults_policy": "If not mentioned in dictation, default to the schema defaults for report_text. Do not print 'not stated' or 'derived from' in report_text. Provide a separate 'CAVEATS' list of any fields that were defaulted or inferred.",
   "pt_mapping": [
     {
