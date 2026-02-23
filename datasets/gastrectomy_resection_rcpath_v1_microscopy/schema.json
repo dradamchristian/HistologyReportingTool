@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RCPath Gastric Carcinoma Resection (Microscopy-only) \u2013 Appendix D derived + local fields",
+  "type": "object",
+  "properties": {
+    "dataset_id": {
+      "type": "string",
+      "const": "gastrectomy_resection_rcpath_v1_microscopy"
+    },
+    "tumour_type": {
+      "type": "string",
+      "enum": [
+        "Adenocarcinoma",
+        "Other"
+      ],
+      "default": "Adenocarcinoma"
+    },
+    "tumour_type_other_specify": {
+      "type": "string",
+      "default": ""
+    },
+    "lauren_classification": {
+      "type": "string",
+      "enum": [
+        "Intestinal",
+        "Diffuse",
+        "Mixed",
+        "Indeterminate"
+      ],
+      "default": "Intestinal"
+    },
+    "differentiation": {
+      "type": "string",
+      "enum": [
+        "Well",
+        "Moderate",
+        "Poor",
+        "Not applicable"
+      ],
+      "default": "Moderate"
+    },
+    "depth_of_invasion_phrase": {
+      "type": "string",
+      "default": ""
+    },
+    "depth_of_invasion_category": {
+      "type": "string",
+      "enum": [
+        "T0  No tumour identified",
+        "Tis  High-grade dysplasia",
+        "T1  Invasion of lamina propria/submucosa",
+        "T1a  Invasion of lamina propria",
+        "T1b  Invasion of submucosa",
+        "T2  Invasion of muscularis propria",
+        "T3  Invasion beyond muscularis propria",
+        "T4a  Tumour invades the serosa",
+        "T4b  Tumour invades adjacent structures (spleen, transverse colon, liver, pancreas, diaphragm, adrenal glands, kidney)"
+      ],
+      "default": "T3  Invasion beyond muscularis propria"
+    },
+    "neoadjuvant_therapy_history": {
+      "type": "string",
+      "enum": [
+        "Yes",
+        "No",
+        "Unknown"
+      ],
+      "default": "No"
+    },
+    "tumour_regression_system": {
+      "type": "string",
+      "enum": [
+        "Mandard",
+        "Other",
+        ""
+      ],
+      "default": "Mandard"
+    },
+    "tumour_regression_grade": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "enum": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        null
+      ],
+      "default": null,
+      "description": "If Mandard: TRG 1\u20135"
+    },
+    "proximal_margin": {
+      "type": "string",
+      "enum": [
+        "Not involved",
+        "Involved"
+      ],
+      "default": "Not involved"
+    },
+    "distal_margin": {
+      "type": "string",
+      "enum": [
+        "Not involved",
+        "Involved"
+      ],
+      "default": "Not involved"
+    },
+    "circumferential_margin_status": {
+      "type": "string",
+      "enum": [
+        "Involved: carcinoma equal or less than 1 mm from CRM",
+        "Not involved: carcinoma more than 1 mm from CRM",
+        "Not applicable"
+      ],
+      "default": "Not applicable"
+    },
+    "distance_to_crm_mm": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "default": null,
+      "description": "Distance of carcinoma to nearest circumferential margin (if not involved) in mm."
+    },
+    "lvi": {
+      "type": "string",
+      "enum": [
+        "Present",
+        "Not identified"
+      ],
+      "default": "Not identified"
+    },
+    "nodes_examined": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0
+    },
+    "nodes_positive": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0
+    },
+    "pm1_disease": {
+      "type": "string",
+      "enum": [
+        "Yes",
+        "No"
+      ],
+      "default": "No"
+    },
+    "tnm_edition": {
+      "type": "string",
+      "enum": [
+        "9"
+      ],
+      "default": "9"
+    },
+    "pT": {
+      "type": "string",
+      "enum": [
+        "TX",
+        "T0",
+        "Tis",
+        "T1",
+        "T1a",
+        "T1b",
+        "T2",
+        "T3",
+        "T4a",
+        "T4b",
+        "yTX",
+        "yT0",
+        "yTis",
+        "yT1",
+        "yT1a",
+        "yT1b",
+        "yT2",
+        "yT3",
+        "yT4a",
+        "yT4b"
+      ],
+      "default": "T3",
+      "description": "May be derived from depth_of_invasion_category/phrase."
+    },
+    "pN": {
+      "type": "string",
+      "enum": [
+        "NX",
+        "N0",
+        "N1",
+        "N2",
+        "N3a",
+        "N3b"
+      ],
+      "default": "N0"
+    },
+    "pM": {
+      "type": "string",
+      "enum": [
+        "Not applicable",
+        "M1"
+      ],
+      "default": "Not applicable"
+    },
+    "y_prefix": {
+      "type": "boolean",
+      "default": false,
+      "description": "If true, use yTNM categories."
+    },
+    "tumour_block_available": {
+      "type": "string",
+      "enum": [
+        "Yes",
+        "No",
+        "Unknown"
+      ],
+      "default": "Unknown"
+    },
+    "tumour_block_id": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "required": [
+    "tumour_type",
+    "lauren_classification",
+    "differentiation",
+    "depth_of_invasion_category",
+    "neoadjuvant_therapy_history",
+    "proximal_margin",
+    "distal_margin",
+    "circumferential_margin_status",
+    "lvi",
+    "nodes_examined",
+    "nodes_positive",
+    "pm1_disease",
+    "tnm_edition",
+    "tumour_block_available"
+  ],
+  "additionalProperties": false
+}

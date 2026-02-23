@@ -1,0 +1,34 @@
+{
+  "id": "gastrectomy_resection_rcpath_v1_microscopy",
+  "kind": "rcpath",
+  "match": {
+    "any": [
+      "gastrectomy",
+      "total gastrectomy",
+      "subtotal gastrectomy",
+      "partial gastrectomy",
+      "gastric carcinoma",
+      "gastric adenocarcinoma",
+      "stomach carcinoma",
+      "stomach adenocarcinoma",
+      "antrum",
+      "pylorus",
+      "body of stomach",
+      "lesser curvature",
+      "greater curvature",
+      "roux-en-y",
+      "billroth"
+    ]
+  },
+  "pipeline": {
+    "mode": "schema_extract_then_rules",
+    "tnm_edition": 9,
+    "deterministic_extract": [
+      "nodes",
+      "margins",
+      "crm",
+      "pt",
+      "mandard"
+    ]
+  }
+}
