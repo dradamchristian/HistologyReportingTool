@@ -1,6 +1,28 @@
 const fs = require("fs");
 const path = require("path");
 
+
+function setFirstExisting(extracted, schema, keys, value) {
+  const props = schema?.properties || {};
+  for (const k of keys) {
+    if (props[k]) { extracted[k] = value; return k; }
+  }
+  return null;
+}
+
+function mapToEnum(schema, field, desired) {
+  const enums = schema?.properties?.[field]?.enum || null;
+  if (!enums) return desired;
+  if (enums.includes(desired)) return desired;
+
+  const d = String(desired || "").toLowerCase();
+  const pick = (cands) => cands.find(x => enums.includes(x));
+
+  if (d === "involved") return pick(["Carcinoma","Involved","Yes","Positive","Present"]) || desired;
+  if (d === "normal") return pick(["Normal","Not involved","No","Negative","Uninvolved","Clear"]) || desired;
+  return desired;
+}
+
 function jsonResp(statusCode, obj) {
   return {
     statusCode,
@@ -288,18 +310,6 @@ function parseCrmDistanceMm(text) {
   return null;
 }
 
-function parseBeyondMuscularisDistanceMm(text) {
-  // Colorectal: only accept a distance if it is explicitly tied to "beyond muscularis propria"
-  // (prevents CRM distances being mis-used as extramural depth).
-  const re = /(beyond\s+muscularis\s+propria|beyond\s+mp|extramural\s+depth|distance\s+beyond\s+muscularis)[^0-9]{0,30}(\d+(?:\.\d+)?)\s*mm\b/i;
-  const m = (text || "").match(re);
-  if (m) return Number(m[2]);
-  const re2 = /(\d+(?:\.\d+)?)\s*mm\b[^.\n]{0,40}(beyond\s+muscularis\s+propria|beyond\s+mp|extramural\s+depth)/i;
-  const m2 = (text || "").match(re2);
-  if (m2) return Number(m2[1]);
-  return null;
-}
-
 function parseMarginStatus(text, which) {
   const t = (text || "").toLowerCase();
   const key = which.toLowerCase();
@@ -318,64 +328,43 @@ function parseMarginStatus(text, which) {
 }
 
 
-// --------------------------
-// Schema-aware setters (shared across datasets)
-// --------------------------
-function schemaHas(schema, key) {
-  return !!(schema && schema.properties && Object.prototype.hasOwnProperty.call(schema.properties, key));
-}
+function computeColorectalLocalPTFromText(text) {
+  const t = (text || "").toLowerCase();
 
-function setFirstExisting(extracted, schema, keys, value) {
-  for (const k of keys) {
-    if (schemaHas(schema, k)) { extracted[k] = value; return k; }
-  }
+  // T4b: direct invasion of other organs/structures
+  if (/(invad|invasion).{0,40}(other organ|adjacent organ|bladder|uterus|vagina|prostate|seminal vesicle|small bowel|abdominal wall)/i.test(t)) return "T4b";
+
+  // T4a: peritoneal surface/serosa
+  if (/(serosa|serosal|peritoneal surface|visceral peritoneum|penetrates peritoneum)/i.test(t)) return "T4a";
+
+  // T3: beyond muscularis propria (extramural)
+  if (/(beyond muscularis propria|through the wall|transmural|extramural|pericolic fat|perirectal fat)/i.test(t)) return "T3";
+
+  // T2: muscularis propria
+  if (/muscularis propria/i.test(t)) return "T2";
+
+  // T1: submucosa
+  if (/submucosa/i.test(t)) return "T1";
+
+  // fallback
   return null;
 }
 
-function mapToEnum(schema, field, desired) {
-  const enums = schema && schema.properties && schema.properties[field] && schema.properties[field].enum;
-  if (!enums) return desired;
-  if (enums.includes(desired)) return desired;
-
-  const d = String(desired || "").toLowerCase();
-
-  if (d === "normal") {
-    for (const cand of ["Normal", "Not involved", "Not involved (>1 mm)", "No", "Negative", "Uninvolved", "Clear"]) {
-      if (enums.includes(cand)) return cand;
-    }
-  }
-
-  if (d === "involved") {
-    for (const cand of ["Carcinoma", "Involved", "Yes", "Positive", "Present"]) {
-      if (enums.includes(cand)) return cand;
-    }
-  }
-
-  return desired;
+function parseBeyondMPDistanceMm(text) {
+  const t = String(text || "");
+  // Look for an explicit association with beyond muscularis / extramural depth
+  const re = /(beyond\s+muscularis\s+propria|beyond\s+mp|extramural\s+(depth|spread)|distance\s+beyond\s+muscularis)[^\d]{0,40}(\d+(?:\.\d+)?)\s*mm/i;
+  const m = t.match(re);
+  if (!m) return null;
+  return m[3]; // return as string to match colorectal schema
 }
 
-function parseColorectalMarginFlags(rawText) {
-  const t = (rawText || "").toLowerCase();
-
-  const flag = (concept) => {
-    const re = new RegExp(concept.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "[^\n\.]{0,140}", "i");
-    const seg = (rawText.match(re) || [""])[0].toLowerCase();
-    const hay = seg || t;
-
-    if (/(involved|positive)/i.test(hay)) return "Yes";
-    if (/(not\s+involved|uninvolved|negative|clear|free)/i.test(hay)) return "No";
-    return null;
-  };
-
-  return {
-    longitudinal: flag("longitudinal margin") || flag("proximal margin") || flag("proximal resection margin"),
-    distal: flag("distal margin") || flag("distal resection margin"),
-    circumferential: flag("circumferential margin") || flag("crm"),
-    doughnuts: flag("doughnut") || flag("doughnuts") || flag("donut") || flag("donuts"),
-  };
+function parseCrmDistanceMmColorectal(text) {
+  const t = String(text || "");
+  const m = t.match(/\bcrm\b[^\d]{0,40}(\d+(?:\.\d+)?)\s*mm/i);
+  if (!m) return null;
+  return m[1]; // as string
 }
-
-
 function computePTFromText(text) {
   const t = (text || "").toLowerCase();
   if (t.includes("beyond muscularis propria") || t.includes("through the wall") || t.includes("through wall") ||
@@ -651,128 +640,85 @@ exports.handler = async (event) => {
       // --------------------------
       // Deterministic overrides from raw text (generic)
       // --------------------------
-      
-const det = new Set((manifest && manifest.pipeline && manifest.pipeline.deterministic_extract) ? manifest.pipeline.deterministic_extract : []);
+      const nodeParsed = parseNodes(rawText);
+      if (nodeParsed) {
+        extracted.nodes_positive = nodeParsed.pos;
+        extracted.nodes_examined = nodeParsed.total;
+      }
 
-// --------------------------
-// Deterministic overrides from raw text (schema-aware)
-// --------------------------
-if (det.has("nodes")) {
-  const nodeParsed = parseNodes(rawText);
-  if (nodeParsed) {
-    setFirstExisting(extracted, schema, ["nodes_positive", "nodes_pos", "positive_nodes"], nodeParsed.pos);
-    setFirstExisting(extracted, schema, ["nodes_examined", "nodes_total", "nodes", "total_nodes"], nodeParsed.total);
+      const prox = parseMarginStatus(rawText, "proximal");
+const dist = parseMarginStatus(rawText, "distal");
+
+// Dataset-aware margin assignment
+if (datasetId === "colorectal_resection_rcpath_v1") {
+  // Colorectal uses Yes/No flags
+  if (prox) extracted.longitudinal_margin_involved = (prox === "Involved") ? "Yes" : "No";
+  if (dist) extracted.distal_margin_involved = (dist === "Involved") ? "Yes" : "No";
+} else {
+  // Oesophagus/gastrectomy style categorical margins
+  if (prox) {
+    const k = setFirstExisting(extracted, schema, ["proximal_margin","proximal_margin_status"], null);
+    if (k) extracted[k] = mapToEnum(schema, k, prox);
+  }
+  if (dist) {
+    const k = setFirstExisting(extracted, schema, ["distal_margin","distal_margin_status"], null);
+    if (k) extracted[k] = mapToEnum(schema, k, dist);
   }
 }
 
-// Margins: colorectal uses Yes/No flags; upper GI uses categorical margins.
-if (det.has("margins") || det.size === 0) {
-  if (schemaHas(schema, "longitudinal_margin_involved") || schemaHas(schema, "distal_margin_involved")) {
-    const mf = parseColorectalMarginFlags(rawText);
-
-    if (mf.longitudinal) extracted.longitudinal_margin_involved = mf.longitudinal;
-    if (mf.distal) extracted.distal_margin_involved = mf.distal;
-    if (mf.circumferential) extracted.circumferential_margin_involved = mf.circumferential;
-    if (mf.doughnuts) extracted.doughnuts_involved = mf.doughnuts;
-  } else {
-    const prox = parseMarginStatus(rawText, "proximal");
-    const dist = parseMarginStatus(rawText, "distal");
-
-    if (prox) {
-      const k = setFirstExisting(extracted, schema, ["proximal_margin", "proximal_margin_status"], "");
-      if (k) extracted[k] = mapToEnum(schema, k, prox);
-    }
-    if (dist) {
-      const k = setFirstExisting(extracted, schema, ["distal_margin", "distal_margin_status"], "");
-      if (k) extracted[k] = mapToEnum(schema, k, dist);
+      // CRM distance
+if (datasetId === "colorectal_resection_rcpath_v1") {
+  const crmDistStr = parseCrmDistanceMmColorectal(rawText);
+  if (crmDistStr !== null) {
+    extracted.distance_to_crm_mm = crmDistStr;
+    const crmNumCol = Number(crmDistStr);
+    if (Number.isFinite(crmNumCol)) {
+      extracted.circumferential_margin_involved = (crmNumCol < 1) ? "Yes" : "No";
     }
   }
-}
-
-// CRM distance + status: ONLY if this dataset opted into deterministic CRM extraction.
-if (det.has("crm")) {
+} else {
   const crmDist = parseCrmDistanceMm(rawText);
-  if (crmDist !== null && Number.isFinite(crmDist)) {
-    if (schemaHas(schema, "distance_to_crm_mm") && schema.properties.distance_to_crm_mm && schema.properties.distance_to_crm_mm.type === "string") {
-      extracted.distance_to_crm_mm = String(crmDist);
-    } else {
-      setFirstExisting(extracted, schema, ["distance_to_crm_mm"], crmDist);
-    }
-  }
-
-  // IMPORTANT: avoid Number(null) === 0
-  const rawCrm = extracted.distance_to_crm_mm;
-  const crmNum = (rawCrm === null || rawCrm === undefined || rawCrm === "") ? NaN : Number(rawCrm);
-
-  // Colorectal: if a CRM distance is given, infer involved Yes/No from the threshold (<1 mm = involved).
-  if (Number.isFinite(crmNum) && schemaHas(schema, "circumferential_margin_involved")) {
-    extracted.circumferential_margin_involved = (crmNum < 1) ? "Yes" : "No";
-  }
-
-  if (Number.isFinite(crmNum) && schemaHas(schema, "circumferential_margin_status")) {
-    const enums = schema.properties.circumferential_margin_status.enum || [];
-    const notInvolvedEnum = enums.find(e => /not\s+involved/i.test(e)) || "Not involved";
-    const involvedEnum = enums.find(e => /involved/i.test(e) && !/not\s+involved/i.test(e)) || "Involved";
-
-    extracted.circumferential_margin_status = (crmNum < 1) ? involvedEnum : notInvolvedEnum;
-  }
+  if (crmDist !== null && Number.isFinite(crmDist)) extracted.distance_to_crm_mm = crmDist;
 }
+
+      const crmRaw = extracted.distance_to_crm_mm;
+      const crmNum = (crmRaw === null || crmRaw === undefined || String(crmRaw).trim() === "") ? NaN : Number(crmRaw);
+      if (Number.isFinite(crmNum)) {
+        // Use enum-aligned strings (no trailing full stop)
+        if (crmNum < 1) extracted.circumferential_margin_status = "Involved: carcinoma within 1 mm of CRM";
+        else extracted.circumferential_margin_status = "Not involved: carcinoma more than 1 mm from CRM";
+      }
+
       // Staging + phrases (oesoph etc.)
       extracted.pT = computePTFromText(rawText);
-      extracted.depth_phrase = depthPhraseFromPT(extracted.pT);
-      extracted.pN = computePNFromRules(rules, extracted.nodes_positive);
-      extracted.r_status = computeRStatusFromRules(rules, extracted);
+extracted.depth_phrase = depthPhraseFromPT(extracted.pT);
 
-
-// --------------------------
-// Dataset-specific field mapping (e.g. colorectal staging fields)
-// --------------------------
-// Colorectal templates use local_invasion_pT (e.g. pT3) plus separate TNM fields (stage_pT/N/M).
-if (schemaHas(schema, "local_invasion_pT") && schemaHas(schema, "stage_pT")) {
-  const lipT = String(extracted.local_invasion_pT || "").trim();
-  if (lipT) {
-    extracted.stage_pT = lipT.replace(/^p/i, "");
+// Colorectal: derive local invasion pT + stage_pT from colorectal-specific wording
+if (datasetId === "colorectal_resection_rcpath_v1") {
+  const colT = computeColorectalLocalPTFromText(rawText); // returns e.g. T3
+  if (colT) {
+    extracted.local_invasion_pT = "p" + colT;
+    extracted.stage_pT = colT;
   }
-}
 
-
-// Colorectal: max distance beyond muscularis propria only applies for pT3/pT4. If pT2 or less -> Not applicable.
-if (schemaHas(schema, "max_distance_beyond_muscularis_mm")) {
-  const lipTraw = String(extracted.local_invasion_pT || "").toLowerCase();
-  const isPT2orLess = (lipTraw === "pt0" || lipTraw === "pt1" || lipTraw === "pt2" || lipTraw === "ptis");
-  const beyond = parseBeyondMuscularisDistanceMm(rawText);
-
-  if (Number.isFinite(beyond)) {
-    extracted.max_distance_beyond_muscularis_mm = String(beyond);
-  } else if (isPT2orLess) {
-    extracted.max_distance_beyond_muscularis_mm = "Not applicable";
+  // Extramural depth beyond muscularis: only applicable for pT3+
+  const ptVal = String(extracted.local_invasion_pT || "").toLowerCase();
+  if (ptVal && (ptVal.startsWith("pt3") || ptVal.startsWith("pt4"))) {
+    const beyond = parseBeyondMPDistanceMm(rawText);
+    if (beyond !== null) extracted.max_distance_beyond_muscularis_mm = beyond;
   } else {
-    // Guard: don't accidentally reuse a CRM distance as extramural depth.
-    const md = String(extracted.max_distance_beyond_muscularis_mm || "").trim();
-    const crm = String(extracted.distance_to_crm_mm || "").trim();
-    const t = rawText.toLowerCase();
-    const mentionsBeyond = /(beyond\s+muscularis|extramural\s+depth|beyond\s+mp)/i.test(t);
-    const mentionsCrm = /\bcrm\b|circumferential\s+margin/i.test(t);
-
-    if (!mentionsBeyond && mentionsCrm && md && crm && md === crm) {
-      extracted.max_distance_beyond_muscularis_mm = "";
-    }
+    extracted.max_distance_beyond_muscularis_mm = "Not applicable";
   }
-}
 
-
-if (schemaHas(schema, "stage_pN")) {
-  extracted.stage_pN = extracted.pN || extracted.stage_pN;
-}
-
-if (schemaHas(schema, "stage_pM") && schemaHas(schema, "distant_metastasis_confirmed")) {
+  // Stage_pM from distant metastasis flag if present
   const dm = String(extracted.distant_metastasis_confirmed || "").toLowerCase();
   extracted.stage_pM = dm.includes("yes") ? "M1" : "Not applicable";
 }
-
-if (schemaHas(schema, "stage_pM")) {
-  extracted.pM_display = extracted.stage_pM || extracted.pM_display;
+      extracted.pN = computePNFromRules(rules, extracted.nodes_positive);
+if (datasetId === "colorectal_resection_rcpath_v1") {
+  extracted.stage_pN = extracted.pN;
 }
+extracted.r_status = computeRStatusFromRules(rules, extracted);
 
       extracted.mandard_descriptor = mandardDescriptor(rules, extracted.tumour_regression_grade);
       if (String(extracted.tumour_regression_grade || "").trim()) {
