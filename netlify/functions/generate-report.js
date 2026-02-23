@@ -288,6 +288,18 @@ function parseCrmDistanceMm(text) {
   return null;
 }
 
+function parseBeyondMuscularisDistanceMm(text) {
+  // Colorectal: only accept a distance if it is explicitly tied to "beyond muscularis propria"
+  // (prevents CRM distances being mis-used as extramural depth).
+  const re = /(beyond\s+muscularis\s+propria|beyond\s+mp|extramural\s+depth|distance\s+beyond\s+muscularis)[^0-9]{0,30}(\d+(?:\.\d+)?)\s*mm\b/i;
+  const m = (text || "").match(re);
+  if (m) return Number(m[2]);
+  const re2 = /(\d+(?:\.\d+)?)\s*mm\b[^.\n]{0,40}(beyond\s+muscularis\s+propria|beyond\s+mp|extramural\s+depth)/i;
+  const m2 = (text || "").match(re2);
+  if (m2) return Number(m2[1]);
+  return null;
+}
+
 function parseMarginStatus(text, which) {
   const t = (text || "").toLowerCase();
   const key = which.toLowerCase();
@@ -681,12 +693,21 @@ if (det.has("margins") || det.size === 0) {
 if (det.has("crm")) {
   const crmDist = parseCrmDistanceMm(rawText);
   if (crmDist !== null && Number.isFinite(crmDist)) {
-    setFirstExisting(extracted, schema, ["distance_to_crm_mm"], crmDist);
+    if (schemaHas(schema, "distance_to_crm_mm") && schema.properties.distance_to_crm_mm && schema.properties.distance_to_crm_mm.type === "string") {
+      extracted.distance_to_crm_mm = String(crmDist);
+    } else {
+      setFirstExisting(extracted, schema, ["distance_to_crm_mm"], crmDist);
+    }
   }
 
   // IMPORTANT: avoid Number(null) === 0
   const rawCrm = extracted.distance_to_crm_mm;
   const crmNum = (rawCrm === null || rawCrm === undefined || rawCrm === "") ? NaN : Number(rawCrm);
+
+  // Colorectal: if a CRM distance is given, infer involved Yes/No from the threshold (<1 mm = involved).
+  if (Number.isFinite(crmNum) && schemaHas(schema, "circumferential_margin_involved")) {
+    extracted.circumferential_margin_involved = (crmNum < 1) ? "Yes" : "No";
+  }
 
   if (Number.isFinite(crmNum) && schemaHas(schema, "circumferential_margin_status")) {
     const enums = schema.properties.circumferential_margin_status.enum || [];
@@ -713,6 +734,32 @@ if (schemaHas(schema, "local_invasion_pT") && schemaHas(schema, "stage_pT")) {
     extracted.stage_pT = lipT.replace(/^p/i, "");
   }
 }
+
+
+// Colorectal: max distance beyond muscularis propria only applies for pT3/pT4. If pT2 or less -> Not applicable.
+if (schemaHas(schema, "max_distance_beyond_muscularis_mm")) {
+  const lipTraw = String(extracted.local_invasion_pT || "").toLowerCase();
+  const isPT2orLess = (lipTraw === "pt0" || lipTraw === "pt1" || lipTraw === "pt2" || lipTraw === "ptis");
+  const beyond = parseBeyondMuscularisDistanceMm(rawText);
+
+  if (Number.isFinite(beyond)) {
+    extracted.max_distance_beyond_muscularis_mm = String(beyond);
+  } else if (isPT2orLess) {
+    extracted.max_distance_beyond_muscularis_mm = "Not applicable";
+  } else {
+    // Guard: don't accidentally reuse a CRM distance as extramural depth.
+    const md = String(extracted.max_distance_beyond_muscularis_mm || "").trim();
+    const crm = String(extracted.distance_to_crm_mm || "").trim();
+    const t = rawText.toLowerCase();
+    const mentionsBeyond = /(beyond\s+muscularis|extramural\s+depth|beyond\s+mp)/i.test(t);
+    const mentionsCrm = /\bcrm\b|circumferential\s+margin/i.test(t);
+
+    if (!mentionsBeyond && mentionsCrm && md && crm && md === crm) {
+      extracted.max_distance_beyond_muscularis_mm = "";
+    }
+  }
+}
+
 
 if (schemaHas(schema, "stage_pN")) {
   extracted.stage_pN = extracted.pN || extracted.stage_pN;
