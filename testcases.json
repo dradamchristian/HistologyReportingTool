@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "notes": "Paste each 'INPUT:' block into your generator (one at a time). Confirm the dataset picked matches EXPECTED_DATASET and that key outputs match EXPECTED_CHECKS."
+  },
+  "cases": [
+    {
+      "id": "CR01_core_R0_CRM5_pT3_N2_M0",
+      "EXPECTED_DATASET": "colorectal resection",
+      "INPUT": "Colorectal resection, sigmoid colon.\nAdenocarcinoma, moderate.\nLocal invasion: tumour invades beyond muscularis propria. Extramural depth beyond muscularis propria 7 mm.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nLymphovascular invasion not identified.\nNodes 3 of 12 positive.\nNo distant metastasis.\nTumour block A5.\n",
+      "EXPECTED_CHECKS": [
+        "CRM involved: No (distance 5 mm)",
+        "Extramural depth (beyond MP): 7 mm (not overwritten by CRM)",
+        "pT in staging/summary = T3 (or pT3 depending on template)",
+        "pN = N2 (3/12)",
+        "R0",
+        "pM not shown as M1"
+      ]
+    },
+    {
+      "id": "CR02_distal_involved_R1_pT2_no_extramural",
+      "EXPECTED_DATASET": "colorectal resection",
+      "INPUT": "Anterior resection, rectum.\nAdenocarcinoma.\nLocal invasion: tumour invades muscularis propria.\nDistal margin involved.\nCRM 8 mm.\nNodes 0 of 15 positive.\nNo distant metastasis.\n",
+      "EXPECTED_CHECKS": [
+        "Distal margin involved: Yes",
+        "R1",
+        "pT2 (or T2) appears in summary",
+        "Extramural depth beyond MP = Not applicable (because pT2 or less)",
+        "CRM involved: No with distance 8 mm"
+      ]
+    },
+    {
+      "id": "CR03_CRM0_5_R1",
+      "EXPECTED_DATASET": "colorectal resection",
+      "INPUT": "Right hemicolectomy.\nAdenocarcinoma.\nTumour invades beyond muscularis propria.\nCRM 0.5 mm.\nMargins clear.\nNodes 1 of 20 positive.\nNo distant metastasis.\n",
+      "EXPECTED_CHECKS": [
+        "CRM involved: Yes (distance 0.5 mm)",
+        "R1 (if your colorectal R rule includes CRM involvement)",
+        "pN = N1 (1/20)"
+      ]
+    },
+    {
+      "id": "OE01_neoadjuvant_y_prefix_Mandard_R0",
+      "EXPECTED_DATASET": "oesophagus resection",
+      "INPUT": "Oesophageal resection.\nAdenocarcinoma, moderate.\nInvasion beyond muscularis propria.\nNeoadjuvant therapy yes. Mandard 3.\nProximal margin normal. Distal margin normal.\nCRM 3 mm.\nLVI not identified. PNI not identified.\nNodes 2 of 18 positive.\nNo pM1 disease.\nTumour block B12.\n",
+      "EXPECTED_CHECKS": [
+        "y-prefix appears in SUMMARY (e.g. ypT\u2026 ypN\u2026)",
+        "Mandard grade printed with descriptor",
+        "CRM not involved (distance 3 mm)",
+        "R0",
+        "pN = N1 (2/18 in your oesophagus mapping)"
+      ]
+    },
+    {
+      "id": "OE02_distal_involved_R1",
+      "EXPECTED_DATASET": "oesophagus resection",
+      "INPUT": "Oesophageal resection.\nAdenocarcinoma.\nInvades pleura.\nDistal margin involved.\nCRM 2 mm.\nNodes 0 of 10 positive.\nNo pM1 disease.\n",
+      "EXPECTED_CHECKS": [
+        "Distal margin becomes 'Carcinoma' (or equivalent) in report",
+        "R1",
+        "pT4a (pleura/pericardium/diaphragm triggers T4a)",
+        "CRM not involved (2 mm)"
+      ]
+    },
+    {
+      "id": "GA01_gastrectomy_default_CRM_NA_R0_pT3_N2",
+      "EXPECTED_DATASET": "gastrectomy resection",
+      "INPUT": "Subtotal gastrectomy.\nGastric adenocarcinoma.\nLaur\u00e9n intestinal. Moderate differentiation.\nTumour invades beyond muscularis propria / through the wall.\nNeoadjuvant therapy no.\nProximal margin clear. Distal margin clear.\nLymphovascular invasion not identified.\nNodes 3 of 12 positive.\nNo pM1 disease.\nTumour block C3.\n",
+      "EXPECTED_CHECKS": [
+        "CRM line = Not applicable (unless you explicitly mention CRM)",
+        "R0",
+        "pT3",
+        "pN = N2",
+        "No Mandard section"
+      ]
+    },
+    {
+      "id": "GA02_neoadjuvant_yes_y_prefix_Mandard_pN3b",
+      "EXPECTED_DATASET": "gastrectomy resection",
+      "INPUT": "Total gastrectomy.\nGastric adenocarcinoma.\nLaur\u00e9n diffuse. Poorly differentiated.\nTumour invades the serosa.\nNeoadjuvant therapy yes. Mandard 2.\nMargins clear.\nNodes 20 of 30 positive.\nNo pM1 disease.\n",
+      "EXPECTED_CHECKS": [
+        "y-prefix in SUMMARY",
+        "Mandard grade printed",
+        "pT4a",
+        "pN = N3b (>=16 positive nodes)",
+        "R0"
+      ]
+    },
+    {
+      "id": "GIST01_core",
+      "EXPECTED_DATASET": "GIST",
+      "INPUT": "Gastrointestinal stromal tumour (GIST), gastric wedge resection.\nSpindle cell type.\nTumour size 4.2 cm.\nMitotic count 3 per 5 mm2.\nNecrosis not identified.\nMargins clear.\nTumour block D7.\n",
+      "EXPECTED_CHECKS": [
+        "Dataset picked is the GIST proforma (not gastrectomy adenocarcinoma)",
+        "Key GIST fields populate (size, mitoses, necrosis, margins)"
+      ]
+    }
+  ]
+}
