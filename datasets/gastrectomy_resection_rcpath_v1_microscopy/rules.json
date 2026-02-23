@@ -107,16 +107,11 @@
     "4": "TRG 4: Residual tumour outgrowing fibrosis.",
     "5": "TRG 5: No regressive changes."
   },
-  "r_status_rules": {
-    "R1_if_any": [
-      {
-        "field": "proximal_margin",
-        "equals": "Involved"
-      },
-      {
-        "field": "distal_margin",
-        "equals": "Involved"
-      }
-    ]
-  }
+"r_status_rules": {
+  "R1_if_any": [
+    { "field": "proximal_margin", "equals": "Involved" },
+    { "field": "distal_margin", "equals": "Involved" },
+    { "field": "circumferential_margin_status", "contains": "Involved" }
+  ]
+}
 }
