@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Report Generator – Regression Tests</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --card: #111a33;
+      --muted: #9fb0d0;
+      --text: #e7eeff;
+      --good: #2ee59d;
+      --bad: #ff5570;
+      --warn: #ffcc66;
+      --border: rgba(255,255,255,0.10);
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 20% 0%, #1a2750 0%, var(--bg) 50%) fixed;
+      color: var(--text);
+    }
+    header {
+      padding: 18px 18px 8px 18px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    h1 {
+      margin: 0 0 6px 0;
+      font-size: 20px;
+      letter-spacing: 0.2px;
+    }
+    p {
+      margin: 0 0 10px 0;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 12px;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 12px 18px 18px 18px;
+    }
+    @media (max-width: 900px) {
+      .row { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: rgba(17,26,51,0.75);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      backdrop-filter: blur(6px);
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    input[type="text"] {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.2);
+      color: var(--text);
+      outline: none;
+    }
+    input[type="file"] {
+      width: 100%;
+      color: var(--muted);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      cursor: pointer;
+      user-select: none;
+      font-weight: 600;
+    }
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .btn.primary {
+      background: linear-gradient(90deg, rgba(46,229,157,0.22), rgba(46,229,157,0.08));
+      border-color: rgba(46,229,157,0.35);
+    }
+    .btn.danger {
+      background: linear-gradient(90deg, rgba(255,85,112,0.18), rgba(255,85,112,0.06));
+      border-color: rgba(255,85,112,0.35);
+    }
+    .pill {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .case {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      background: rgba(0,0,0,0.15);
+    }
+    .case h3 {
+      margin: 0 0 6px 0;
+      font-size: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .status.good { color: var(--good); }
+    .status.bad { color: var(--bad); }
+    .status.warn { color: var(--warn); }
+    details { margin-top: 8px; }
+    summary {
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: rgba(0,0,0,0.25);
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 12px;
+    }
+    .kpi {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Report Generator – Regression Tests</h1>
+    <p>
+      Runs a small suite of dictation-style inputs against your Netlify function and checks for expected substrings.
+      It’s intentionally crude: we’re catching regressions, not proving correctness.
+    </p>
+  </header>
+
+  <div class="row">
+    <div class="card">
+      <div style="display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+        <div><div class="pill">1) Configure</div></div>
+        <div id="runState" class="pill">Idle</div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <label>Base site URL (your deployed site)</label>
+        <input id="baseUrl" type="text" value="https://adorable-stardust-c53cd3.netlify.app" />
+        <div class="small" style="margin-top:6px;">We’ll call <code>/.netlify/functions/generate-report</code> under this base URL.</div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <label>Optional: override function path (advanced)</label>
+        <input id="fnPath" type="text" value="/.netlify/functions/generate-report" />
+        <div class="small" style="margin-top:6px;">If your function has a different name, change it here.</div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <label>Load testcases (optional)</label>
+        <input id="file" type="file" accept="application/json" />
+        <div class="small" style="margin-top:6px;">If not provided, we use embedded default cases.</div>
+      </div>
+
+      <div class="kpi">
+        <button id="runBtn" class="btn primary">▶ Run tests</button>
+        <button id="stopBtn" class="btn danger" disabled>■ Stop</button>
+        <button id="resetBtn" class="btn" type="button">↺ Reset results</button>
+      </div>
+
+      <div class="small" style="margin-top:10px;">
+        Tip: open DevTools console if you want to see raw responses.
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+        <div class="pill">2) Results</div>
+        <div id="kpi" class="pill">0 passed • 0 failed • 0 warnings</div>
+      </div>
+      <div id="results" class="grid" style="margin-top:12px;"></div>
+    </div>
+  </div>
+
+<script>
+  const EMBEDDED = {"meta": {"notes": "Paste each 'INPUT:' block into your generator (one at a time). Confirm the dataset picked matches EXPECTED_DATASET and that key outputs match EXPECTED_CHECKS."}, "cases": [{"id": "CR01_core_R0_CRM5_pT3_N2_M0", "EXPECTED_DATASET": "colorectal resection", "INPUT": "Colorectal resection, sigmoid colon.\nAdenocarcinoma, moderate.\nLocal invasion: tumour invades beyond muscularis propria. Extramural depth beyond muscularis propria 7 mm.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nLymphovascular invasion not identified.\nNodes 3 of 12 positive.\nNo distant metastasis.\nTumour block A5.\n", "EXPECTED_CHECKS": ["CRM involved: No (distance 5 mm)", "Extramural depth (beyond MP): 7 mm (not overwritten by CRM)", "pT in staging/summary = T3 (or pT3 depending on template)", "pN = N2 (3/12)", "R0", "pM not shown as M1"]}, {"id": "CR02_distal_involved_R1_pT2_no_extramural", "EXPECTED_DATASET": "colorectal resection", "INPUT": "Anterior resection, rectum.\nAdenocarcinoma.\nLocal invasion: tumour invades muscularis propria.\nDistal margin involved.\nCRM 8 mm.\nNodes 0 of 15 positive.\nNo distant metastasis.\n", "EXPECTED_CHECKS": ["Distal margin involved: Yes", "R1", "pT2 (or T2) appears in summary", "Extramural depth beyond MP = Not applicable (because pT2 or less)", "CRM involved: No with distance 8 mm"]}, {"id": "CR03_CRM0_5_R1", "EXPECTED_DATASET": "colorectal resection", "INPUT": "Right hemicolectomy.\nAdenocarcinoma.\nTumour invades beyond muscularis propria.\nCRM 0.5 mm.\nMargins clear.\nNodes 1 of 20 positive.\nNo distant metastasis.\n", "EXPECTED_CHECKS": ["CRM involved: Yes (distance 0.5 mm)", "R1 (if your colorectal R rule includes CRM involvement)", "pN = N1 (1/20)"]}, {"id": "OE01_neoadjuvant_y_prefix_Mandard_R0", "EXPECTED_DATASET": "oesophagus resection", "INPUT": "Oesophageal resection.\nAdenocarcinoma, moderate.\nInvasion beyond muscularis propria.\nNeoadjuvant therapy yes. Mandard 3.\nProximal margin normal. Distal margin normal.\nCRM 3 mm.\nLVI not identified. PNI not identified.\nNodes 2 of 18 positive.\nNo pM1 disease.\nTumour block B12.\n", "EXPECTED_CHECKS": ["y-prefix appears in SUMMARY (e.g. ypT\u2026 ypN\u2026)", "Mandard grade printed with descriptor", "CRM not involved (distance 3 mm)", "R0", "pN = N1 (2/18 in your oesophagus mapping)"]}, {"id": "OE02_distal_involved_R1", "EXPECTED_DATASET": "oesophagus resection", "INPUT": "Oesophageal resection.\nAdenocarcinoma.\nInvades pleura.\nDistal margin involved.\nCRM 2 mm.\nNodes 0 of 10 positive.\nNo pM1 disease.\n", "EXPECTED_CHECKS": ["Distal margin becomes 'Carcinoma' (or equivalent) in report", "R1", "pT4a (pleura/pericardium/diaphragm triggers T4a)", "CRM not involved (2 mm)"]}, {"id": "GA01_gastrectomy_default_CRM_NA_R0_pT3_N2", "EXPECTED_DATASET": "gastrectomy resection", "INPUT": "Subtotal gastrectomy.\nGastric adenocarcinoma.\nLaur\u00e9n intestinal. Moderate differentiation.\nTumour invades beyond muscularis propria / through the wall.\nNeoadjuvant therapy no.\nProximal margin clear. Distal margin clear.\nLymphovascular invasion not identified.\nNodes 3 of 12 positive.\nNo pM1 disease.\nTumour block C3.\n", "EXPECTED_CHECKS": ["CRM line = Not applicable (unless you explicitly mention CRM)", "R0", "pT3", "pN = N2", "No Mandard section"]}, {"id": "GA02_neoadjuvant_yes_y_prefix_Mandard_pN3b", "EXPECTED_DATASET": "gastrectomy resection", "INPUT": "Total gastrectomy.\nGastric adenocarcinoma.\nLaur\u00e9n diffuse. Poorly differentiated.\nTumour invades the serosa.\nNeoadjuvant therapy yes. Mandard 2.\nMargins clear.\nNodes 20 of 30 positive.\nNo pM1 disease.\n", "EXPECTED_CHECKS": ["y-prefix in SUMMARY", "Mandard grade printed", "pT4a", "pN = N3b (>=16 positive nodes)", "R0"]}, {"id": "GIST01_core", "EXPECTED_DATASET": "GIST", "INPUT": "Gastrointestinal stromal tumour (GIST), gastric wedge resection.\nSpindle cell type.\nTumour size 4.2 cm.\nMitotic count 3 per 5 mm2.\nNecrosis not identified.\nMargins clear.\nTumour block D7.\n", "EXPECTED_CHECKS": ["Dataset picked is the GIST proforma (not gastrectomy adenocarcinoma)", "Key GIST fields populate (size, mitoses, necrosis, margins)"]}]};
+
+  const $ = (id) => document.getElementById(id);
+
+  let cases = EMBEDDED.cases || [];
+  let stopRequested = false;
+
+  function setRunState(msg) { $("runState").textContent = msg; }
+
+  function resetUI() {
+    $("results").innerHTML = "";
+    $("kpi").textContent = "0 passed • 0 failed • 0 warnings";
+  }
+
+  function normalizeUrl(base, path) {
+    base = (base || "").trim().replace(/\/+$/,"");
+    path = (path || "").trim();
+    if (!path.startsWith("/")) path = "/" + path;
+    return base + path;
+  }
+
+  async function readFileAsJson(file) {
+    const text = await file.text();
+    return JSON.parse(text);
+  }
+
+  function containsAll(text, checks) {
+    const t = (text || "").toLowerCase();
+    const missing = [];
+    for (const c of checks) {
+      const s = String(c).toLowerCase();
+      if (!t.includes(s)) missing.push(c);
+    }
+    return missing;
+  }
+
+  function renderCaseShell(c) {
+    const el = document.createElement("div");
+    el.className = "case";
+    el.innerHTML = `
+      <h3>
+        <span>${c.id}</span>
+        <span class="pill">${c.EXPECTED_DATASET}</span>
+        <span class="status warn" id="status-${c.id}">PENDING</span>
+      </h3>
+      <div class="small">Expected checks: ${(c.EXPECTED_CHECKS || []).length}</div>
+      <details>
+        <summary>Show input</summary>
+        <pre>${escapeHtml(c.INPUT || "")}</pre>
+      </details>
+      <details>
+        <summary>Show output</summary>
+        <pre id="out-${c.id}">(not run)</pre>
+      </details>
+      <details>
+        <summary>Show missing checks</summary>
+        <pre id="miss-${c.id}">(not run)</pre>
+      </details>
+    `;
+    return el;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (m) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",""":"&quot;","'":"&#039;" })[m]);
+  }
+
+  function updateKpi(passed, failed, warn) {
+    $("kpi").textContent = `${passed} passed • ${failed} failed • ${warn} warnings`;
+  }
+
+  async function callFunction(url, input) {
+    const body = JSON.stringify({ text: input });
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body
+    });
+    const json = await res.json();
+    return { status: res.status, json };
+  }
+
+  async function run() {
+    stopRequested = false;
+    $("runBtn").disabled = true;
+    $("stopBtn").disabled = false;
+
+    resetUI();
+
+    const baseUrl = $("baseUrl").value;
+    const fnPath = $("fnPath").value;
+    const fnUrl = normalizeUrl(baseUrl, fnPath);
+
+    const results = $("results");
+    for (const c of cases) results.appendChild(renderCaseShell(c));
+
+    let passed=0, failed=0, warn=0;
+    updateKpi(passed, failed, warn);
+    setRunState("Running…");
+
+    for (const c of cases) {
+      if (stopRequested) break;
+
+      const sid = c.id;
+      const statusEl = $("status-"+sid);
+      statusEl.textContent = "RUNNING";
+      statusEl.className = "status warn";
+
+      try {
+        const resp = await callFunction(fnUrl, c.INPUT);
+        const report = resp?.json?.report_text || resp?.json?.report || resp?.json?.text || JSON.stringify(resp.json, null, 2);
+
+        $("out-"+sid).textContent = report;
+
+        const missing = containsAll(report, c.EXPECTED_CHECKS || []);
+        $("miss-"+sid).textContent = missing.length ? missing.join("\n") : "(none)";
+
+        const datasetId = (resp?.json?.dataset_id || "").toLowerCase();
+        const expected = String(c.EXPECTED_DATASET || "").toLowerCase();
+
+        const ok = missing.length === 0;
+        if (!ok) {
+          failed += 1;
+          statusEl.textContent = "FAIL";
+          statusEl.className = "status bad";
+        } else {
+          passed += 1;
+          statusEl.textContent = "PASS";
+          statusEl.className = "status good";
+        }
+
+        // Soft dataset warning only (names differ between setups)
+        if (datasetId && expected && !datasetId.includes(expected.split(" ")[0])) {
+          warn += 1;
+          statusEl.textContent = ok ? "PASS (dataset?)" : "FAIL (dataset?)";
+          statusEl.className = "status warn";
+        }
+
+      } catch (e) {
+        failed += 1;
+        statusEl.textContent = "ERROR";
+        statusEl.className = "status bad";
+        $("out-"+sid).textContent = String(e);
+        $("miss-"+sid).textContent = "(error)";
+      }
+
+      updateKpi(passed, failed, warn);
+    }
+
+    setRunState(stopRequested ? "Stopped" : "Done");
+    $("runBtn").disabled = false;
+    $("stopBtn").disabled = true;
+  }
+
+  $("runBtn").addEventListener("click", run);
+  $("stopBtn").addEventListener("click", () => {
+    stopRequested = true;
+    setRunState("Stopping…");
+  });
+  $("resetBtn").addEventListener("click", resetUI);
+
+  $("file").addEventListener("change", async (ev) => {
+    const file = ev.target.files?.[0];
+    if (!file) return;
+    try {
+      const json = await readFileAsJson(file);
+      if (Array.isArray(json.cases)) cases = json.cases;
+      else if (Array.isArray(json)) cases = json;
+      else throw new Error("JSON must be an object with a 'cases' array (or a raw array).");
+      setRunState(`Loaded ${cases.length} cases`);
+    } catch (e) {
+      alert("Failed to load JSON: " + e.message);
+    }
+  });
+
+  setRunState(`Ready (${cases.length} cases)`);
+</script>
+</body>
+</html>
