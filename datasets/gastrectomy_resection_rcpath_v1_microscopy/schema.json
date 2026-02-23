@@ -5,7 +5,7 @@
   "properties": {
     "dataset_id": {
       "type": "string",
-      "const": "gastrectomy_resection_rcpath_v1_microscopy"
+      "const": "gastrectomy_resection_rcpath_v1_1_microscopy"
     },
     "tumour_type": {
       "type": "string",
@@ -89,8 +89,7 @@
         5,
         null
       ],
-      "default": null,
-      "description": "If Mandard: TRG 1\u20135"
+      "default": null
     },
     "proximal_margin": {
       "type": "string",
@@ -123,8 +122,7 @@
         "null"
       ],
       "minimum": 0,
-      "default": null,
-      "description": "Distance of carcinoma to nearest circumferential margin (if not involved) in mm."
+      "default": null
     },
     "lvi": {
       "type": "string",
@@ -183,8 +181,7 @@
         "yT4a",
         "yT4b"
       ],
-      "default": "T3",
-      "description": "May be derived from depth_of_invasion_category/phrase."
+      "default": "T3"
     },
     "pN": {
       "type": "string",
@@ -208,8 +205,7 @@
     },
     "y_prefix": {
       "type": "boolean",
-      "default": false,
-      "description": "If true, use yTNM categories."
+      "default": false
     },
     "tumour_block_available": {
       "type": "string",

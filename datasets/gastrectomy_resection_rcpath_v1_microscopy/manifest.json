@@ -1,5 +1,5 @@
 {
-  "id": "gastrectomy_resection_rcpath_v1_microscopy",
+  "id": "gastrectomy_resection_rcpath_v1_1_microscopy",
   "kind": "rcpath",
   "match": {
     "any": [
@@ -26,7 +26,6 @@
     "deterministic_extract": [
       "nodes",
       "margins",
-      "crm",
       "pt",
       "mandard"
     ]
