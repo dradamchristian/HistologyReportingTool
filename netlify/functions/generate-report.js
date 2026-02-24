@@ -89,19 +89,71 @@ function extractNodeTallies(rawText) {
   const text = rawText || "";
   const lower = text.toLowerCase();
 
+  // explicit override: "final nodes 1/8" / "overall nodes 1 of 8"
   const fm = lower.match(/\b(?:final|overall)\s+nodes?\s*(\d+)\s*(?:\/|of)\s*(\d+)\b/);
-  if (fm) return { examined: parseInt(fm[2],10), positive: parseInt(fm[1],10), isFinal: true };
+  if (fm) return { examined: parseInt(fm[2], 10), positive: parseInt(fm[1], 10), isFinal: true };
 
   let examined = 0;
   let positive = 0;
 
+  // Split into small clauses to prevent double-counting within a phrase like "1/2 nodes"
+  const clauses = text
+    .replace(/\r/g, "\n")
+    .replace(/[;]+/g, ".")
+    .replace(/[,\n]+/g, ".")
+    .split(".")
+    .map(s => s.trim())
+    .filter(Boolean);
 
-// Pattern 0: "1/2 nodes" or "1 of 2 nodes"
-const p0 = /(\d+)\s*(?:\/|of)\s*(\d+)\s*nodes?\b/ig;
-let m0;
-while ((m0 = p0.exec(text)) !== null) {
-  positive += parseInt(m0[1],10);
-  examined += parseInt(m0[2],10);
+  for (const clause of clauses) {
+    const c = clause.toLowerCase();
+    if (!c.includes("node")) continue;
+
+    // Prefer fraction-style: "1/2 nodes", "1 of 2 nodes", "nodes 1/2", "nodes 1 of 2"
+    let m = clause.match(/(\d+)\s*(?:\/|of)\s*(\d+)\s*nodes?\b/i) ||
+            clause.match(/\bnodes?\b[^\d]{0,10}(\d+)\s*(?:\/|of)\s*(\d+)\b/i);
+    if (m) {
+      positive += parseInt(m[1], 10);
+      examined += parseInt(m[2], 10);
+      continue; // don't also count the "2 nodes" part again
+    }
+
+    // "3/12 involved" with node context in the same clause
+    m = clause.match(/(\d+)\s*\/\s*(\d+)\s*(?:involved|positive)\b/i);
+    if (m) {
+      positive += parseInt(m[1], 10);
+      examined += parseInt(m[2], 10);
+      continue;
+    }
+
+    // "nodes 4 involved 1" / "4 nodes involved 1"
+    m = clause.match(/\bnodes?\b[^\d]{0,10}(\d+)[^\d]{0,20}(?:involved|positive)\s*(\d+)\b/i) ||
+        clause.match(/(\d+)\s*nodes?\b[^\d]{0,20}(?:involved|positive)\s*(\d+)\b/i);
+    if (m) {
+      examined += parseInt(m[1], 10);
+      positive += parseInt(m[2], 10);
+      continue;
+    }
+
+    // "nodes 4 negative" / "4 nodes negative"
+    m = clause.match(/\bnodes?\b[^\d]{0,10}(\d+)\s*(?:all\s+)?(?:negative|clear|uninvolved)\b/i) ||
+        clause.match(/(\d+)\s*nodes?\s*(?:all\s+)?(?:negative|clear|uninvolved)\b/i);
+    if (m) {
+      examined += parseInt(m[1], 10);
+      continue;
+    }
+
+    // As a last resort: "2 nodes" / "nodes 2" => examined-only
+    m = clause.match(/\bnodes?\b[^\d]{0,10}(\d+)\b/i) ||
+        clause.match(/(\d+)\s*nodes?\b/i);
+    if (m) {
+      examined += parseInt(m[1], 10);
+      continue;
+    }
+  }
+
+  if (examined === 0 && positive === 0) return { examined: null, positive: null, isFinal: false };
+  return { examined, positive, isFinal: false };
 }
 
   const p1 = /\bnodes?\b[^\n\r]{0,40}?(\d+)\s*(?:\/|of)\s*(\d+)\b/ig;
