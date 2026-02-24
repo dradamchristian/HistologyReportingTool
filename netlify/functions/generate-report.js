@@ -189,7 +189,15 @@ function applyAccumulators(rawText, schema, extracted) {
       if (!(s.includes("node") || s.includes("nodes"))) return false;
       if (s.includes("positive") || s.includes("involved")) return false;
       return s.includes("exam") || s.includes("total") || s.includes("present") || s.includes("retriev") || s.includes("count");
-    });
+// Derive pN from schema enums (prevents dataset rules mis-mapping)
+if (props.pN) {
+  const derived = derivePNFromSchema(schema, nodeInfo.positive);
+  if (derived) {
+    extracted.pN = derived;
+    if (props.stage_pN) extracted.stage_pN = derived;
+  }
+}
+  });
 
     const positiveKey = keys.find(k => {
       const s = k.toLowerCase();
@@ -579,6 +587,43 @@ function computePNFromRules(rules, nodesPositive) {
   for (const band of mapping) if (n >= band.min && n <= band.max) return band.set;
   return "NX";
 }
+
+function derivePNFromSchema(schema, nodesPositive) {
+  const n = Number(nodesPositive || 0);
+  const enums = schema?.properties?.pN?.enum || [];
+
+  // Colorectal-style enums (N1a/N1b/N1c/N2a/N2b)
+  if (enums.some(e => String(e).includes("N1a")) || enums.some(e => String(e).includes("N2a"))) {
+    if (n === 0) return "N0";
+    if (n === 1) return "N1a";
+    if (n >= 2 && n <= 3) return "N1b";
+    if (n >= 4 && n <= 6) return "N2a";
+    if (n >= 7) return "N2b";
+    return "NX";
+  }
+
+  // Gastric-style enums (N3a/N3b present)
+  if (enums.some(e => String(e).includes("N3a")) || enums.some(e => String(e).includes("N3b"))) {
+    if (n === 0) return "N0";
+    if (n >= 1 && n <= 2) return "N1";
+    if (n >= 3 && n <= 6) return "N2";
+    if (n >= 7 && n <= 15) return "N3a";
+    if (n >= 16) return "N3b";
+    return "NX";
+  }
+
+  // Oesophagus-style enums (N0/N1/N2/N3 only)
+  if (enums.includes("N0") && enums.includes("N1") && enums.includes("N2") && enums.includes("N3") && !enums.some(e => String(e).includes("N1a"))) {
+    if (n === 0) return "N0";
+    if (n >= 1 && n <= 2) return "N1";
+    if (n >= 3 && n <= 6) return "N2";
+    if (n >= 7) return "N3";
+    return "NX";
+  }
+
+  return null;
+}
+
 
 function computeRStatusFromRules(rules, record) {
   const triggers = rules?.r_status_rules?.R1_if_any || [];
