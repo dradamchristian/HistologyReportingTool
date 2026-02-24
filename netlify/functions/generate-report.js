@@ -156,52 +156,6 @@ function extractNodeTallies(rawText) {
   return { examined, positive, isFinal: false };
 }
 
-  const p1 = /\bnodes?\b[^\n\r]{0,40}?(\d+)\s*(?:\/|of)\s*(\d+)\b/ig;
-  let m1;
-  while ((m1 = p1.exec(text)) !== null) {
-    positive += parseInt(m1[1],10);
-    examined += parseInt(m1[2],10);
-  }
-
-  const p2 = /(\d+)\s*\/\s*(\d+)\s*(?:involved|positive)\b/ig;
-  let m2;
-  while ((m2 = p2.exec(text)) !== null) {
-    const start = Math.max(0, m2.index - 50);
-    const ctx = lower.slice(start, m2.index + 30);
-    if (ctx.includes("node")) {
-      positive += parseInt(m2[1],10);
-      examined += parseInt(m2[2],10);
-    }
-  }
-
-  const p3 = /\bnodes?\b[^\n\r]{0,40}?(\d+)[^\n\r]{0,20}?(?:involved|positive)\s*(\d+)\b/ig;
-  let m3;
-  while ((m3 = p3.exec(text)) !== null) {
-    examined += parseInt(m3[1],10);
-    positive += parseInt(m3[2],10);
-  }
-
-  const p4 = /\bnodes?\b[^\n\r]{0,40}?(\d+)\s*(?:all\s+)?(?:negative|clear|uninvolved)\b/ig;
-  let m4;
-  while ((m4 = p4.exec(text)) !== null) {
-    examined += parseInt(m4[1],10);
-  }
-
-
-// Pattern 5: "2 nodes" (no explicit involved/positive/negative) => add examined only.
-// We skip counts that are part of a fraction like "1/2 nodes".
-const p5 = /\b(\d+)\s+nodes?\b/ig;
-let m5;
-while ((m5 = p5.exec(text)) !== null) {
-  const i = m5.index;
-  const prev = text.slice(Math.max(0, i-2), i);
-  if (prev.includes("/")) continue; // part of 1/2 nodes
-  examined += parseInt(m5[1],10);
-}
-
-  if (examined === 0 && positive === 0) return { examined: null, positive: null, isFinal: false };
-  return { examined, positive, isFinal: false };
-}
 
 function applyAccumulators(rawText, schema, extracted) {
   const props = schema?.properties || {};
