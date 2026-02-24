@@ -624,6 +624,31 @@ function derivePNFromSchema(schema, nodesPositive) {
   return null;
 }
 
+function finalizeStaging(schema, extracted) {
+  const props = schema?.properties || {};
+  const nPos = (extracted.nodes_positive != null) ? extracted.nodes_positive
+            : (extracted.nodes_involved != null) ? extracted.nodes_involved
+            : (extracted.number_positive != null) ? extracted.number_positive
+            : null;
+  if (nPos == null) return;
+
+  // Derive pN from schema enums
+  if (props.pN) {
+    const derived = derivePNFromSchema(schema, nPos);
+    if (derived) {
+      extracted.pN = derived;
+      if (props.stage_pN) extracted.stage_pN = derived;
+    }
+  }
+
+  // Colorectal templates sometimes use stage_pN even if pN isn't present
+  if (props.stage_pN && !props.pN) {
+    const derived = derivePNFromSchema(schema, nPos);
+    if (derived) extracted.stage_pN = derived;
+  }
+}
+
+
 
 function computeRStatusFromRules(rules, record) {
   const triggers = rules?.r_status_rules?.R1_if_any || [];
@@ -1003,6 +1028,7 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
     const forbidden = ["not stated", "derived from", "inferred", "assumed"];
     // Re-apply accumulators at the end to override any later single-match parsing
     applyAccumulators(rawText, schema, extracted);
+    finalizeStaging(schema, extracted);
 
     let report_text = renderTemplate(template, extracted)
       .split("\n")
