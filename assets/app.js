@@ -68,10 +68,39 @@ async function generate(){
 }
 
 async function copyOut(){
-  const txt = $("output").textContent || "";
-  if (!txt.trim()){ setStatus("Nothing to copy yet.", true); return; }
-  await navigator.clipboard.writeText(txt);
-  setStatus("Copied to clipboard.");
+  const raw = $("output").textContent || "";
+  if (!raw.trim()){ setStatus("Nothing to copy yet.", true); return; }
+
+  // Some systems (incl some LIMS) preserve line breaks better with CRLF
+  const txt = raw.replace(/\r?\n/g, "\r\n");
+
+  try {
+    // Modern clipboard API (works on HTTPS + user gesture)
+    await navigator.clipboard.writeText(txt);
+    setStatus("Copied to clipboard.");
+    return;
+  } catch (err) {
+    // Fallback for stricter environments / older browsers
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = txt;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      ta.style.top = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+
+      if (!ok) throw new Error("execCommand copy failed");
+      setStatus("Copied to clipboard.");
+      return;
+    } catch (err2) {
+      setStatus("Copy failed — try selecting the output and copying manually.", true);
+    }
+  }
 }
 
 $("btnDictate").addEventListener("click", () => { dictating ? stopDictation() : startDictation(); });
