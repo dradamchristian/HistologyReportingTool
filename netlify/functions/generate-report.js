@@ -1,3 +1,4 @@
+const ENGINE_VERSION = "accumulators-fixed5d-debug";
 const fs = require("fs");
 const path = require("path");
 
@@ -1038,7 +1039,15 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
     return jsonResp(200, {
       report_text,
       caveats: buildCaveats(extracted, datasetId),
-      dataset_id: datasetId
+      dataset_id: datasetId,
+      engine_version: ENGINE_VERSION,
+      debug: {
+        nodes_examined: extracted.nodes_examined,
+        nodes_positive: extracted.nodes_positive,
+        pN: extracted.pN,
+        stage_pN: extracted.stage_pN,
+        schema_pN_enum: schema?.properties?.pN?.enum || null
+      }
     });
 
   } catch (e) {
