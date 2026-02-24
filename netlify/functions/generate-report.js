@@ -165,17 +165,37 @@ function applyAccumulators(rawText, schema, extracted) {
 
   const nodeInfo = extractNodeTallies(rawText);
   if (nodeInfo.examined != null) {
+    // Common field names across datasets
     if (props.nodes_examined) extracted.nodes_examined = nodeInfo.examined;
     if (props.nodes_positive) extracted.nodes_positive = nodeInfo.positive;
 
     if (props.nodes_total) extracted.nodes_total = nodeInfo.examined;
     if (props.nodes_involved) extracted.nodes_involved = nodeInfo.positive;
 
-    // some schemas use explicit totals
     if (props.total_examined) extracted.total_examined = nodeInfo.examined;
     if (props.number_positive) extracted.number_positive = nodeInfo.positive;
+
+    // Heuristic fallback: set the first schema field that looks like total/examined nodes, and the first that looks like positive/involved nodes.
+    const keys = Object.keys(props);
+
+    const examinedKey = keys.find(k => {
+      const s = k.toLowerCase();
+      if (!(s.includes("node") || s.includes("nodes"))) return false;
+      if (s.includes("positive") || s.includes("involved")) return false;
+      return s.includes("exam") || s.includes("total") || s.includes("present") || s.includes("retriev") || s.includes("count");
+    });
+
+    const positiveKey = keys.find(k => {
+      const s = k.toLowerCase();
+      if (!(s.includes("node") || s.includes("nodes"))) return false;
+      return s.includes("positive") || s.includes("involved");
+    });
+
+    if (examinedKey && extracted[examinedKey] == null) extracted[examinedKey] = nodeInfo.examined;
+    if (positiveKey && extracted[positiveKey] == null) extracted[positiveKey] = nodeInfo.positive;
   }
 }
+
 
 function jsonResp(statusCode, obj) {
   return {
