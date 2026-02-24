@@ -1,80 +1,360 @@
 {
   "meta": {
-    "notes": "Expanded tests incl pT worst-of and node accumulation. Substring checks; prefix '! ' = must not appear."
+    "notes": "Expanded resection + GIST suite. Substring checks; prefix '! ' means must not appear. Bundle collects failed cases (input+missing+output)."
   },
   "cases": [
     {
-      "id": "CR_worst_pt",
+      "id": "CR_pT1_0of10",
       "EXPECTED_DATASET": "colorectal",
-      "INPUT": "Colorectal resection.\nAdenocarcinoma.\nLocal invasion: pT2, pT3, pT2.\nNodes 0 of 10.\nCRM 5 mm.\nNo distant metastasis.\n",
+      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades submucosa.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 0 of 10 positive.\nNo distant metastasis.\n",
+      "EXPECTED_CHECKS": [
+        "Local invasion: pT1.",
+        "0 / 10 involved.",
+        "N0"
+      ]
+    },
+    {
+      "id": "CR_pT1_1of8",
+      "EXPECTED_DATASET": "colorectal",
+      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades submucosa.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 1 of 8 positive.\nNo distant metastasis.\n",
+      "EXPECTED_CHECKS": [
+        "Local invasion: pT1.",
+        "1 / 8 involved.",
+        "N1a"
+      ]
+    },
+    {
+      "id": "CR_pT1_3of12",
+      "EXPECTED_DATASET": "colorectal",
+      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades submucosa.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 3 of 12 positive.\nNo distant metastasis.\n",
+      "EXPECTED_CHECKS": [
+        "Local invasion: pT1.",
+        "3 / 12 involved.",
+        "N1b"
+      ]
+    },
+    {
+      "id": "CR_pT2_0of10",
+      "EXPECTED_DATASET": "colorectal",
+      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades muscularis propria.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 0 of 10 positive.\nNo distant metastasis.\n",
+      "EXPECTED_CHECKS": [
+        "Local invasion: pT2.",
+        "0 / 10 involved.",
+        "N0"
+      ]
+    },
+    {
+      "id": "CR_pT2_1of8",
+      "EXPECTED_DATASET": "colorectal",
+      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades muscularis propria.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 1 of 8 positive.\nNo distant metastasis.\n",
+      "EXPECTED_CHECKS": [
+        "Local invasion: pT2.",
+        "1 / 8 involved.",
+        "N1a"
+      ]
+    },
+    {
+      "id": "CR_pT2_3of12",
+      "EXPECTED_DATASET": "colorectal",
+      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades muscularis propria.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 3 of 12 positive.\nNo distant metastasis.\n",
+      "EXPECTED_CHECKS": [
+        "Local invasion: pT2.",
+        "3 / 12 involved.",
+        "N1b"
+      ]
+    },
+    {
+      "id": "CR_pT3_0of10",
+      "EXPECTED_DATASET": "colorectal",
+      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades beyond muscularis propria. Extramural depth beyond muscularis propria 7 mm.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 0 of 10 positive.\nNo distant metastasis.\n",
       "EXPECTED_CHECKS": [
         "Local invasion: pT3.",
         "0 / 10 involved.",
-        "Circumferential margin (CRM) involved: No."
+        "N0"
       ]
     },
     {
-      "id": "CR_nodes_accum_1of8",
+      "id": "CR_pT3_1of8",
       "EXPECTED_DATASET": "colorectal",
-      "INPUT": "Colorectal resection.\nAdenocarcinoma.\nLocal invasion: pT2.\nNodes 4 negative.\nNodes 3 involved 1.\nNodes 1 negative.\nCRM 5 mm.\n",
+      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades beyond muscularis propria. Extramural depth beyond muscularis propria 7 mm.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 1 of 8 positive.\nNo distant metastasis.\n",
       "EXPECTED_CHECKS": [
+        "Local invasion: pT3.",
         "1 / 8 involved.",
-        "pN1a",
-        "RESECTION STATUS:\nR0."
+        "N1a"
       ]
     },
     {
-      "id": "CR_distal_involved",
+      "id": "CR_pT3_3of12",
       "EXPECTED_DATASET": "colorectal",
-      "INPUT": "Anterior resection.\nAdenocarcinoma.\nLocal invasion: pT2.\nDistal margin involved.\nCRM 8 mm.\nNodes 0 of 15.\n",
+      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades beyond muscularis propria. Extramural depth beyond muscularis propria 7 mm.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 3 of 12 positive.\nNo distant metastasis.\n",
+      "EXPECTED_CHECKS": [
+        "Local invasion: pT3.",
+        "3 / 12 involved.",
+        "N1b"
+      ]
+    },
+    {
+      "id": "CR_pT4a_0of10",
+      "EXPECTED_DATASET": "colorectal",
+      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour perforates visceral peritoneum.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 0 of 10 positive.\nNo distant metastasis.\n",
+      "EXPECTED_CHECKS": [
+        "Local invasion: pT4a.",
+        "0 / 10 involved.",
+        "N0"
+      ]
+    },
+    {
+      "id": "CR_pT4a_1of8",
+      "EXPECTED_DATASET": "colorectal",
+      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour perforates visceral peritoneum.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 1 of 8 positive.\nNo distant metastasis.\n",
+      "EXPECTED_CHECKS": [
+        "Local invasion: pT4a.",
+        "1 / 8 involved.",
+        "N1a"
+      ]
+    },
+    {
+      "id": "CR_pT4a_3of12",
+      "EXPECTED_DATASET": "colorectal",
+      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour perforates visceral peritoneum.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 3 of 12 positive.\nNo distant metastasis.\n",
+      "EXPECTED_CHECKS": [
+        "Local invasion: pT4a.",
+        "3 / 12 involved.",
+        "N1b"
+      ]
+    },
+    {
+      "id": "CR_pT4b_0of10",
+      "EXPECTED_DATASET": "colorectal",
+      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades adjacent organ.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 0 of 10 positive.\nNo distant metastasis.\n",
+      "EXPECTED_CHECKS": [
+        "Local invasion: pT4b.",
+        "0 / 10 involved.",
+        "N0"
+      ]
+    },
+    {
+      "id": "CR_pT4b_1of8",
+      "EXPECTED_DATASET": "colorectal",
+      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades adjacent organ.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 1 of 8 positive.\nNo distant metastasis.\n",
+      "EXPECTED_CHECKS": [
+        "Local invasion: pT4b.",
+        "1 / 8 involved.",
+        "N1a"
+      ]
+    },
+    {
+      "id": "CR_pT4b_3of12",
+      "EXPECTED_DATASET": "colorectal",
+      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades adjacent organ.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 3 of 12 positive.\nNo distant metastasis.\n",
+      "EXPECTED_CHECKS": [
+        "Local invasion: pT4b.",
+        "3 / 12 involved.",
+        "N1b"
+      ]
+    },
+    {
+      "id": "CR_nodes_accumulate_5of12",
+      "EXPECTED_DATASET": "colorectal",
+      "INPUT": "Colorectal resection.\nAdenocarcinoma.\nLocal invasion: pT2, pT3, pT2.\nNodes 1/2 nodes, 2 nodes, 3 nodes, 4/5 nodes.\nCRM 5 mm.\n",
+      "EXPECTED_CHECKS": [
+        "Local invasion: pT3.",
+        "5 / 12 involved.",
+        "pN2a"
+      ]
+    },
+    {
+      "id": "CR_distal_involved_R1",
+      "EXPECTED_DATASET": "colorectal",
+      "INPUT": "Anterior resection.\nAdenocarcinoma.\nLocal invasion: tumour invades muscularis propria.\nDistal margin involved.\nCRM 8 mm.\nNodes 0 of 15 positive.\n",
       "EXPECTED_CHECKS": [
         "RESECTION STATUS:\nR1.",
         "Distance from carcinoma to CRM: 8 mm."
       ]
     },
     {
-      "id": "OE_worst_pt_with_pleura",
-      "EXPECTED_DATASET": "oesophagus",
-      "INPUT": "Oesophageal resection.\nAdenocarcinoma.\npT2 pT3 pT2.\nInvades pleura.\nNodes 0 of 10.\nDistal margin involved.\nCRM 2 mm.\n",
+      "id": "CR_CRM_involved_R1",
+      "EXPECTED_DATASET": "colorectal",
+      "INPUT": "Colorectal resection.\nAdenocarcinoma.\nLocal invasion: tumour invades beyond muscularis propria.\nCRM 0.5 mm.\nNodes 0 of 10 positive.\n",
       "EXPECTED_CHECKS": [
-        "pT: T4a",
-        "Distal margin: Carcinoma",
-        "R1"
+        "Circumferential margin (CRM) involved: Yes.",
+        "RESECTION STATUS:\nR1."
       ]
     },
     {
-      "id": "OE_nodes_accum_1of8",
+      "id": "OE_T2_0of10",
       "EXPECTED_DATASET": "oesophagus",
-      "INPUT": "Oesophageal resection.\nAdenocarcinoma.\nT3.\nNodes 4 negative.\nNodes 3 involved 1.\nNodes 1 negative.\nCRM 3 mm.\n",
+      "INPUT": "Oesophageal resection.\nAdenocarcinoma.\ninvades muscularis propria.\nCRM 5 mm.\nNodes 0 of 10 positive.\nNo pM1 disease.\n",
       "EXPECTED_CHECKS": [
-        "1 / 8 involved."
-      ]
-    },
-    {
-      "id": "GA_worst_pt",
-      "EXPECTED_DATASET": "gastrectomy",
-      "INPUT": "Total gastrectomy.\nGastric adenocarcinoma.\nT2 T3 T2 T4b.\nNeoadjuvant therapy no.\nMargins clear.\nNodes 0 of 10.\n",
-      "EXPECTED_CHECKS": [
-        "pT: T4b",
+        "pT: T2",
+        "0 / 10 involved.",
         "pN: N0"
       ]
     },
     {
-      "id": "GA_nodes_accum_1of8",
-      "EXPECTED_DATASET": "gastrectomy",
-      "INPUT": "Subtotal gastrectomy.\nGastric adenocarcinoma.\nT3.\nNodes 4 negative.\nNodes 3 involved 1.\nNodes 1 negative.\nMargins clear.\n",
+      "id": "OE_T2_2of10",
+      "EXPECTED_DATASET": "oesophagus",
+      "INPUT": "Oesophageal resection.\nAdenocarcinoma.\ninvades muscularis propria.\nCRM 5 mm.\nNodes 2 of 10 positive.\nNo pM1 disease.\n",
       "EXPECTED_CHECKS": [
-        "Total examined: 8.",
-        "Number positive: 1."
+        "pT: T2",
+        "2 / 10 involved.",
+        "pN: N1"
       ]
     },
     {
-      "id": "GIST_smoke",
+      "id": "OE_T3_0of10",
+      "EXPECTED_DATASET": "oesophagus",
+      "INPUT": "Oesophageal resection.\nAdenocarcinoma.\ninvades adventitia.\nCRM 5 mm.\nNodes 0 of 10 positive.\nNo pM1 disease.\n",
+      "EXPECTED_CHECKS": [
+        "pT: T3",
+        "0 / 10 involved.",
+        "pN: N0"
+      ]
+    },
+    {
+      "id": "OE_T3_2of10",
+      "EXPECTED_DATASET": "oesophagus",
+      "INPUT": "Oesophageal resection.\nAdenocarcinoma.\ninvades adventitia.\nCRM 5 mm.\nNodes 2 of 10 positive.\nNo pM1 disease.\n",
+      "EXPECTED_CHECKS": [
+        "pT: T3",
+        "2 / 10 involved.",
+        "pN: N1"
+      ]
+    },
+    {
+      "id": "OE_T4a_0of10",
+      "EXPECTED_DATASET": "oesophagus",
+      "INPUT": "Oesophageal resection.\nAdenocarcinoma.\ninvades pleura.\nCRM 5 mm.\nNodes 0 of 10 positive.\nNo pM1 disease.\n",
+      "EXPECTED_CHECKS": [
+        "pT: T4a",
+        "0 / 10 involved.",
+        "pN: N0"
+      ]
+    },
+    {
+      "id": "OE_T4a_2of10",
+      "EXPECTED_DATASET": "oesophagus",
+      "INPUT": "Oesophageal resection.\nAdenocarcinoma.\ninvades pleura.\nCRM 5 mm.\nNodes 2 of 10 positive.\nNo pM1 disease.\n",
+      "EXPECTED_CHECKS": [
+        "pT: T4a",
+        "2 / 10 involved.",
+        "pN: N1"
+      ]
+    },
+    {
+      "id": "OE_T4b_0of10",
+      "EXPECTED_DATASET": "oesophagus",
+      "INPUT": "Oesophageal resection.\nAdenocarcinoma.\ninvades aorta.\nCRM 5 mm.\nNodes 0 of 10 positive.\nNo pM1 disease.\n",
+      "EXPECTED_CHECKS": [
+        "pT: T4b",
+        "0 / 10 involved.",
+        "pN: N0"
+      ]
+    },
+    {
+      "id": "OE_T4b_2of10",
+      "EXPECTED_DATASET": "oesophagus",
+      "INPUT": "Oesophageal resection.\nAdenocarcinoma.\ninvades aorta.\nCRM 5 mm.\nNodes 2 of 10 positive.\nNo pM1 disease.\n",
+      "EXPECTED_CHECKS": [
+        "pT: T4b",
+        "2 / 10 involved.",
+        "pN: N1"
+      ]
+    },
+    {
+      "id": "OE_nodes_accumulate_5of12",
+      "EXPECTED_DATASET": "oesophagus",
+      "INPUT": "Oesophageal resection.\nAdenocarcinoma.\nt2, t3, t2.\n1/2 nodes, 2 nodes, 3 nodes, 4/5 nodes.\ncrm 5mm.\n",
+      "EXPECTED_CHECKS": [
+        "pT: T3",
+        "5 / 12 involved.",
+        "pN: N2"
+      ]
+    },
+    {
+      "id": "GA_T2_0of10",
+      "EXPECTED_DATASET": "gastrectomy",
+      "INPUT": "Subtotal gastrectomy.\nGastric adenocarcinoma.\nTumour invades muscularis propria.\nMargins clear.\nNodes 0 of 10 positive.\nNo pM1 disease.\n",
+      "EXPECTED_CHECKS": [
+        "pT: T2",
+        "Number positive: 0.",
+        "pN: N0"
+      ]
+    },
+    {
+      "id": "GA_T2_2of10",
+      "EXPECTED_DATASET": "gastrectomy",
+      "INPUT": "Subtotal gastrectomy.\nGastric adenocarcinoma.\nTumour invades muscularis propria.\nMargins clear.\nNodes 2 of 10 positive.\nNo pM1 disease.\n",
+      "EXPECTED_CHECKS": [
+        "pT: T2",
+        "Number positive: 2.",
+        "pN: N1"
+      ]
+    },
+    {
+      "id": "GA_T2_5of12",
+      "EXPECTED_DATASET": "gastrectomy",
+      "INPUT": "Subtotal gastrectomy.\nGastric adenocarcinoma.\nTumour invades muscularis propria.\nMargins clear.\nNodes 5 of 12 positive.\nNo pM1 disease.\n",
+      "EXPECTED_CHECKS": [
+        "pT: T2",
+        "Number positive: 5.",
+        "pN: N2"
+      ]
+    },
+    {
+      "id": "GA_T3_0of10",
+      "EXPECTED_DATASET": "gastrectomy",
+      "INPUT": "Subtotal gastrectomy.\nGastric adenocarcinoma.\nTumour invades beyond muscularis propria.\nMargins clear.\nNodes 0 of 10 positive.\nNo pM1 disease.\n",
+      "EXPECTED_CHECKS": [
+        "pT: T3",
+        "Number positive: 0.",
+        "pN: N0"
+      ]
+    },
+    {
+      "id": "GA_T3_2of10",
+      "EXPECTED_DATASET": "gastrectomy",
+      "INPUT": "Subtotal gastrectomy.\nGastric adenocarcinoma.\nTumour invades beyond muscularis propria.\nMargins clear.\nNodes 2 of 10 positive.\nNo pM1 disease.\n",
+      "EXPECTED_CHECKS": [
+        "pT: T3",
+        "Number positive: 2.",
+        "pN: N1"
+      ]
+    },
+    {
+      "id": "GA_T3_5of12",
+      "EXPECTED_DATASET": "gastrectomy",
+      "INPUT": "Subtotal gastrectomy.\nGastric adenocarcinoma.\nTumour invades beyond muscularis propria.\nMargins clear.\nNodes 5 of 12 positive.\nNo pM1 disease.\n",
+      "EXPECTED_CHECKS": [
+        "pT: T3",
+        "Number positive: 5.",
+        "pN: N2"
+      ]
+    },
+    {
+      "id": "GA_nodes_accumulate_5of12",
+      "EXPECTED_DATASET": "gastrectomy",
+      "INPUT": "Total gastrectomy.\nGastric adenocarcinoma.\nT2 T3 T2.\n1/2 nodes, 2 nodes, 3 nodes, 4/5 nodes.\nMargins clear.\n",
+      "EXPECTED_CHECKS": [
+        "pT: T3",
+        "Number positive: 5."
+      ]
+    },
+    {
+      "id": "GIST_smoke_1",
       "EXPECTED_DATASET": "gist",
-      "INPUT": "Gastrointestinal stromal tumour (GIST), wedge.\nTumour size 4.2 cm.\nMitotic count 3 per 5 mm2.\n",
+      "INPUT": "GIST, gastric wedge.\nTumour size 4.2 cm.\nMitotic count 3 per 5 mm2.\nMargins clear.\n",
       "EXPECTED_CHECKS": [
         "Gastrointestinal Stromal Tumour report",
         "Mitotic count: 3 /5 mm2"
+      ]
+    },
+    {
+      "id": "GIST_smoke_2",
+      "EXPECTED_DATASET": "gist",
+      "INPUT": "Gastrointestinal stromal tumour (GIST).\nTumour size 9 cm.\nMitotic count 15 per 5 mm2.\n",
+      "EXPECTED_CHECKS": [
+        "Gastrointestinal Stromal Tumour report"
       ]
     }
   ]

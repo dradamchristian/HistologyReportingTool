@@ -8,6 +8,8 @@
   function resetUI() {
     $("results").innerHTML = "";
     $("kpi").textContent = "0 passed • 0 failed • 0 warnings";
+    const b = $("bundle");
+    if (b) b.value = "";
   }
   function normalizeUrl(base, path) {
     base = (base || "").trim().replace(/\/+$/,"");
@@ -38,7 +40,7 @@
       const s = String(raw);
       if (s.startsWith("! ")) {
         const needle = s.slice(2).toLowerCase();
-        if (needle && t.includes(needle)) missing.push(raw); // treat as failure: forbidden string present
+        if (needle && t.includes(needle)) missing.push(raw); // forbidden string present
       } else {
         const needle = s.toLowerCase();
         if (needle && !t.includes(needle)) missing.push(raw);
@@ -83,6 +85,22 @@
     return { status: res.status, json };
   }
 
+  function appendToBundle({id, input, report, missing, ok}) {
+    const b = $("bundle");
+    if (!b) return;
+
+    const includePasses = $("bundlePasses")?.checked;
+    if (!includePasses && ok) return;
+
+    const header = `\n\n===== ${id} (${ok ? "PASS" : "FAIL"}) =====\n`;
+    const miss = missing?.length ? missing.join("\n") : "(none)";
+    b.value = (b.value || "") +
+      header +
+      "\nINPUT:\n" + input +
+      "\n\nMISSING/CHECKS FAILED:\n" + miss +
+      "\n\nOUTPUT:\n" + report + "\n";
+  }
+
   async function run() {
     stopRequested = false;
     $("runBtn").disabled = true;
@@ -124,16 +142,12 @@
 
         $("out-"+sid).textContent = report;
 
-        const b = document.getElementById("bundle");
-        if (b) {
-          const header = `\n\n===== ${sid} =====\n`;
-          b.value = (b.value || "") + header + report;
-        }
-
         const missing = evaluateChecks(report, c.EXPECTED_CHECKS || []);
         $("miss-"+sid).textContent = missing.length ? missing.join("\n") : "(none)";
 
         const ok = missing.length === 0;
+        appendToBundle({id:sid, input:c.INPUT||"", report, missing, ok});
+
         if (!ok) {
           failed += 1;
           statusEl.textContent = "FAIL";
@@ -144,7 +158,6 @@
           statusEl.className = "status good";
         }
 
-        // Optional dataset warning (soft)
         const datasetId = (resp?.json?.dataset_id || "").toLowerCase();
         const expected = String(c.EXPECTED_DATASET || "").toLowerCase();
         if (datasetId && expected && !datasetId.includes(expected)) {
@@ -159,6 +172,7 @@
         statusEl.className = "status bad";
         $("out-"+sid).textContent = String(e);
         $("miss-"+sid).textContent = "(error)";
+        appendToBundle({id:sid, input:c.INPUT||"", report:String(e), missing:["(error)"], ok:false});
         console.error(e);
       }
 

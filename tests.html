@@ -7,11 +7,11 @@
   <style>
     :root { --bg:#0b1020; --card:#111a33; --muted:#9fb0d0; --text:#e7eeff; --good:#2ee59d; --bad:#ff5570; --warn:#ffcc66; --border:rgba(255,255,255,0.10); }
     body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; background:radial-gradient(1200px 600px at 20% 0%, #1a2750 0%, var(--bg) 50%) fixed; color:var(--text); }
-    header { padding:18px 18px 8px 18px; max-width:1100px; margin:0 auto; }
+    header { padding:18px 18px 8px 18px; max-width:1200px; margin:0 auto; }
     h1 { margin:0 0 6px 0; font-size:20px; }
     p { margin:0 0 10px 0; color:var(--muted); line-height:1.4; }
-    .row { display:grid; grid-template-columns:1.3fr 1fr; gap:12px; max-width:1100px; margin:0 auto; padding:12px 18px 18px 18px; }
-    @media (max-width:900px){ .row{ grid-template-columns:1fr; } }
+    .row { display:grid; grid-template-columns:1.2fr 1fr; gap:12px; max-width:1200px; margin:0 auto; padding:12px 18px 18px 18px; }
+    @media (max-width:950px){ .row{ grid-template-columns:1fr; } }
     .card { background:rgba(17,26,51,0.75); border:1px solid var(--border); border-radius:14px; padding:14px; box-shadow:0 10px 30px rgba(0,0,0,0.25); backdrop-filter: blur(6px); }
     label { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
     input[type="text"]{ width:100%; box-sizing:border-box; padding:10px 10px; border-radius:10px; border:1px solid var(--border); background:rgba(0,0,0,0.2); color:var(--text); outline:none; }
@@ -28,13 +28,15 @@
     .status.good{ color:var(--good); } .status.bad{ color:var(--bad); } .status.warn{ color:var(--warn); }
     details{ margin-top:8px; } summary{ cursor:pointer; color:var(--muted); font-size:12px; }
     pre{ white-space:pre-wrap; word-break:break-word; background:rgba(0,0,0,0.25); padding:10px; border-radius:10px; border:1px solid var(--border); color:var(--text); font-size:12px; }
-    .kpi{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+    textarea{ width:100%; min-height:180px; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(0,0,0,0.2); color:var(--text); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px; box-sizing:border-box;}
+    .kpi{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; align-items:center;}
+    .toggle{ display:flex; gap:8px; align-items:center; color:var(--muted); font-size:12px; }
   </style>
 </head>
 <body>
   <header>
     <h1>Report Generator – Regression Tests</h1>
-    <p>Runs dictation-style inputs against your Netlify function and checks expected substrings. If clicking Run does nothing, your site likely blocks inline scripts via CSP—this v2 uses an external JS file.</p>
+    <p>Runs inputs against your Netlify function and checks expected substrings. Bundle box collects <b>failed</b> cases (input + missing checks + output) so you can paste them straight back into ChatGPT.</p>
   </header>
 
   <div class="row">
@@ -58,17 +60,18 @@
       <div style="margin-top:12px;">
         <label>Load testcases JSON (optional)</label>
         <input id="file" type="file" accept="application/json" />
-        <div class="small" style="margin-top:6px;">If you don’t load a file, we will fetch <code>/testcases.json</code> from this folder if present.</div>
+        <div class="small" style="margin-top:6px;">If you don’t load a file, we fetch <code>./testcases.json</code>.</div>
       </div>
 
       <div class="kpi">
         <button id="runBtn" class="btn primary">▶ Run tests</button>
         <button id="stopBtn" class="btn danger" disabled>■ Stop</button>
-        <button id="resetBtn" class="btn" type="button">↺ Reset results</button>
+        <button id="resetBtn" class="btn" type="button">↺ Reset</button>
+        <span class="toggle"><input id="bundlePasses" type="checkbox" /> Include passes in bundle</span>
       </div>
 
       <div class="small" style="margin-top:10px;">
-        Debug: open DevTools Console — this page logs fetch + errors.
+        Tip: DevTools → Network → click generate-report → Response to see full JSON.
       </div>
     </div>
 
@@ -78,11 +81,11 @@
         <div id="kpi" class="pill">0 passed • 0 failed • 0 warnings</div>
       </div>
       <div id="results" class="grid" style="margin-top:12px;"></div>
-      <div style="margin-top:12px;">
-        <div class="small" style="margin-bottom:6px;">Copyable bundle (all outputs):</div>
-        <textarea id="bundle" style="width:100%; min-height:140px; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(0,0,0,0.2); color:var(--text); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;" placeholder="Run tests to populate…"></textarea>
-      </div>
 
+      <div style="margin-top:12px;">
+        <div class="small" style="margin-bottom:6px;">Copy bundle (failed cases by default):</div>
+        <textarea id="bundle" placeholder="Run tests to populate…"></textarea>
+      </div>
     </div>
   </div>
 
