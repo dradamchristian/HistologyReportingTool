@@ -95,6 +95,15 @@ function extractNodeTallies(rawText) {
   let examined = 0;
   let positive = 0;
 
+
+// Pattern 0: "1/2 nodes" or "1 of 2 nodes"
+const p0 = /(\d+)\s*(?:\/|of)\s*(\d+)\s*nodes?\b/ig;
+let m0;
+while ((m0 = p0.exec(text)) !== null) {
+  positive += parseInt(m0[1],10);
+  examined += parseInt(m0[2],10);
+}
+
   const p1 = /\bnodes?\b[^\n\r]{0,40}?(\d+)\s*(?:\/|of)\s*(\d+)\b/ig;
   let m1;
   while ((m1 = p1.exec(text)) !== null) {
@@ -125,6 +134,18 @@ function extractNodeTallies(rawText) {
   while ((m4 = p4.exec(text)) !== null) {
     examined += parseInt(m4[1],10);
   }
+
+
+// Pattern 5: "2 nodes" (no explicit involved/positive/negative) => add examined only.
+// We skip counts that are part of a fraction like "1/2 nodes".
+const p5 = /\b(\d+)\s+nodes?\b/ig;
+let m5;
+while ((m5 = p5.exec(text)) !== null) {
+  const i = m5.index;
+  const prev = text.slice(Math.max(0, i-2), i);
+  if (prev.includes("/")) continue; // part of 1/2 nodes
+  examined += parseInt(m5[1],10);
+}
 
   if (examined === 0 && positive === 0) return { examined: null, positive: null, isFinal: false };
   return { examined, positive, isFinal: false };
@@ -840,7 +861,7 @@ if (datasetId === "colorectal_resection_rcpath_v1") {
       }
 
       // Staging + phrases (oesoph etc.)
-      extracted.pT = computePTFromText(rawText);
+      if (!extracted.pT || extracted.pT === "TX") extracted.pT = computePTFromText(rawText);
 extracted.depth_phrase = depthPhraseFromPT(extracted.pT);
 
 // Colorectal: derive local invasion pT + stage_pT from colorectal-specific wording
