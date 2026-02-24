@@ -950,6 +950,9 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
     }
 
     const forbidden = ["not stated", "derived from", "inferred", "assumed"];
+    // Re-apply accumulators at the end to override any later single-match parsing
+    applyAccumulators(rawText, schema, extracted);
+
     let report_text = renderTemplate(template, extracted)
       .split("\n")
       .filter(line => !forbidden.some(f => line.toLowerCase().includes(f)))
