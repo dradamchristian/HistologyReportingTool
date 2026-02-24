@@ -124,6 +124,12 @@
 
         $("out-"+sid).textContent = report;
 
+        const b = document.getElementById("bundle");
+        if (b) {
+          const header = `\n\n===== ${sid} =====\n`;
+          b.value = (b.value || "") + header + report;
+        }
+
         const missing = evaluateChecks(report, c.EXPECTED_CHECKS || []);
         $("miss-"+sid).textContent = missing.length ? missing.join("\n") : "(none)";
 

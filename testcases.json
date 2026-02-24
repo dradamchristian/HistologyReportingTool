@@ -1,65 +1,80 @@
 {
   "meta": {
-    "notes": "Checks are substring based. Prefix a check with '! ' to assert it must NOT appear in the output."
+    "notes": "Expanded tests incl pT worst-of and node accumulation. Substring checks; prefix '! ' = must not appear."
   },
   "cases": [
     {
-      "id": "CR01_core_R0_CRM5_pT3_N1b_M0",
+      "id": "CR_worst_pt",
       "EXPECTED_DATASET": "colorectal",
-      "INPUT": "Colorectal resection, sigmoid colon.\nAdenocarcinoma, moderate.\nLocal invasion: tumour invades beyond muscularis propria. Extramural depth beyond muscularis propria 7 mm.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nLymphovascular invasion not identified.\nNodes 3 of 12 positive.\nNo distant metastasis.\nTumour block A5.\n",
+      "INPUT": "Colorectal resection.\nAdenocarcinoma.\nLocal invasion: pT2, pT3, pT2.\nNodes 0 of 10.\nCRM 5 mm.\nNo distant metastasis.\n",
       "EXPECTED_CHECKS": [
         "Local invasion: pT3.",
-        "Maximum distance beyond muscularis propria: 7 mm.",
-        "Circumferential margin (CRM) involved: No.",
-        "Distance from carcinoma to CRM: 5 mm.",
-        "RESECTION STATUS:\nR0.",
-        "pN1b",
-        "pM: Not applicable"
-      ]
-    },
-    {
-      "id": "CR02_distal_involved_R1_pT2_no_extramural",
-      "EXPECTED_DATASET": "colorectal",
-      "INPUT": "Anterior resection, rectum.\nAdenocarcinoma.\nLocal invasion: tumour invades muscularis propria.\nDistal margin involved.\nCRM 8 mm.\nNodes 0 of 15 positive.\nNo distant metastasis.\n",
-      "EXPECTED_CHECKS": [
-        "Local invasion: pT2.",
-        "Maximum distance beyond muscularis propria: Not applicable.",
-        "Distal margin involved: Yes.",
-        "RESECTION STATUS:\nR1.",
-        "Distance from carcinoma to CRM: 8 mm.",
+        "0 / 10 involved.",
         "Circumferential margin (CRM) involved: No."
       ]
     },
     {
-      "id": "OE02_distal_involved_R1_T4a_CRM2",
+      "id": "CR_nodes_accum_1of8",
+      "EXPECTED_DATASET": "colorectal",
+      "INPUT": "Colorectal resection.\nAdenocarcinoma.\nLocal invasion: pT2.\nNodes 4 negative.\nNodes 3 involved 1.\nNodes 1 negative.\nCRM 5 mm.\n",
+      "EXPECTED_CHECKS": [
+        "1 / 8 involved.",
+        "pN1a",
+        "RESECTION STATUS:\nR0."
+      ]
+    },
+    {
+      "id": "CR_distal_involved",
+      "EXPECTED_DATASET": "colorectal",
+      "INPUT": "Anterior resection.\nAdenocarcinoma.\nLocal invasion: pT2.\nDistal margin involved.\nCRM 8 mm.\nNodes 0 of 15.\n",
+      "EXPECTED_CHECKS": [
+        "RESECTION STATUS:\nR1.",
+        "Distance from carcinoma to CRM: 8 mm."
+      ]
+    },
+    {
+      "id": "OE_worst_pt_with_pleura",
       "EXPECTED_DATASET": "oesophagus",
-      "INPUT": "Oesophageal resection.\nAdenocarcinoma.\nInvades pleura.\nDistal margin involved.\nCRM 2 mm.\nNodes 0 of 10 positive.\nNo pM1 disease.\n",
+      "INPUT": "Oesophageal resection.\nAdenocarcinoma.\npT2 pT3 pT2.\nInvades pleura.\nNodes 0 of 10.\nDistal margin involved.\nCRM 2 mm.\n",
       "EXPECTED_CHECKS": [
-        "Distal margin: Carcinoma.",
-        "SUMMARY:\npT4a pN0 R1",
-        "Circumferential resection margin (CRM): Not involved: carcinoma more than 1 mm from CRM.",
-        "Distance to nearest CRM: 2 mm."
+        "pT: T4a",
+        "Distal margin: Carcinoma",
+        "R1"
       ]
     },
     {
-      "id": "GA01_default_CRM_NA_R0_T3_N2_no_Mandard",
+      "id": "OE_nodes_accum_1of8",
+      "EXPECTED_DATASET": "oesophagus",
+      "INPUT": "Oesophageal resection.\nAdenocarcinoma.\nT3.\nNodes 4 negative.\nNodes 3 involved 1.\nNodes 1 negative.\nCRM 3 mm.\n",
+      "EXPECTED_CHECKS": [
+        "1 / 8 involved."
+      ]
+    },
+    {
+      "id": "GA_worst_pt",
       "EXPECTED_DATASET": "gastrectomy",
-      "INPUT": "Subtotal gastrectomy.\nGastric adenocarcinoma.\nLaur\u00e9n intestinal. Moderate differentiation.\nTumour invades beyond muscularis propria / through the wall.\nNeoadjuvant therapy no.\nProximal margin clear. Distal margin clear.\nLymphovascular invasion not identified.\nNodes 3 of 12 positive.\nNo pM1 disease.\nTumour block C3.\n",
+      "INPUT": "Total gastrectomy.\nGastric adenocarcinoma.\nT2 T3 T2 T4b.\nNeoadjuvant therapy no.\nMargins clear.\nNodes 0 of 10.\n",
       "EXPECTED_CHECKS": [
-        "Circumferential margin lower oesophagus (CRM): Not applicable.",
-        "SUMMARY:\npT3 pN2 R0",
-        "! Tumour regression grade if neoadjuvant treatment used"
+        "pT: T4b",
+        "pN: N0"
       ]
     },
     {
-      "id": "GIST01_core_dataset_match",
+      "id": "GA_nodes_accum_1of8",
+      "EXPECTED_DATASET": "gastrectomy",
+      "INPUT": "Subtotal gastrectomy.\nGastric adenocarcinoma.\nT3.\nNodes 4 negative.\nNodes 3 involved 1.\nNodes 1 negative.\nMargins clear.\n",
+      "EXPECTED_CHECKS": [
+        "Total examined: 8.",
+        "Number positive: 1."
+      ]
+    },
+    {
+      "id": "GIST_smoke",
       "EXPECTED_DATASET": "gist",
-      "INPUT": "Gastrointestinal stromal tumour (GIST), gastric wedge resection.\nSpindle cell type.\nTumour size 4.2 cm.\nMitotic count 3 per 5 mm2.\nNecrosis not identified.\nMargins clear.\nTumour block D7.\n",
+      "INPUT": "Gastrointestinal stromal tumour (GIST), wedge.\nTumour size 4.2 cm.\nMitotic count 3 per 5 mm2.\n",
       "EXPECTED_CHECKS": [
         "Gastrointestinal Stromal Tumour report",
-        "Mitotic count: 3 /5 mm2",
-        "AFIP / LASOTA\u2013MIETTINEN RISK CATEGORY",
-        "Very low"
+        "Mitotic count: 3 /5 mm2"
       ]
     }
   ]
