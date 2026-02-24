@@ -591,13 +591,21 @@ function computePNFromRules(rules, nodesPositive) {
 
 function derivePNFromSchema(schema, nodesPositive) {
   const n = Number(nodesPositive || 0);
-  const enums = schema?.properties?.pN?.enum || [];
+
+  // Prefer schema.properties.pN.enum; fall back to stage_pN enum (used by some datasets like colorectal)
+  const enums =
+    schema?.properties?.pN?.enum ||
+    schema?.properties?.stage_pN?.enum ||
+    null;
+
+  if (!Array.isArray(enums)) return null;
 
   // Colorectal-style enums (N1a/N1b/N1c/N2a/N2b)
   if (enums.some(e => String(e).includes("N1a")) || enums.some(e => String(e).includes("N2a"))) {
     if (n === 0) return "N0";
     if (n === 1) return "N1a";
     if (n >= 2 && n <= 3) return "N1b";
+    // N1c is tumour deposits without node mets; we can't infer reliably from node counts alone.
     if (n >= 4 && n <= 6) return "N2a";
     if (n >= 7) return "N2b";
     return "NX";
@@ -625,29 +633,27 @@ function derivePNFromSchema(schema, nodesPositive) {
   return null;
 }
 
+
 function finalizeStaging(schema, extracted) {
   const props = schema?.properties || {};
-  const nPos = (extracted.nodes_positive != null) ? extracted.nodes_positive
-            : (extracted.nodes_involved != null) ? extracted.nodes_involved
-            : (extracted.number_positive != null) ? extracted.number_positive
-            : null;
+  const nPos =
+    (extracted.nodes_positive != null) ? extracted.nodes_positive :
+    (extracted.nodes_involved != null) ? extracted.nodes_involved :
+    (extracted.number_positive != null) ? extracted.number_positive :
+    null;
+
   if (nPos == null) return;
 
-  // Derive pN from schema enums
-  if (props.pN) {
-    const derived = derivePNFromSchema(schema, nPos);
-    if (derived) {
-      extracted.pN = derived;
-      if (props.stage_pN) extracted.stage_pN = derived;
-    }
-  }
+  const derived = derivePNFromSchema(schema, nPos);
+  if (!derived) return;
 
-  // Colorectal templates sometimes use stage_pN even if pN isn't present
-  if (props.stage_pN && !props.pN) {
-    const derived = derivePNFromSchema(schema, nPos);
-    if (derived) extracted.stage_pN = derived;
-  }
+  if (props.pN) extracted.pN = derived;
+  if (props.stage_pN) extracted.stage_pN = derived;
+
+  // Some templates print "pN: {{stage_pN}}" but still want a pN-like value around
+  if (!props.pN) extracted.pN = derived;
 }
+
 
 
 
