@@ -71,19 +71,34 @@ async function copyOut(){
   const raw = $("output").textContent || "";
   if (!raw.trim()){ setStatus("Nothing to copy yet.", true); return; }
 
-  // Some systems (incl some LIMS) preserve line breaks better with CRLF
-  const txt = raw.replace(/\r?\n/g, "\r\n");
+  // Plain text: CRLF for Windows/LIMS friendliness
+  const plain = raw.replace(/\r?\n/g, "\r\n");
+
+  // HTML: preserve line breaks even if target prefers HTML clipboard
+  const esc = (s) => String(s).replace(/[&<>"]/g, ch => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"
+  }[ch]));
+  const html = `<pre style="margin:0;font-family:Consolas,Menlo,monospace;white-space:pre-wrap;">${esc(raw)}</pre>`;
 
   try {
-    // Modern clipboard API (works on HTTPS + user gesture)
-    await navigator.clipboard.writeText(txt);
-    setStatus("Copied to clipboard.");
+    // Best: write both MIME types
+    const item = new ClipboardItem({
+      "text/plain": new Blob([plain], { type: "text/plain" }),
+      "text/html":  new Blob([html],  { type: "text/html"  }),
+    });
+    await navigator.clipboard.write([item]);
+    setStatus("Copied to clipboard (LIMS-friendly).");
     return;
   } catch (err) {
-    // Fallback for stricter environments / older browsers
+    // Fallback: plain-text only (still CRLF)
     try {
+      await navigator.clipboard.writeText(plain);
+      setStatus("Copied to clipboard.");
+      return;
+    } catch (err2) {
+      // Last-resort fallback
       const ta = document.createElement("textarea");
-      ta.value = txt;
+      ta.value = plain;
       ta.setAttribute("readonly", "");
       ta.style.position = "fixed";
       ta.style.left = "-9999px";
@@ -93,12 +108,7 @@ async function copyOut(){
       ta.select();
       const ok = document.execCommand("copy");
       document.body.removeChild(ta);
-
-      if (!ok) throw new Error("execCommand copy failed");
-      setStatus("Copied to clipboard.");
-      return;
-    } catch (err2) {
-      setStatus("Copy failed — try selecting the output and copying manually.", true);
+      setStatus(ok ? "Copied to clipboard." : "Copy failed — select output and copy manually.", !ok);
     }
   }
 }
