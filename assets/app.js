@@ -71,40 +71,37 @@ async function copyOut(){
   const raw = $("output").textContent || "";
   if (!raw.trim()){ setStatus("Nothing to copy yet.", true); return; }
 
-  // Plain text (Windows newlines)
+  // Plain text: CRLF
   const plain = raw.replace(/\r?\n/g, "\r\n");
 
-  // RTF: use \par for line breaks (very Windows-control friendly)
-  const escRtf = (s) =>
-    String(s)
-      .replace(/\\/g, "\\\\")
-      .replace(/{/g, "\\{")
-      .replace(/}/g, "\\}")
-      .replace(/\r?\n/g, "\\par\n");
+  // HTML: Outlook-ish (div + <br>, no <pre>, minimal markup)
+  const escHtml = (s) => String(s).replace(/[&<>"]/g, ch => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"
+  }[ch]));
 
-  const rtf =
-    "{\\rtf1\\ansi\\deff0\n" +
-    "{\\fonttbl{\\f0\\fnil\\fcharset0 Consolas;}}\n" +
-    "\\f0\\fs20\n" +
-    escRtf(raw) +
-    "\n}";
+  // Preserve blank lines by turning empty lines into &nbsp;
+  const htmlLines = raw
+    .replace(/\r/g, "")
+    .split("\n")
+    .map(line => line.length ? escHtml(line) : "&nbsp;")
+    .join("<br>");
 
-  // Try to write BOTH formats (preferred)
+  const html = `<div>${htmlLines}</div>`;
+
   try {
     await navigator.clipboard.write([
       new ClipboardItem({
         "text/plain": new Blob([plain], { type: "text/plain" }),
-        "text/rtf":   new Blob([rtf],   { type: "text/rtf" }),
+        "text/html":  new Blob([html],  { type: "text/html"  }),
       })
     ]);
-    setStatus("Copied to clipboard (LIMS-friendly).");
+    setStatus("Copied to clipboard (Outlook-style).");
     return;
   } catch (err) {
-    // Fallback: plain text only
+    // Fallback to plain text CRLF
     try {
       await navigator.clipboard.writeText(plain);
-      setStatus("Copied (plain text).");
-      return;
+      setStatus("Copied to clipboard (plain text).");
     } catch {
       setStatus("Copy failed — select output and copy manually.", true);
     }
