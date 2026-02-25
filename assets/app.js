@@ -71,45 +71,39 @@ async function copyOut(){
   const raw = $("output").textContent || "";
   if (!raw.trim()){ setStatus("Nothing to copy yet.", true); return; }
 
-  // Plain text: CRLF for Windows/LIMS friendliness
-  const plain = raw.replace(/\r?\n/g, "\r\n");
+  // Plain text with Windows line endings
+  const txt = raw.replace(/\r?\n/g, "\r\n");
 
-  // HTML: preserve line breaks even if target prefers HTML clipboard
-  const esc = (s) => String(s).replace(/[&<>"]/g, ch => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"
-  }[ch]));
-  const html = `<pre style="margin:0;font-family:Consolas,Menlo,monospace;white-space:pre-wrap;">${esc(raw)}</pre>`;
-
+  // Prefer the "textarea selection" method: many LIMS controls preserve CRLF best from this
   try {
-    // Best: write both MIME types
-    const item = new ClipboardItem({
-      "text/plain": new Blob([plain], { type: "text/plain" }),
-      "text/html":  new Blob([html],  { type: "text/html"  }),
-    });
-    await navigator.clipboard.write([item]);
-    setStatus("Copied to clipboard (LIMS-friendly).");
-    return;
-  } catch (err) {
-    // Fallback: plain-text only (still CRLF)
-    try {
-      await navigator.clipboard.writeText(plain);
-      setStatus("Copied to clipboard.");
+    const ta = document.createElement("textarea");
+    ta.value = txt;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    ta.style.top = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+
+    if (ok) {
+      setStatus("Copied to clipboard (plain text).");
       return;
-    } catch (err2) {
-      // Last-resort fallback
-      const ta = document.createElement("textarea");
-      ta.value = plain;
-      ta.setAttribute("readonly", "");
-      ta.style.position = "fixed";
-      ta.style.left = "-9999px";
-      ta.style.top = "0";
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      const ok = document.execCommand("copy");
-      document.body.removeChild(ta);
-      setStatus(ok ? "Copied to clipboard." : "Copy failed — select output and copy manually.", !ok);
     }
+    // If execCommand fails, fall through to clipboard API
+  } catch (e) {
+    // fall through
+  }
+
+  // Fallback: modern clipboard API (still plain text CRLF)
+  try {
+    await navigator.clipboard.writeText(txt);
+    setStatus("Copied to clipboard (plain text).");
+  } catch (err) {
+    setStatus("Copy failed — select the output and copy manually.", true);
   }
 }
 
