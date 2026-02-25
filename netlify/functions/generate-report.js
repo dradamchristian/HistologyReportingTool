@@ -770,7 +770,7 @@ exports.handler = async (event) => {
       };
 
       const ac = new AbortController();
-      const tmr = setTimeout(() => ac.abort(), 9000);
+      const tmr = setTimeout(() => ac.abort(), 20000);
 
       const resp = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
