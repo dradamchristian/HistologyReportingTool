@@ -963,8 +963,15 @@ if (datasetId === "colorectal_resection_rcpath_v1") {
         else extracted.circumferential_margin_status = "Not involved: carcinoma more than 1 mm from CRM";
       }
 
-      // Staging + phrases (oesoph etc.)
-      if (!extracted.pT || extracted.pT === "TX") extracted.pT = computePTFromText(rawText);
+ // --------------------------
+// Staging + phrases (oesophagus / gastric etc.)
+// --------------------------
+const ptFromText = computePTFromText(rawText);
+
+// If free text contains a meaningful pT cue, override schema defaults (which may be T3)
+if (ptFromText && ptFromText !== "TX") extracted.pT = ptFromText;
+
+// Keep your existing generic phrase (some templates use this)
 extracted.depth_phrase = depthPhraseFromPT(extracted.pT);
 
 // Colorectal: derive local invasion pT + stage_pT from colorectal-specific wording
@@ -975,6 +982,25 @@ if (datasetId === "colorectal_resection_rcpath_v1") {
     extracted.stage_pT = colT;
   }
 
+// Oesophagus: keep category + phrase in sync with pT (overrides schema defaults)
+if (datasetId === "oesophagus_resection_rcpath_v3_microscopy") {
+  if (extracted.pT === "T2") {
+    extracted.depth_of_invasion_category = "Invasion of muscularis propria";
+    extracted.depth_of_invasion_phrase = "T2 (Invasion of muscularis propria.)";
+  } else if (extracted.pT === "T3") {
+    extracted.depth_of_invasion_category = "Invasion beyond muscularis propria";
+    extracted.depth_of_invasion_phrase = "T3 (Invasion beyond muscularis propria.)";
+  } else if (extracted.pT === "T4a") {
+    extracted.depth_of_invasion_category = "Invades pleura, pericardium or diaphragm";
+    extracted.depth_of_invasion_phrase = "T4a (Invades pleura, pericardium or diaphragm.)";
+  } else if (extracted.pT === "T4b") {
+    extracted.depth_of_invasion_category = "Invades aorta, vertebrae or trachea";
+    extracted.depth_of_invasion_phrase = "T4b (Invades aorta, vertebrae or trachea.)";
+  } else if (extracted.pT === "TX") {
+    extracted.depth_of_invasion_phrase = "TX (Depth of invasion cannot be assessed from the description.)";
+  }
+}
+  
   // Extramural depth beyond muscularis: only applicable for pT3+
   const ptVal = String(extracted.local_invasion_pT || "").toLowerCase();
   if (ptVal && (ptVal.startsWith("pt3") || ptVal.startsWith("pt4"))) {
