@@ -71,42 +71,45 @@ async function copyOut(){
   const raw = $("output").textContent || "";
   if (!raw.trim()){ setStatus("Nothing to copy yet.", true); return; }
 
-  // Plain text with Windows line endings
-  const txt = raw.replace(/\r?\n/g, "\r\n");
+  // Plain text (Windows newlines)
+  const plain = raw.replace(/\r?\n/g, "\r\n");
 
-  // Prefer the "textarea selection" method: many LIMS controls preserve CRLF best from this
+  // RTF: use \par for line breaks (very Windows-control friendly)
+  const escRtf = (s) =>
+    String(s)
+      .replace(/\\/g, "\\\\")
+      .replace(/{/g, "\\{")
+      .replace(/}/g, "\\}")
+      .replace(/\r?\n/g, "\\par\n");
+
+  const rtf =
+    "{\\rtf1\\ansi\\deff0\n" +
+    "{\\fonttbl{\\f0\\fnil\\fcharset0 Consolas;}}\n" +
+    "\\f0\\fs20\n" +
+    escRtf(raw) +
+    "\n}";
+
+  // Try to write BOTH formats (preferred)
   try {
-    const ta = document.createElement("textarea");
-    ta.value = txt;
-    ta.setAttribute("readonly", "");
-    ta.style.position = "fixed";
-    ta.style.left = "-9999px";
-    ta.style.top = "0";
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-
-    const ok = document.execCommand("copy");
-    document.body.removeChild(ta);
-
-    if (ok) {
-      setStatus("Copied to clipboard (plain text).");
-      return;
-    }
-    // If execCommand fails, fall through to clipboard API
-  } catch (e) {
-    // fall through
-  }
-
-  // Fallback: modern clipboard API (still plain text CRLF)
-  try {
-    await navigator.clipboard.writeText(txt);
-    setStatus("Copied to clipboard (plain text).");
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        "text/plain": new Blob([plain], { type: "text/plain" }),
+        "text/rtf":   new Blob([rtf],   { type: "text/rtf" }),
+      })
+    ]);
+    setStatus("Copied to clipboard (LIMS-friendly).");
+    return;
   } catch (err) {
-    setStatus("Copy failed — select the output and copy manually.", true);
+    // Fallback: plain text only
+    try {
+      await navigator.clipboard.writeText(plain);
+      setStatus("Copied (plain text).");
+      return;
+    } catch {
+      setStatus("Copy failed — select output and copy manually.", true);
+    }
   }
 }
-
 $("btnDictate").addEventListener("click", () => { dictating ? stopDictation() : startDictation(); });
 $("btnGenerate").addEventListener("click", generate);
 $("btnClear").addEventListener("click", () => { stopDictation(); finalText=""; $("inputText").value=""; $("output").textContent=""; $("caveatsBox").style.display="none"; setStatus(""); });
