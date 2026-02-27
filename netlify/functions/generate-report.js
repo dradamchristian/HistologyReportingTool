@@ -748,6 +748,7 @@ function lgiNormalizeToken(tok) {
   if (t === "ne" || t === "not excised" || t === "cannot be guaranteed" || t === "excision cannot be guaranteed") return "ne";
 
   if (t === "dys" || t === "dysplasia") return "dys";
+  if (t === "hg" || t === "high grade") return "HGD";
   if (t === "hgd" || t === "high grade dysplasia") return "HGD";
   if (t === "inv" || t === "invasive" || t === "invasive carcinoma" || t === "malignancy") return "inv";
 
@@ -875,6 +876,7 @@ function lgiRenderPart(p) {
 
   // Polyp
   if (polypType) {
+    const isAdenoma = ["TA","TVA","V","TSA"].includes(polypType);
     const typePhrase =
       polypType === "TA" ? "tubular adenoma" :
       polypType === "TVA" ? "tubulovillous adenoma" :
@@ -885,18 +887,31 @@ function lgiRenderPart(p) {
       "polyp";
 
     const sizePhrase = size ? `${size.replace("mm"," mm")} ` : "";
-    let s = `${p.label} (${site}): ${sizePhrase}${typePhrase}`;
+    const grade = isAdenoma ? (dys === "HGD" ? "high-grade" : "low-grade") : "";
+
+    // First sentence
+    let s = `${p.label} (${site}): Colonic mucosa contains a ${sizePhrase}${grade ? grade + " " : ""}${typePhrase}`;
     if (exc === "e") s += " which appears excised.";
     else if (exc === "ne") s += ". Excision cannot be guaranteed.";
     else s += ".";
-    if (dys === "HGD") s += " High-grade dysplasia is identified.";
-    else if (dys === "dys") s += " Dysplasia is identified.";
-    else {
-      // default negatives
-      if (["SSL","HP","TSA"].includes(polypType)) s += " No dysplasia is identified.";
+
+    // Dysplasia statements
+    if (isAdenoma) {
+      if (grade === "high-grade") s += " High-grade dysplasia is identified.";
+      else s += " Low-grade dysplasia is identified.";
+      if (!inv) {
+        if (grade === "high-grade") s += " No invasive malignancy is identified.";
+        else s += " No high-grade dysplasia or invasive malignancy is identified.";
+      }
+      else s += " Invasive malignancy is identified.";
+    } else {
+      if (dys === "HGD") s += " Dysplasia is identified.";
+      else if (dys === "dys") s += " Dysplasia is identified.";
+      else s += " No dysplasia is identified.";
+      if (!inv) s += " No invasive malignancy is identified.";
+      else s += " Invasive malignancy is identified.";
     }
-    if (!inv) s += " No invasive malignancy is identified.";
-    else s += " Invasive malignancy is identified.";
+
     return s;
   }
 
