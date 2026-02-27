@@ -971,6 +971,7 @@ function lgiBuildConclusion(parts) {
 function lgiProcess(rawText) {
   const segs0 = lgiSplitSegments(rawText);
   const segs = [];
+
   for (const s of segs0) {
     const exp = lgiExpandRangeShortcut(s);
     if (exp) segs.push(...exp);
@@ -979,23 +980,37 @@ function lgiProcess(rawText) {
 
   const parts = [];
   for (const s of segs) {
-    const p = lgiParseLine(s);
-    if (p) parts.push(p);
+    const parsed = lgiParseLine(s);
+    if (parsed) parts.push(parsed);
   }
 
-  // If user used range shortcut without sites, ensure we still render parts
-  const partsText = parts
-    .map(p => String(lgiRenderPart(p) || "").replace(/\r/g, "").trim())
-    .filter(Boolean)
-    .join("\n\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-  const conclusion = String(lgiBuildConclusion(parts) || "").replace(/\r/g, "").trim();
-  const conclusion = String(lgiBuildConclusion(parts) || "").trim();
+  // Render each specimen safely
+  const renderedParts = parts
+    .map(p => {
+      try {
+        return String(lgiRenderPart(p) || "").trim();
+      } catch (e) {
+        return "";
+      }
+    })
+    .filter(Boolean);
 
-  return { parts_text: partsText, conclusion_text: conclusion };
+  const partsText = renderedParts.join("\n\n");
+
+  const conclusionText = String(lgiBuildConclusion(parts) || "").trim();
+
+  let output = partsText;
+
+  if (conclusionText) {
+    output += "\n\nCONCLUSION:\n" + conclusionText;
+  }
+
+  // 🔒 Hard clamp spacing globally (prevents triple gaps forever)
+  output = output.replace(/\r/g, "");
+  output = output.replace(/\n{3,}/g, "\n\n");
+
+  return output.trim() + "\n";
 }
-
 function applyKeywordShortReport(extracted, rawText) {
   const lt = String(rawText || "").toLowerCase();
 
