@@ -416,14 +416,22 @@ function lgiSplitSegments(rawText) {
 }
 
 function lgiExpandRangeShortcut(seg) {
-  const m = String(seg || "").match(/^([A-Z])\s*-\s*([A-Z])\s*[:\-]?\s*(.*)$/);
+  // Only match A-D where D is a single letter and NOT followed by another capital
+  const m = String(seg || "").match(
+    /^([A-Z])\s*-\s*([A-Z])(?=\s|$|:|-)\s*[:\-]?\s*(.*)$/
+  );
   if (!m) return null;
+
   const a = m[1].charCodeAt(0);
   const b = m[2].charCodeAt(0);
   if (b < a) return null;
+
   const rest = (m[3] || "").trim() || "n";
+
   const out = [];
-  for (let c = a; c <= b; c++) out.push(String.fromCharCode(c) + " - " + rest);
+  for (let c = a; c <= b; c++) {
+    out.push(String.fromCharCode(c) + " - " + rest);
+  }
   return out;
 }
 
