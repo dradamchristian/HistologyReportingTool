@@ -969,45 +969,48 @@ function lgiBuildConclusion(parts) {
 }
 
 function lgiProcess(rawText) {
+  // 1) Split into segments (handles multi-line, semicolons, and ", B -" style)
   const segs0 = lgiSplitSegments(rawText);
-  const segs = [];
 
+  // 2) Expand shortcuts like "A-D n" into A/B/C/D
+  const segs = [];
   for (const s of segs0) {
     const exp = lgiExpandRangeShortcut(s);
-    if (exp) segs.push(...exp);
+    if (Array.isArray(exp) && exp.length) segs.push(...exp);
     else segs.push(s);
   }
 
+  // 3) Parse each segment into a structured part object
   const parts = [];
   for (const s of segs) {
     const parsed = lgiParseLine(s);
     if (parsed) parts.push(parsed);
   }
 
-  // Render each specimen safely
+  // 4) Render each part into a single paragraph line
   const renderedParts = parts
-    .map(p => {
-      try {
-        return String(lgiRenderPart(p) || "").trim();
-      } catch (e) {
-        return "";
-      }
-    })
+    .map(p => String(lgiRenderPart(p) || "").replace(/\r/g, "").trim())
     .filter(Boolean);
 
-  const partsText = renderedParts.join("\n\n");
+  const partsText = renderedParts.join("\n\n"); // exactly ONE blank line between specimens
 
-  const conclusionText = String(lgiBuildConclusion(parts) || "").trim();
+  // 5) Build conclusion from the structured parts
+  const conclusionText = String(lgiBuildConclusion(parts) || "").replace(/\r/g, "").trim();
 
-  let output = partsText;
+  // 6) Assemble final output
+  let output = "";
+  if (partsText) output += partsText;
 
   if (conclusionText) {
-    output += "\n\nCONCLUSION:\n" + conclusionText;
+    if (output) output += "\n\n";
+    output += "CONCLUSION:\n" + conclusionText;
   }
 
-  // 🔒 Hard clamp spacing globally (prevents triple gaps forever)
-  output = output.replace(/\r/g, "");
+  // 7) Clamp any accidental whitespace blow-ups
   output = output.replace(/\n{3,}/g, "\n\n");
+
+  // If everything is empty (shouldn't happen often), return a safe minimal string
+  if (!output.trim()) return "CONCLUSION:\n[No LGI content parsed]\n";
 
   return output.trim() + "\n";
 }
