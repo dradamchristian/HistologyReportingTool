@@ -983,6 +983,21 @@ function lgiProcess(rawText) {
     if (p) parts.push(p);
   }
 
+function lgiProcess(rawText) {
+  const segs0 = lgiSplitSegments(rawText);
+  const segs = [];
+  for (const s of segs0) {
+    const exp = lgiExpandRangeShortcut(s);
+    if (exp) segs.push(...exp);
+    else segs.push(s);
+  }
+
+  const parts = [];
+  for (const s of segs) {
+    const p = lgiParseLine(s);
+    if (p) parts.push(p);
+  }
+
   // If user used range shortcut without sites, ensure we still render parts
  const partsText = parts
   .map(p => p.trim())
@@ -992,6 +1007,8 @@ function lgiProcess(rawText) {
 return partsText.trim() + "\n\n" + conclusionText.trim() + "\n";
 }
 
+function applyKeywordShortReport(extracted, rawText) {
+  const lt = String(rawText || "").toLowerCase();
 function applyKeywordShortReport(extracted, rawText) {
   const lt = String(rawText || "").toLowerCase();
 
