@@ -769,7 +769,11 @@ function lgiSplitSegments(rawText) {
   body = body.replace(/^\s*lgi\s*:\s*/i, "");
   body = body.replace(/\r/g, "\n");
 
-  // Allow inline "A - ..." separated by semicolons
+  // People will separate parts with newlines, semicolons, or commas:
+  //   "A - ...; B - ..."  OR  "A - ..., B - ..."  OR each on its own line.
+  // Only treat commas as separators when they precede another specimen label.
+  body = body.replace(/,\s*(?=[A-Z]\s*-\s*)/g, "; ");
+
   const parts = body
     .split(/[\n;]+/)
     .map(s => s.trim())
