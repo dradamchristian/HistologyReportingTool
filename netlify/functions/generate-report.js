@@ -1,216 +1,45 @@
-const ENGINE_VERSION = "accumulators-fixed6-lgi4";
 const fs = require("fs");
 const path = require("path");
 
 
-function setFirstExisting(extracted, schema, keys, value) {
-  const props = schema?.properties || {};
-  for (const k of keys) {
-    if (props[k]) { extracted[k] = value; return k; }
+
+function lgiProcess(rawText) {
+  const segs0 = lgiSplitSegments(rawText);
+
+  const segs = [];
+  for (const s of segs0) {
+    const exp = lgiExpandRangeShortcut(s);
+    if (Array.isArray(exp) && exp.length) segs.push(...exp);
+    else segs.push(s);
   }
-  return null;
-}
 
-function mapToEnum(schema, field, desired) {
-  const enums = schema?.properties?.[field]?.enum || null;
-  if (!enums) return desired;
-  if (enums.includes(desired)) return desired;
-
-  const d = String(desired || "").toLowerCase();
-  const pick = (cands) => cands.find(x => enums.includes(x));
-
-  if (d === "involved") return pick(["Carcinoma","Involved","Yes","Positive","Present"]) || desired;
-  if (d === "normal") return pick(["Normal","Not involved","No","Negative","Uninvolved","Clear"]) || desired;
-  return desired;
-}
-
-
-/** ============================
- *  Accumulators (pT + nodes)
- *  ============================
- *  - Multiple pT mentions anywhere in dictation -> take WORST stage.
- *  - Multiple node tallies -> sum examined + positive (only when 'node(s)' is mentioned nearby).
- *  - Optional explicit overrides:
- *      - "final pT3" / "overall pT3"
- *      - "final nodes 1/8" / "overall nodes 1 of 8"
- */
-
-const PT_RANK = new Map([
-  ["TX", 0],
-  ["T0", 1],
-  ["Tis", 2],
-  ["T1", 3], ["T1a", 4], ["T1b", 5],
-  ["T2", 6],
-  ["T3", 7],
-  ["T4a", 8],
-  ["T4b", 9],
-]);
-
-function normalizePTToken(tok) {
-  if (!tok) return null;
-  let t = String(tok).trim();
-  t = t.replace(/^(?:yp|y|p)\s*/i, ""); // strip prefixes
-  if (/^TIS$/i.test(t)) return "Tis";
-  if (/^TX$/i.test(t)) return "TX";
-  if (/^T0$/i.test(t)) return "T0";
-  const m = t.match(/^(T\d)([ab])?$/i);
-  if (m) return m[1].toUpperCase() + (m[2] ? m[2].toLowerCase() : "");
-  const m4 = t.match(/^T4([ab])$/i);
-  if (m4) return "T4" + m4[1].toLowerCase();
-  return t;
-}
-
-function worstPT(tokens) {
-  let best = "TX";
-  let bestRank = PT_RANK.get(best) || 0;
-  for (const tok of (tokens || [])) {
-    const n = normalizePTToken(tok);
-    const r = PT_RANK.get(n);
-    if (r != null && r > bestRank) { best = n; bestRank = r; }
+  const parts = [];
+  for (const s of segs) {
+    const parsed = lgiParseLine(s);
+    if (parsed) parts.push(parsed);
   }
-  return best;
-}
 
-function extractPTCandidates(rawText) {
-  const text = rawText || "";
-  const finals = text.match(/\b(?:final|overall)\s+(?:y?\s*p?)?T(?:is|[0-4](?:a|b)?)\b/ig);
-  if (finals && finals.length) {
-    const last = finals[finals.length - 1];
-    const mm = last.match(/T(?:is|[0-4](?:a|b)?)/i);
-    return { candidates: [mm ? mm[0] : "TX"], isFinal: true };
-  }
-  const out = [];
-  const rx = /\b(?:y?p)?T(?:is|[0-4](?:a|b)?)\b/ig;
-  let m;
-  while ((m = rx.exec(text)) !== null) out.push(m[0]);
-  return { candidates: out, isFinal: false };
-}
-
-function extractNodeTallies(rawText) {
-  const text = rawText || "";
-  const lower = text.toLowerCase();
-
-  // explicit override: "final nodes 1/8" / "overall nodes 1 of 8"
-  const fm = lower.match(/\b(?:final|overall)\s+nodes?\s*(\d+)\s*(?:\/|of)\s*(\d+)\b/);
-  if (fm) return { examined: parseInt(fm[2], 10), positive: parseInt(fm[1], 10), isFinal: true };
-
-  let examined = 0;
-  let positive = 0;
-
-  // Split into small clauses to prevent double-counting within a phrase like "1/2 nodes"
-  const clauses = text
-    .replace(/\r/g, "\n")
-    .replace(/[;]+/g, ".")
-    .replace(/[,\n]+/g, ".")
-    .split(".")
-    .map(s => s.trim())
+  const renderedParts = parts
+    .map(p => String(lgiRenderPart(p) || "").replace(/\r/g, "").trim())
     .filter(Boolean);
 
-  for (const clause of clauses) {
-    const c = clause.toLowerCase();
-    if (!c.includes("node")) continue;
+  const partsText = renderedParts.join("\n");
+  const conclusionText = String(lgiBuildConclusion(parts) || "").replace(/\r/g, "").trim();
 
-    // Prefer fraction-style: "1/2 nodes", "1 of 2 nodes", "nodes 1/2", "nodes 1 of 2"
-    let m = clause.match(/(\d+)\s*(?:\/|of)\s*(\d+)\s*nodes?\b/i) ||
-            clause.match(/\bnodes?\b[^\d]{0,10}(\d+)\s*(?:\/|of)\s*(\d+)\b/i);
-    if (m) {
-      positive += parseInt(m[1], 10);
-      examined += parseInt(m[2], 10);
-      continue; // don't also count the "2 nodes" part again
-    }
+  let output = "";
+  if (partsText) output += partsText;
 
-    // "3/12 involved" with node context in the same clause
-    m = clause.match(/(\d+)\s*\/\s*(\d+)\s*(?:involved|positive)\b/i);
-    if (m) {
-      positive += parseInt(m[1], 10);
-      examined += parseInt(m[2], 10);
-      continue;
-    }
-
-    // "nodes 4 involved 1" / "4 nodes involved 1"
-    m = clause.match(/\bnodes?\b[^\d]{0,10}(\d+)[^\d]{0,20}(?:involved|positive)\s*(\d+)\b/i) ||
-        clause.match(/(\d+)\s*nodes?\b[^\d]{0,20}(?:involved|positive)\s*(\d+)\b/i);
-    if (m) {
-      examined += parseInt(m[1], 10);
-      positive += parseInt(m[2], 10);
-      continue;
-    }
-
-    // "nodes 4 negative" / "4 nodes negative"
-    m = clause.match(/\bnodes?\b[^\d]{0,10}(\d+)\s*(?:all\s+)?(?:negative|clear|uninvolved)\b/i) ||
-        clause.match(/(\d+)\s*nodes?\s*(?:all\s+)?(?:negative|clear|uninvolved)\b/i);
-    if (m) {
-      examined += parseInt(m[1], 10);
-      continue;
-    }
-
-    // As a last resort: "2 nodes" / "nodes 2" => examined-only
-    m = clause.match(/\bnodes?\b[^\d]{0,10}(\d+)\b/i) ||
-        clause.match(/(\d+)\s*nodes?\b/i);
-    if (m) {
-      examined += parseInt(m[1], 10);
-      continue;
-    }
+  if (conclusionText) {
+    if (output) output += "\n\n";
+    output += "CONCLUSION:\n" + conclusionText;
   }
 
-  if (examined === 0 && positive === 0) return { examined: null, positive: null, isFinal: false };
-  return { examined, positive, isFinal: false };
+  output = output.replace(/\n{3,}/g, "\n\n");
+  output = output.replace(/\n/g, "\r\n");
+
+  if (!output.trim()) return "CONCLUSION:\r\n[No LGI content parsed]\r\n";
+  return output.trim() + "\r\n";
 }
-
-
-function applyAccumulators(rawText, schema, extracted) {
-  const props = schema?.properties || {};
-
-  const ptInfo = extractPTCandidates(rawText);
-  if (ptInfo.candidates.length) {
-    const worst = worstPT(ptInfo.candidates);
-
-    if (props.local_invasion_pT) extracted.local_invasion_pT = "p" + worst;
-    if (props.stage_pT) extracted.stage_pT = worst;
-    if (props.pT) extracted.pT = worst;
-  }
-
-  const nodeInfo = extractNodeTallies(rawText);
-  if (nodeInfo.examined != null) {
-    // Common field names across datasets
-    if (props.nodes_examined) extracted.nodes_examined = nodeInfo.examined;
-    if (props.nodes_positive) extracted.nodes_positive = nodeInfo.positive;
-
-    if (props.nodes_total) extracted.nodes_total = nodeInfo.examined;
-    if (props.nodes_involved) extracted.nodes_involved = nodeInfo.positive;
-
-    if (props.total_examined) extracted.total_examined = nodeInfo.examined;
-    if (props.number_positive) extracted.number_positive = nodeInfo.positive;
-
-    // Heuristic fallback: set the first schema field that looks like total/examined nodes, and the first that looks like positive/involved nodes.
-    const keys = Object.keys(props);
-
-    const examinedKey = keys.find(k => {
-      const s = k.toLowerCase();
-      if (!(s.includes("node") || s.includes("nodes"))) return false;
-      if (s.includes("positive") || s.includes("involved")) return false;
-      return s.includes("exam") || s.includes("total") || s.includes("present") || s.includes("retriev") || s.includes("count");
-// Derive pN from schema enums (prevents dataset rules mis-mapping)
-if (props.pN) {
-  const derived = derivePNFromSchema(schema, nodeInfo.positive);
-  if (derived) {
-    extracted.pN = derived;
-    if (props.stage_pN) extracted.stage_pN = derived;
-  }
-}
-  });
-
-    const positiveKey = keys.find(k => {
-      const s = k.toLowerCase();
-      if (!(s.includes("node") || s.includes("nodes"))) return false;
-      return s.includes("positive") || s.includes("involved");
-    });
-
-    if (examinedKey && extracted[examinedKey] == null) extracted[examinedKey] = nodeInfo.examined;
-    if (positiveKey && extracted[positiveKey] == null) extracted[positiveKey] = nodeInfo.positive;
-  }
-}
-
 
 function jsonResp(statusCode, obj) {
   return {
@@ -240,19 +69,7 @@ function listDatasetManifests() {
 }
 
 function pickDataset(text, manifests) {
-  const raw = String(text || "");
-  const t = raw.toLowerCase();
-
-  // Hard routing for shorthand biopsy modes
-  if (/^\s*lgi\s*:/i.test(raw)) {
-    const hit = manifests.find(mm => mm.id === "lgi_biopsy_shorthand_v1");
-    if (hit) return { id: hit.id, manifest: hit, score: 999 };
-  }
-  if (/^\s*ugi\s*:/i.test(raw)) {
-    const hit = manifests.find(mm => mm.id === "ugi_biopsy_shorthand_v1");
-    if (hit) return { id: hit.id, manifest: hit, score: 999 };
-  }
-
+  const t = (text || "").toLowerCase();
   let best = null;
 
   for (const m of manifests) {
@@ -528,67 +345,15 @@ function parseMarginStatus(text, which) {
   return null;
 }
 
-
-function computeColorectalLocalPTFromText(text) {
-  const t = (text || "").toLowerCase();
-
-  // T4b: direct invasion of other organs/structures
-  if (/(invad|invasion).{0,40}(other organ|adjacent organ|bladder|uterus|vagina|prostate|seminal vesicle|small bowel|abdominal wall)/i.test(t)) return "T4b";
-
-  // T4a: peritoneal surface/serosa
-  if (/(serosa|serosal|peritoneal surface|visceral peritoneum|penetrates peritoneum)/i.test(t)) return "T4a";
-
-  // T3: beyond muscularis propria (extramural)
-  if (/(beyond muscularis propria|through the wall|transmural|extramural|pericolic fat|perirectal fat)/i.test(t)) return "T3";
-
-  // T2: muscularis propria
-  if (/muscularis propria/i.test(t)) return "T2";
-
-  // T1: submucosa
-  if (/submucosa/i.test(t)) return "T1";
-
-  // fallback
-  return null;
-}
-
-function parseBeyondMPDistanceMm(text) {
-  const t = String(text || "");
-  // Look for an explicit association with beyond muscularis / extramural depth
-  const re = /(beyond\s+muscularis\s+propria|beyond\s+mp|extramural\s+(depth|spread)|distance\s+beyond\s+muscularis)[^\d]{0,40}(\d+(?:\.\d+)?)\s*mm/i;
-  const m = t.match(re);
-  if (!m) return null;
-  return m[3]; // return as string to match colorectal schema
-}
-
-function parseCrmDistanceMmColorectal(text) {
-  const t = String(text || "");
-  const m = t.match(/\bcrm\b[^\d]{0,40}(\d+(?:\.\d+)?)\s*mm/i);
-  if (!m) return null;
-  return m[1]; // as string
-}
 function computePTFromText(text) {
   const t = (text || "").toLowerCase();
-
-  // Oesophagus-specific advanced invasion triggers (TNM 9 style)
-  // T4a: pleura / pericardium / diaphragm
-  if (t.includes("pleura") || t.includes("pericard") || t.includes("diaphragm")) return "T4a";
-
-  // T4b: invasion of adjacent structures (common dictation cues)
-  if (t.includes("aorta") || t.includes("trachea") || t.includes("bronch") || t.includes("vertebr") || t.includes("heart")) return "T4b";
-
-  // Generic: through the wall / beyond muscularis propria etc.
   if (t.includes("beyond muscularis propria") || t.includes("through the wall") || t.includes("through wall") ||
       t.includes("beyond the wall") || t.includes("through muscularis propria") || t.includes("adventitia")) return "T3";
-
   if (t.includes("within the wall") || t.includes("into the wall") || t.includes("muscularis propria")) return "T2";
-
   return "TX";
 }
 
-
 function depthPhraseFromPT(pT) {
-  if (pT === "T4b") return "Tumour invades adjacent structures.";
-  if (pT === "T4a") return "Tumour invades pleura/pericardium/diaphragm.";
   if (pT === "T3") return "Invasion beyond muscularis propria.";
   if (pT === "T2") return "Invasion into muscularis propria.";
   return "Depth of invasion cannot be assessed from the description.";
@@ -600,74 +365,6 @@ function computePNFromRules(rules, nodesPositive) {
   for (const band of mapping) if (n >= band.min && n <= band.max) return band.set;
   return "NX";
 }
-
-function derivePNFromSchema(schema, nodesPositive) {
-  const n = Number(nodesPositive || 0);
-
-  // Prefer schema.properties.pN.enum; fall back to stage_pN enum (used by some datasets like colorectal)
-  const enums =
-    schema?.properties?.pN?.enum ||
-    schema?.properties?.stage_pN?.enum ||
-    null;
-
-  if (!Array.isArray(enums)) return null;
-
-  // Colorectal-style enums (N1a/N1b/N1c/N2a/N2b)
-  if (enums.some(e => String(e).includes("N1a")) || enums.some(e => String(e).includes("N2a"))) {
-    if (n === 0) return "N0";
-    if (n === 1) return "N1a";
-    if (n >= 2 && n <= 3) return "N1b";
-    // N1c is tumour deposits without node mets; we can't infer reliably from node counts alone.
-    if (n >= 4 && n <= 6) return "N2a";
-    if (n >= 7) return "N2b";
-    return "NX";
-  }
-
-  // Gastric-style enums (N3a/N3b present)
-  if (enums.some(e => String(e).includes("N3a")) || enums.some(e => String(e).includes("N3b"))) {
-    if (n === 0) return "N0";
-    if (n >= 1 && n <= 2) return "N1";
-    if (n >= 3 && n <= 6) return "N2";
-    if (n >= 7 && n <= 15) return "N3a";
-    if (n >= 16) return "N3b";
-    return "NX";
-  }
-
-  // Oesophagus-style enums (N0/N1/N2/N3 only)
-  if (enums.includes("N0") && enums.includes("N1") && enums.includes("N2") && enums.includes("N3") && !enums.some(e => String(e).includes("N1a"))) {
-    if (n === 0) return "N0";
-    if (n >= 1 && n <= 2) return "N1";
-    if (n >= 3 && n <= 6) return "N2";
-    if (n >= 7) return "N3";
-    return "NX";
-  }
-
-  return null;
-}
-
-
-function finalizeStaging(schema, extracted) {
-  const props = schema?.properties || {};
-  const nPos =
-    (extracted.nodes_positive != null) ? extracted.nodes_positive :
-    (extracted.nodes_involved != null) ? extracted.nodes_involved :
-    (extracted.number_positive != null) ? extracted.number_positive :
-    null;
-
-  if (nPos == null) return;
-
-  const derived = derivePNFromSchema(schema, nPos);
-  if (!derived) return;
-
-  if (props.pN) extracted.pN = derived;
-  if (props.stage_pN) extracted.stage_pN = derived;
-
-  // Some templates print "pN: {{stage_pN}}" but still want a pN-like value around
-  if (!props.pN) extracted.pN = derived;
-}
-
-
-
 
 function computeRStatusFromRules(rules, record) {
   const triggers = rules?.r_status_rules?.R1_if_any || [];
@@ -695,325 +392,6 @@ function buildCaveats(extracted, datasetId) {
 }
 
 // Pipeline: keyword-based short report (gallbladder)
-// ------------------------
-// LGI biopsy shorthand (deterministic, no LLM)
-// Triggered by text starting with "LGI:"
-// Format: "LGI: A - <site> <tokens>; B - <site> <tokens>"
-// Also supports range shortcut: "LGI: A-D n" (generic normal for A..D)
-// ------------------------
-
-const LGI_SITE_ALIASES = new Map([
-  ["ti", "Terminal ileum"], ["terminalileum", "Terminal ileum"], ["terminal", "Terminal ileum"], ["ileum", "Terminal ileum"],
-  ["cae", "Caecum"], ["cecum", "Caecum"], ["caecum", "Caecum"],
-  ["asc", "Ascending colon"], ["ascending", "Ascending colon"],
-  ["tra", "Transverse colon"], ["transverse", "Transverse colon"],
-  ["des", "Descending colon"], ["descending", "Descending colon"],
-  ["sig", "Sigmoid colon"], ["sigmoid", "Sigmoid colon"],
-  ["rec", "Rectum"], ["rectum", "Rectum"], ["rectal", "Rectum"],
-  ["colon", "Colon"]
-]);
-
-function lgiNormalizeToken(tok) {
-  if (!tok) return null;
-  let t = String(tok).trim().toLowerCase();
-  if (!t) return null;
-  t = t.replace(/[()]/g, "");
-  // collapse phrases
-  t = t.replace(/\s+/g, " ");
-  if (["n","normal","wnl","within normal limits","no abnormality"].includes(t)) return "n";
-
-  if (t === "ad" || t === "architectural distortion" || t === "distortion") return "ad";
-  if (t === "bp" || t === "basal plasmacytosis") return "bp";
-
-  if (t === "cryp" || t === "cryptitis") return "cryp";
-  if (t === "absc" || t === "crypt abscess" || t === "crypt abscesses") return "absc";
-  if (t === "gran" || t === "granuloma" || t === "granulomas") return "gran";
-
-  if (t === "isch" || t === "ischaemia" || t === "ischemia" || t === "ischaemic" || t === "ischemic") return "isch";
-  if (t === "wither" || t === "withered crypts" || t === "withered") return "wither";
-
-  if (t === "cmv" || t === "cytomegalovirus") return "cmv";
-  if (t === "drug" || t === "drug effect" || t === "medication" || t === "medication related") return "drug";
-  if (t === "eos" || t === "eosinophils" || t === "eosinophilia") return "eos";
-
-  // polyp types (short + full)
-  if (t === "ta" || t === "tubular adenoma") return "TA";
-  if (t === "tva" || t === "tubulovillous adenoma") return "TVA";
-  if (t === "v" || t === "villous adenoma" || t === "villous") return "V";
-  if (t === "hp" || t === "hyperplastic polyp" || t === "hyperplastic") return "HP";
-  if (t === "ssl" || t === "sessile serrated lesion" || t === "sessile serrated") return "SSL";
-  if (t === "tsa" || t === "traditional serrated adenoma") return "TSA";
-
-  if (t === "e" || t === "excised" || t === "excision complete") return "e";
-  if (t === "ne" || t === "not excised" || t === "cannot be guaranteed" || t === "excision cannot be guaranteed") return "ne";
-
-  if (t === "dys" || t === "dysplasia") return "dys";
-  if (t === "hg" || t === "high grade") return "HGD";
-  if (t === "hgd" || t === "high grade dysplasia") return "HGD";
-  if (t === "inv" || t === "invasive" || t === "invasive carcinoma" || t === "malignancy") return "inv";
-
-  // size token: 3mm / 12 mm
-  const mm = t.match(/^(\d+(?:\.\d+)?)\s*mm$/);
-  if (mm) return mm[1] + "mm";
-
-  return t;
-}
-
-function lgiParseSite(siteTok) {
-  if (!siteTok) return "Colon";
-  const raw = String(siteTok).trim().toLowerCase().replace(/\s+/g, "");
-  return LGI_SITE_ALIASES.get(raw) || (siteTok.trim().charAt(0).toUpperCase() + siteTok.trim().slice(1));
-}
-
-function lgiSplitSegments(rawText) {
-  let body = String(rawText || "");
-  body = body.replace(/^\s*lgi\s*:\s*/i, "");
-  body = body.replace(/\r/g, "\n");
-
-  // People will separate parts with newlines, semicolons, or commas:
-  //   "A - ...; B - ..."  OR  "A - ..., B - ..."  OR each on its own line.
-  // Only treat commas as separators when they precede another specimen label.
-  body = body.replace(/,\s*(?=[A-Z]\s*-\s*)/g, "; ");
-
-  const parts = body
-    .split(/[\n;]+/)
-    .map(s => s.trim())
-    .filter(Boolean);
-
-  return parts;
-}
-
-function lgiExpandRangeShortcut(seg) {
-  // e.g. "A-D n" or "A - D n"
-  const m = seg.match(/^([A-Z])\s*-\s*([A-Z])\s*(.*)$/);
-  if (!m) return null;
-  const a = m[1].charCodeAt(0);
-  const b = m[2].charCodeAt(0);
-  if (b < a) return null;
-  const tail = (m[3] || "").trim();
-  const tokens = tail ? tail : "n";
-  const out = [];
-  for (let c=a; c<=b; c++){
-    out.push(String.fromCharCode(c) + " - " + tokens);
-  }
-  return out;
-}
-
-function lgiParseLine(line) {
-  // Standard: "A - rectum ad cryp cmv" OR shortcut-expanded "A - n"
-  const mm = line.match(/^([A-Z])\s*-\s*(.*)$/);
-  if (!mm) return null;
-  const label = mm[1];
-  let rest = (mm[2] || "").trim();
-  if (!rest) rest = "n";
-
-  // Tokenize by commas + spaces, but keep phrases "withered crypts"
-  rest = rest.replace(/,/g, " ");
-  const rawToks = rest.split(/\s+/).filter(Boolean);
-
-  // If first token looks like a site, use it; otherwise default to colon.
-  let site = "Colon";
-  let startIdx = 0;
-
-  if (rawToks.length) {
-    const maybeSite = rawToks[0];
-    const normSite = maybeSite.toLowerCase();
-    if (LGI_SITE_ALIASES.has(normSite) || LGI_SITE_ALIASES.has(normSite.replace(/\s+/g,"")) || ["ti","ileum","rectum","sigmoid","caecum","cecum","colon"].includes(normSite)) {
-      site = lgiParseSite(maybeSite);
-      startIdx = 1;
-    } else if (rawToks.length >= 2) {
-      // handle "terminal ileum"
-      const two = (rawToks[0] + " " + rawToks[1]).toLowerCase();
-      if (two === "terminal ileum") {
-        site = "Terminal ileum";
-        startIdx = 2;
-      }
-    }
-  }
-
-  // re-join for phrase matching
-  const joined = rawToks.slice(startIdx).join(" ").toLowerCase();
-  const phraseTokens = [];
-  if (joined.includes("withered crypt")) phraseTokens.push("withered crypts");
-  // split remaining
-  const toks = [];
-  for (const pt of phraseTokens) {
-    // remove phrase from joined by marking; we will also add its normalized token
-    toks.push(pt);
-  }
-  for (const t of rawToks.slice(startIdx)) toks.push(t);
-
-  const norm = toks.map(lgiNormalizeToken).filter(Boolean);
-
-  return { label, site, tokens: norm };
-}
-
-function lgiRenderPart(p) {
-  const site = p.site;
-  const toks = new Set(p.tokens);
-
-  // Polyp object detection
-  const size = p.tokens.find(t => /mm$/.test(t) && /^\d/.test(t)) || "";
-  const polypType = p.tokens.find(t => ["TA","TVA","V","HP","SSL","TSA"].includes(t)) || "";
-  const exc = toks.has("e") ? "e" : toks.has("ne") ? "ne" : "";
-  const dys = toks.has("HGD") ? "HGD" : toks.has("dys") ? "dys" : "";
-  const inv = toks.has("inv");
-
-  const hasIsch = toks.has("isch") || toks.has("wither");
-  const hasCmv = toks.has("cmv");
-  const hasDrug = toks.has("drug") || toks.has("eos");
-  const hasChronic = toks.has("ad") || toks.has("bp");
-  const hasActive = toks.has("cryp") || toks.has("absc");
-  const hasGran = toks.has("gran");
-
-  // Normal
-  if (toks.has("n") && !polypType && !hasIsch && !hasCmv && !hasDrug && !hasChronic && !hasActive && !hasGran) {
-    if (site === "Terminal ileum") {
-      return `${p.label} (${site}): Small bowel mucosa is within normal limits. No active ileitis is seen.`;
-    }
-    return `${p.label} (${site}): Colonic mucosa is within normal limits. No active colitis is seen.`;
-  }
-
-  // Polyp
-  if (polypType) {
-    const isAdenoma = ["TA","TVA","V","TSA"].includes(polypType);
-    const typePhrase =
-      polypType === "TA" ? "tubular adenoma" :
-      polypType === "TVA" ? "tubulovillous adenoma" :
-      polypType === "V" ? "villous adenoma" :
-      polypType === "HP" ? "hyperplastic polyp" :
-      polypType === "SSL" ? "sessile serrated lesion" :
-      polypType === "TSA" ? "traditional serrated adenoma" :
-      "polyp";
-
-    const sizePhrase = size ? `${size.replace("mm"," mm")} ` : "";
-    const grade = isAdenoma ? (dys === "HGD" ? "high-grade" : "low-grade") : "";
-
-    // First sentence
-    let s = `${p.label} (${site}): Colonic mucosa contains a ${sizePhrase}${grade ? grade + " " : ""}${typePhrase}`;
-    if (exc === "e") s += " which appears excised.";
-    else if (exc === "ne") s += ". Excision cannot be guaranteed.";
-    else s += ".";
-
-    // Dysplasia statements
-    if (isAdenoma) {
-      if (grade === "high-grade") s += " High-grade dysplasia is identified.";
-      else s += " Low-grade dysplasia is identified.";
-      if (!inv) {
-        if (grade === "high-grade") s += " No invasive malignancy is identified.";
-        else s += " No high-grade dysplasia or invasive malignancy is identified.";
-      }
-      else s += " Invasive malignancy is identified.";
-    } else {
-      if (dys === "HGD") s += " Dysplasia is identified.";
-      else if (dys === "dys") s += " Dysplasia is identified.";
-      else s += " No dysplasia is identified.";
-      if (!inv) s += " No invasive malignancy is identified.";
-      else s += " Invasive malignancy is identified.";
-    }
-
-    return s;
-  }
-
-  // Inflammatory patterns
-  let s = `${p.label} (${site}): `;
-  if (hasIsch) {
-    s += "Features are in keeping with ischaemic-type mucosal injury";
-    if (toks.has("wither")) s += " including withered crypts";
-    s += ".";
-    if (!hasChronic && !hasGran) s += " No dysplasia or malignancy is identified.";
-    return s;
-  }
-
-  const bits = [];
-  if (hasChronic) bits.push("architectural distortion");
-  if (hasActive) bits.push(toks.has("absc") ? "cryptitis and crypt abscesses" : "cryptitis");
-  if (hasGran) bits.push("granulomas");
-  if (bits.length) {
-    s += "Colonic mucosa shows " + bits.join(" with ") + ".";
-  } else {
-    s += "Colonic mucosa shows non-specific inflammatory changes.";
-  }
-
-  if (hasCmv) s += " CMV infection is suspected; correlate with immunohistochemistry.";
-  if (hasDrug) s += " Features of drug-related injury are considered in the differential diagnosis.";
-  s += " There is no dysplasia or malignancy.";
-  return s;
-}
-
-function lgiBuildConclusion(parts) {
-  const allTokens = new Set();
-  for (const p of parts) for (const t of p.tokens) allTokens.add(t);
-
-  const hasIsch = allTokens.has("isch") || allTokens.has("wither");
-  const hasCmv = allTokens.has("cmv");
-  const hasDrug = allTokens.has("drug") || allTokens.has("eos");
-  const hasChronic = allTokens.has("ad") || allTokens.has("bp");
-  const hasActive = allTokens.has("cryp") || allTokens.has("absc");
-  const hasGran = allTokens.has("gran");
-  const hasPolyp = [...allTokens].some(t => ["TA","TVA","V","HP","SSL","TSA"].includes(t));
-
-  // Priority: ischemia -> CMV -> IBD -> acute -> polyp -> normal
-  if (hasIsch && !hasChronic && !hasGran) return "Features are in keeping with ischaemic-type mucosal injury. Correlate clinically/endoscopically.";
-  if (hasCmv) {
-    if (hasChronic) return "Features are in keeping with chronic colitis with superimposed CMV infection suspected. Correlate clinically and perform CMV immunohistochemistry as appropriate.";
-    return "CMV infection is suspected. Correlate clinically and perform CMV immunohistochemistry as appropriate.";
-  }
-  if (hasChronic || hasGran) {
-    if (hasGran) return "Features are in keeping with chronic colitis; inflammatory bowel disease is favoured (Crohn disease is suggested by granulomas). Correlate clinically/endoscopically.";
-    return "Features are in keeping with chronic colitis; inflammatory bowel disease is favoured. Correlate clinically/endoscopically.";
-  }
-  if (hasActive) return "Features are in keeping with active colitis without convincing chronicity. Correlate clinically (infective/drug-related causes may be considered).";
-  if (hasPolyp) return "Biopsies show a polyp/adenoma as described. Background mucosa is otherwise unremarkable.";
-  return "No histological evidence of colitis. No features of microscopic colitis are identified.";
-}
-
-function lgiProcess(rawText) {
-  // 1) Split into segments (handles multi-line, semicolons, and ", B -" style)
-  const segs0 = lgiSplitSegments(rawText);
-
-  // 2) Expand shortcuts like "A-D n" into A/B/C/D
-  const segs = [];
-  for (const s of segs0) {
-    const exp = lgiExpandRangeShortcut(s);
-    if (Array.isArray(exp) && exp.length) segs.push(...exp);
-    else segs.push(s);
-  }
-
-  // 3) Parse each segment into a structured part object
-  const parts = [];
-  for (const s of segs) {
-    const parsed = lgiParseLine(s);
-    if (parsed) parts.push(parsed);
-  }
-
-  // 4) Render each part into a single paragraph line
-  const renderedParts = parts
-    .map(p => String(lgiRenderPart(p) || "").replace(/\r/g, "").trim())
-    .filter(Boolean);
-
-  const partsText = renderedParts.join("\n\n"); // exactly ONE blank line between specimens
-
-  // 5) Build conclusion from the structured parts
-  const conclusionText = String(lgiBuildConclusion(parts) || "").replace(/\r/g, "").trim();
-
-  // 6) Assemble final output
-  let output = "";
-  if (partsText) output += partsText;
-
-  if (conclusionText) {
-    if (output) output += "\n\n";
-    output += "CONCLUSION:\n" + conclusionText;
-  }
-
-  // 7) Clamp any accidental whitespace blow-ups
-  output = output.replace(/\n{3,}/g, "\n\n");
-
-  // If everything is empty (shouldn't happen often), return a safe minimal string
-  if (!output.trim()) return "CONCLUSION:\n[No LGI content parsed]\n";
-
-  return output.trim() + "\n";
-}
 function applyKeywordShortReport(extracted, rawText) {
   const lt = String(rawText || "").toLowerCase();
 
@@ -1060,15 +438,21 @@ exports.handler = async (event) => {
     const manifest = picked.manifest;
     const { schema, rules, template } = readDatasetFiles(datasetId);
 
+// --- LGI shorthand: render report directly (bypass template rendering) ---
+if (datasetId === "lgi_biopsy_shorthand_v1") {
+  const report_text = lgiProcess(rawText);
+  return jsonResp(200, {
+    report_text,
+    caveats: [`Dataset selected: ${datasetId}.`],
+    dataset_id: datasetId,
+    engine_version: ENGINE_VERSION
+  });
+}
+
+
     let extracted = {};
 
-    if (manifest.pipeline?.mode === "lgi_shorthand_v1") {
-      extracted = applyDefaults(schema, {});
-      const out = lgiProcess(rawText);
-      extracted.parts_text = out.parts_text;
-      extracted.conclusion_text = out.conclusion_text;
-
-    } else if (manifest.pipeline?.mode === "keyword_short_report") {
+    if (manifest.pipeline?.mode === "keyword_short_report") {
       extracted = applyDefaults(schema, {});
       applyKeywordShortReport(extracted, rawText);
 
@@ -1126,9 +510,6 @@ exports.handler = async (event) => {
       if (!extracted0) return jsonResp(500, { error: "Model did not return valid JSON.", model_output: content });
 
       extracted = applyDefaults(schema, extracted0);
-
-      // Apply accumulators: multiple pT mentions + multiple node tallies
-      applyAccumulators(rawText, schema, extracted);
 
       // --------------------------
       // GIST deterministic staging + AFIP + site/specimen hardening
@@ -1258,78 +639,24 @@ exports.handler = async (event) => {
       }
 
       const prox = parseMarginStatus(rawText, "proximal");
-const dist = parseMarginStatus(rawText, "distal");
+      const dist = parseMarginStatus(rawText, "distal");
+      if (prox) extracted.proximal_margin_status = prox;
+      if (dist) extracted.distal_margin_status = dist;
 
-// Dataset-aware margin assignment
-if (datasetId === "colorectal_resection_rcpath_v1") {
-  // Colorectal uses Yes/No flags
-  if (prox) extracted.longitudinal_margin_involved = (prox === "Involved") ? "Yes" : "No";
-  if (dist) extracted.distal_margin_involved = (dist === "Involved") ? "Yes" : "No";
-} else {
-  // Oesophagus/gastrectomy style categorical margins
-  if (prox) {
-    const k = setFirstExisting(extracted, schema, ["proximal_margin","proximal_margin_status"], null);
-    if (k) extracted[k] = mapToEnum(schema, k, prox);
-  }
-  if (dist) {
-    const k = setFirstExisting(extracted, schema, ["distal_margin","distal_margin_status"], null);
-    if (k) extracted[k] = mapToEnum(schema, k, dist);
-  }
-}
+      const crmDist = parseCrmDistanceMm(rawText);
+      if (crmDist !== null && Number.isFinite(crmDist)) extracted.distance_to_crm_mm = crmDist;
 
-      // CRM distance
-if (datasetId === "colorectal_resection_rcpath_v1") {
-  const crmDistStr = parseCrmDistanceMmColorectal(rawText);
-  if (crmDistStr !== null) {
-    extracted.distance_to_crm_mm = crmDistStr;
-    const crmNumCol = Number(crmDistStr);
-    if (Number.isFinite(crmNumCol)) {
-      extracted.circumferential_margin_involved = (crmNumCol < 1) ? "Yes" : "No";
-    }
-  }
-} else {
-  const crmDist = parseCrmDistanceMm(rawText);
-  if (crmDist !== null && Number.isFinite(crmDist)) extracted.distance_to_crm_mm = crmDist;
-}
-
-      const crmRaw = extracted.distance_to_crm_mm;
-      const crmNum = (crmRaw === null || crmRaw === undefined || String(crmRaw).trim() === "") ? NaN : Number(crmRaw);
+      const crmNum = Number(extracted.distance_to_crm_mm);
       if (Number.isFinite(crmNum)) {
-        // Use enum-aligned strings (no trailing full stop)
-        if (crmNum < 1) extracted.circumferential_margin_status = "Involved: carcinoma within 1 mm of CRM";
-        else extracted.circumferential_margin_status = "Not involved: carcinoma more than 1 mm from CRM";
+        if (crmNum < 1) extracted.circumferential_margin_status = "Involved: carcinoma within 1 mm of CRM.";
+        else extracted.circumferential_margin_status = "Not involved: carcinoma more than 1 mm from CRM.";
       }
 
       // Staging + phrases (oesoph etc.)
-      if (!extracted.pT || extracted.pT === "TX") extracted.pT = computePTFromText(rawText);
-extracted.depth_phrase = depthPhraseFromPT(extracted.pT);
-
-// Colorectal: derive local invasion pT + stage_pT from colorectal-specific wording
-if (datasetId === "colorectal_resection_rcpath_v1") {
-  const colT = computeColorectalLocalPTFromText(rawText); // returns e.g. T3
-  if (colT) {
-    extracted.local_invasion_pT = "p" + colT;
-    extracted.stage_pT = colT;
-  }
-
-  // Extramural depth beyond muscularis: only applicable for pT3+
-  const ptVal = String(extracted.local_invasion_pT || "").toLowerCase();
-  if (ptVal && (ptVal.startsWith("pt3") || ptVal.startsWith("pt4"))) {
-    const beyond = parseBeyondMPDistanceMm(rawText);
-    if (beyond !== null) extracted.max_distance_beyond_muscularis_mm = beyond;
-  } else {
-    extracted.max_distance_beyond_muscularis_mm = "Not applicable";
-  }
-
-  // Stage_pM from distant metastasis flag if present
-  const dm = String(extracted.distant_metastasis_confirmed || "").toLowerCase();
-  extracted.stage_pM = dm.includes("yes") ? "M1" : "Not applicable";
-}
+      extracted.pT = computePTFromText(rawText);
+      extracted.depth_phrase = depthPhraseFromPT(extracted.pT);
       extracted.pN = computePNFromRules(rules, extracted.nodes_positive);
-if (datasetId === "colorectal_resection_rcpath_v1") {
-  extracted.stage_pN = extracted.pN;
-}
-extracted.r_status = computeRStatusFromRules(rules, extracted);
+      extracted.r_status = computeRStatusFromRules(rules, extracted);
 
       extracted.mandard_descriptor = mandardDescriptor(rules, extracted.tumour_regression_grade);
       if (String(extracted.tumour_regression_grade || "").trim()) {
@@ -1370,31 +697,15 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
     }
 
     const forbidden = ["not stated", "derived from", "inferred", "assumed"];
-    // Re-apply accumulators at the end to override any later single-match parsing
-    applyAccumulators(rawText, schema, extracted);
-    finalizeStaging(schema, extracted);
-
     let report_text = renderTemplate(template, extracted)
       .split("\n")
       .filter(line => !forbidden.some(f => line.toLowerCase().includes(f)))
       .join("\n");
 
-    // Clamp excessive blank lines (especially for LGI multi-specimen output)
-    report_text = report_text.replace(/\n{3,}/g, "\n\n");
-
-
     return jsonResp(200, {
       report_text,
       caveats: buildCaveats(extracted, datasetId),
-      dataset_id: datasetId,
-      engine_version: ENGINE_VERSION,
-      debug: {
-        nodes_examined: extracted.nodes_examined,
-        nodes_positive: extracted.nodes_positive,
-        pN: extracted.pN,
-        stage_pN: extracted.stage_pN,
-        schema_pN_enum: schema?.properties?.pN?.enum || null
-      }
+      dataset_id: datasetId
     });
 
   } catch (e) {
