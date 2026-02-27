@@ -1,3 +1,4 @@
+const ENGINE_VERSION = "lgi-prefix-override-fixed4";
 const fs = require("fs");
 const path = require("path");
 
