@@ -1,4 +1,4 @@
-const ENGINE_VERSION = "accumulators-fixed6-lgi3";
+const ENGINE_VERSION = "accumulators-fixed6-lgi4";
 const fs = require("fs");
 const path = require("path");
 
@@ -985,9 +985,12 @@ function lgiProcess(rawText) {
 
   // If user used range shortcut without sites, ensure we still render parts
   const partsText = parts
-    .map(p => String(lgiRenderPart(p) || "").trim())
+    .map(p => String(lgiRenderPart(p) || "").replace(/\r/g, "").trim())
     .filter(Boolean)
-    .join("\n\n");
+    .join("\n\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  const conclusion = String(lgiBuildConclusion(parts) || "").replace(/\r/g, "").trim();
   const conclusion = String(lgiBuildConclusion(parts) || "").trim();
 
   return { parts_text: partsText, conclusion_text: conclusion };
@@ -1356,7 +1359,11 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
     let report_text = renderTemplate(template, extracted)
       .split("\n")
       .filter(line => !forbidden.some(f => line.toLowerCase().includes(f)))
-      .join("\n\n");
+      .join("\n");
+
+    // Clamp excessive blank lines (especially for LGI multi-specimen output)
+    report_text = report_text.replace(/\n{3,}/g, "\n\n");
+
 
     return jsonResp(200, {
       report_text,
