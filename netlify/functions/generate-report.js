@@ -1,46 +1,6 @@
 const fs = require("fs");
 const path = require("path");
 
-
-
-function lgiProcess(rawText) {
-  const segs0 = lgiSplitSegments(rawText);
-
-  const segs = [];
-  for (const s of segs0) {
-    const exp = lgiExpandRangeShortcut(s);
-    if (Array.isArray(exp) && exp.length) segs.push(...exp);
-    else segs.push(s);
-  }
-
-  const parts = [];
-  for (const s of segs) {
-    const parsed = lgiParseLine(s);
-    if (parsed) parts.push(parsed);
-  }
-
-  const renderedParts = parts
-    .map(p => String(lgiRenderPart(p) || "").replace(/\r/g, "").trim())
-    .filter(Boolean);
-
-  const partsText = renderedParts.join("\n");
-  const conclusionText = String(lgiBuildConclusion(parts) || "").replace(/\r/g, "").trim();
-
-  let output = "";
-  if (partsText) output += partsText;
-
-  if (conclusionText) {
-    if (output) output += "\n\n";
-    output += "CONCLUSION:\n" + conclusionText;
-  }
-
-  output = output.replace(/\n{3,}/g, "\n\n");
-  output = output.replace(/\n/g, "\r\n");
-
-  if (!output.trim()) return "CONCLUSION:\r\n[No LGI content parsed]\r\n";
-  return output.trim() + "\r\n";
-}
-
 function jsonResp(statusCode, obj) {
   return {
     statusCode,
@@ -422,6 +382,222 @@ function applyKeywordShortReport(extracted, rawText) {
   extracted.malignancy = ((lt.includes("malign") || lt.includes("carcinoma") || lt.includes("cancer")) && !lt.includes("no malignancy")) ? "Yes" : "No";
 }
 
+// ===========================
+// LGI biopsy shorthand module
+// ===========================
+const LGI_SITE_ALIASES = new Map([
+  ["ti", "Terminal ileum"], ["terminal", "Terminal ileum"], ["ileum", "Terminal ileum"], ["terminalileum", "Terminal ileum"],
+  ["cae", "Caecum"], ["caecum", "Caecum"], ["cecum", "Caecum"],
+  ["asc", "Ascending colon"], ["ascending", "Ascending colon"],
+  ["hep", "Hepatic flexure"], ["hepatic", "Hepatic flexure"],
+  ["trans", "Transverse colon"], ["transverse", "Transverse colon"],
+  ["spl", "Splenic flexure"], ["splenic", "Splenic flexure"],
+  ["desc", "Descending colon"], ["descending", "Descending colon"],
+  ["sig", "Sigmoid colon"], ["sigmoid", "Sigmoid colon"],
+  ["rect", "Rectum"], ["rectum", "Rectum"],
+  ["colon", "Colon"],
+]);
+
+function lgiParseSite(tok) {
+  const t = String(tok || "").toLowerCase().replace(/[^a-z]/g, "");
+  return LGI_SITE_ALIASES.get(t) || "Colon";
+}
+
+function lgiSplitSegments(rawText) {
+  let body = String(rawText || "");
+  body = body.replace(/^\s*lgi\s*:\s*/i, "");
+  body = body.replace(/\r/g, "\n");
+  body = body.replace(/,\s*(?=[A-Z]\s*-\s*)/g, "; ");
+  return body
+    .split(/[\n;]+/)
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+function lgiExpandRangeShortcut(seg) {
+  const m = String(seg || "").match(/^([A-Z])\s*-\s*([A-Z])\s*[:\-]?\s*(.*)$/);
+  if (!m) return null;
+  const a = m[1].charCodeAt(0);
+  const b = m[2].charCodeAt(0);
+  if (b < a) return null;
+  const rest = (m[3] || "").trim() || "n";
+  const out = [];
+  for (let c = a; c <= b; c++) out.push(String.fromCharCode(c) + " - " + rest);
+  return out;
+}
+
+function lgiParseLine(line) {
+  const mm = String(line || "").match(/^([A-Z])\s*-\s*(.*)$/);
+  if (!mm) return null;
+  const label = mm[1];
+  let rest = (mm[2] || "").trim();
+  if (!rest) rest = "n";
+  rest = rest.replace(/,/g, " ");
+  const rawToks = rest.split(/\s+/).filter(Boolean);
+
+  let site = "Colon";
+  let startIdx = 0;
+
+  if (rawToks.length >= 2 && (rawToks[0] + " " + rawToks[1]).toLowerCase() === "terminal ileum") {
+    site = "Terminal ileum"; startIdx = 2;
+  } else if (rawToks.length) {
+    const maybe = rawToks[0];
+    const norm = maybe.toLowerCase();
+    if (LGI_SITE_ALIASES.has(norm) || LGI_SITE_ALIASES.has(norm.replace(/\s+/g,""))) {
+      site = lgiParseSite(maybe);
+      startIdx = 1;
+    }
+  }
+
+  const tokens = rawToks.slice(startIdx).map(t => {
+    const x = t.trim();
+    if (!x) return "";
+    const u = x.toUpperCase();
+    if (["TA","TVA","V","HP","SSL","TSA","HGD"].includes(u)) return u;
+    if (/^\d+mm$/i.test(x)) return x.toLowerCase();
+    return x.toLowerCase();
+  }).filter(Boolean);
+
+  return { label, site, tokens };
+}
+
+function lgiRenderPart(p) {
+  const site = p.site;
+  const toks = new Set(p.tokens);
+
+  const size = p.tokens.find(t => /^\d+mm$/.test(t)) || "";
+  const polypType = p.tokens.find(t => ["TA","TVA","V","HP","SSL","TSA"].includes(t)) || "";
+  const exc = toks.has("e") ? "e" : toks.has("ne") ? "ne" : "";
+  const dys = toks.has("HGD") ? "HGD" : toks.has("dys") ? "dys" : "";
+  const inv = toks.has("inv");
+
+  const hasIsch = toks.has("ischaemia") || toks.has("ischemia") || toks.has("isch") || toks.has("wither") || toks.has("withered");
+  const hasCmv = toks.has("cmv");
+  const hasDrug = toks.has("drug") || toks.has("eos") || toks.has("eosinophils") || toks.has("eosinophil");
+  const hasChronic = toks.has("ad") || toks.has("bp");
+  const hasActive = toks.has("cryp") || toks.has("cryptitis") || toks.has("absc") || toks.has("abscess");
+  const hasGran = toks.has("gran") || toks.has("granuloma") || toks.has("granulomas");
+
+  if (toks.has("n") && !polypType && !hasIsch && !hasCmv && !hasDrug && !hasChronic && !hasActive && !hasGran) {
+    if (site === "Terminal ileum") return `${p.label} (${site}): Small bowel mucosa is within normal limits. No active ileitis is seen.`;
+    return `${p.label} (${site}): Colonic mucosa is within normal limits. No active colitis is seen.`;
+  }
+
+  if (polypType) {
+    const isAdenoma = ["TA","TVA","V","TSA"].includes(polypType);
+    const typePhrase =
+      polypType === "TA" ? "tubular adenoma" :
+      polypType === "TVA" ? "tubulovillous adenoma" :
+      polypType === "V" ? "villous adenoma" :
+      polypType === "HP" ? "hyperplastic polyp" :
+      polypType === "SSL" ? "sessile serrated lesion" :
+      polypType === "TSA" ? "traditional serrated adenoma" : "polyp";
+
+    const sizePhrase = size ? `${size.replace("mm"," mm")} ` : "";
+    const grade = isAdenoma ? (dys === "HGD" ? "high-grade" : "low-grade") : "";
+
+    let s = `${p.label} (${site}): Colonic mucosa contains a ${sizePhrase}${grade ? grade + " " : ""}${typePhrase}`;
+    if (exc === "e") s += " which appears excised.";
+    else if (exc === "ne") s += ". Excision cannot be guaranteed.";
+    else s += ".";
+
+    if (isAdenoma) {
+      if (grade === "high-grade") s += " High-grade dysplasia is identified.";
+      else s += " Low-grade dysplasia is identified.";
+      if (!inv) {
+        if (grade === "high-grade") s += " No invasive malignancy is identified.";
+        else s += " No high-grade dysplasia or invasive malignancy is identified.";
+      } else s += " Invasive malignancy is identified.";
+    } else {
+      if (dys) s += " Dysplasia is identified.";
+      else s += " No dysplasia is identified.";
+      if (!inv) s += " No invasive malignancy is identified.";
+      else s += " Invasive malignancy is identified.";
+    }
+    return s;
+  }
+
+  let s = `${p.label} (${site}): `;
+  if (hasIsch) {
+    s += "Features are in keeping with ischaemic-type mucosal injury";
+    if (toks.has("wither") || toks.has("withered")) s += " including withered crypts";
+    s += ". There is no dysplasia or malignancy.";
+    return s;
+  }
+
+  const bits = [];
+  if (hasChronic) bits.push("architectural distortion");
+  if (hasActive) bits.push((toks.has("absc") || toks.has("abscess")) ? "cryptitis and crypt abscesses" : "cryptitis");
+  if (hasGran) bits.push("granulomas");
+
+  if (bits.length) s += "Colonic mucosa shows " + bits.join(" with ") + ".";
+  else s += "Colonic mucosa shows non-specific inflammatory changes.";
+
+  if (hasCmv) s += " CMV infection is suspected; correlate with immunohistochemistry.";
+  if (hasDrug) s += " Features of drug-related injury are considered in the differential diagnosis.";
+  s += " There is no dysplasia or malignancy.";
+  return s;
+}
+
+function lgiBuildConclusion(parts) {
+  const allTokens = new Set();
+  for (const p of (parts || [])) for (const t of (p.tokens || [])) allTokens.add(String(t).toLowerCase());
+
+  const hasCmv = allTokens.has("cmv");
+  const hasIsch = allTokens.has("ischaemia") || allTokens.has("ischemia") || allTokens.has("isch") || allTokens.has("wither") || allTokens.has("withered");
+  const hasDrug = allTokens.has("drug") || allTokens.has("eos") || allTokens.has("eosinophils") || allTokens.has("eosinophil");
+  const hasChronic = allTokens.has("ad") || allTokens.has("bp");
+  const hasActive = allTokens.has("cryp") || allTokens.has("cryptitis") || allTokens.has("absc") || allTokens.has("abscess");
+  const hasGran = allTokens.has("gran") || allTokens.has("granuloma") || allTokens.has("granulomas");
+  const hasPolyp = Array.from(allTokens).some(t => ["ta","tva","v","hp","ssl","tsa"].includes(t));
+
+  if (!hasPolyp && !hasIsch && !hasCmv && !hasDrug && !hasChronic && !hasActive && !hasGran) {
+    return "No histological evidence of colitis. No features of microscopic colitis are identified.";
+  }
+
+  const bits = [];
+  if (hasIsch) bits.push("Features are in keeping with ischaemic-type mucosal injury.");
+  if (hasCmv) bits.push("Features raise the possibility of CMV infection; correlate clinically and perform CMV immunohistochemistry as appropriate.");
+  if (hasDrug) bits.push("Drug-related injury is considered in the differential diagnosis.");
+  if (hasChronic || hasActive || hasGran) bits.push("Features are in keeping with colitis; correlate clinically (and endoscopically) to classify (e.g. IBD vs infection vs other).");
+  if (hasPolyp) bits.push("Polyp(s) are described above.");
+  return bits.join(" ");
+}
+
+function lgiProcess(rawText) {
+  const segs0 = lgiSplitSegments(rawText);
+  const segs = [];
+  for (const s of segs0) {
+    const exp = lgiExpandRangeShortcut(s);
+    if (Array.isArray(exp) && exp.length) segs.push(...exp);
+    else segs.push(s);
+  }
+
+  const parts = [];
+  for (const s of segs) {
+    const parsed = lgiParseLine(s);
+    if (parsed) parts.push(parsed);
+  }
+
+  const renderedParts = parts
+    .map(p => String(lgiRenderPart(p) || "").replace(/\r/g, "").trim())
+    .filter(Boolean);
+
+  const partsText = renderedParts.join("\n\n");
+  const conclusionText = String(lgiBuildConclusion(parts) || "").replace(/\r/g, "").trim();
+
+  let output = "";
+  if (partsText) output += partsText;
+  if (conclusionText) {
+    if (output) output += "\n\n";
+    output += "CONCLUSION:\n" + conclusionText;
+  }
+
+  output = output.replace(/\n{3,}/g, "\n\n");
+  output = output.replace(/\n/g, "\r\n");
+  return output.trim() + "\r\n";
+}
+
 exports.handler = async (event) => {
   try {
     if (event.httpMethod !== "POST") return jsonResp(200, { error: "Missing text" });
@@ -430,42 +606,24 @@ exports.handler = async (event) => {
     if (!text) return jsonResp(400, { error: "Missing text" });
 
     const rawText = String(text);
-    // --- Dataset hard overrides (prefix-based) ---
-// If the user starts with "LGI:" (or "UGI:" in future), we should not accidentally select a cancer resection proforma.
-const prefix = rawText.trimStart().slice(0, 10).toLowerCase();
-if (prefix.startsWith("lgi:") || prefix.startsWith("lgi -") || prefix.startsWith("lgi—") || prefix.startsWith("lgi–")) {
-  const datasetId = "lgi_biopsy_shorthand_v1";
-  const { schema, rules, template } = readDatasetFiles(datasetId);
+    // FORCE_LGI_PREFIX_OVERRIDE
+    if (/^\s*lgi\s*:/i.test(rawText)) {
+      const report_text = lgiProcess(rawText);
+      return jsonResp(200, {
+        report_text,
+        caveats: ["Dataset selected: lgi_biopsy_shorthand_v1 (forced by LGI: prefix)."],
+        dataset_id: "lgi_biopsy_shorthand_v1",
+        engine_version: ENGINE_VERSION
+      });
+    }
 
-  // Render LGI directly (bypass template rendering)
-  const report_text = lgiProcess(rawText);
-  return jsonResp(200, {
-    report_text,
-    caveats: [`Dataset selected: ${datasetId}.`],
-    dataset_id: datasetId,
-    engine_version: ENGINE_VERSION
-  });
-}
+    const manifests = listDatasetManifests();
+    const picked = pickDataset(rawText, manifests);
+    if (!picked) return jsonResp(400, { error: "Could not confidently select a dataset. Please include site/specimen." });
 
-const manifests = listDatasetManifests();
-const picked = pickDataset(rawText, manifests);
-if (!picked) return jsonResp(400, { error: "Could not confidently select a dataset. Please include site/specimen." });
-
-const datasetId = picked.id;
+    const datasetId = picked.id;
     const manifest = picked.manifest;
     const { schema, rules, template } = readDatasetFiles(datasetId);
-
-// --- LGI shorthand: render report directly (bypass template rendering) ---
-if (datasetId === "lgi_biopsy_shorthand_v1") {
-  const report_text = lgiProcess(rawText);
-  return jsonResp(200, {
-    report_text,
-    caveats: [`Dataset selected: ${datasetId}.`],
-    dataset_id: datasetId,
-    engine_version: ENGINE_VERSION
-  });
-}
-
 
     let extracted = {};
 
