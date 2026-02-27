@@ -1,4 +1,3 @@
-MICROSCOPY:
 {{parts_text}}
 
 CONCLUSION:
