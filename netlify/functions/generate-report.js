@@ -1,4 +1,4 @@
-const ENGINE_VERSION = "accumulators-fixed6-lgi1";
+const ENGINE_VERSION = "accumulators-fixed6-lgi2";
 const fs = require("fs");
 const path = require("path");
 
@@ -984,7 +984,7 @@ function lgiProcess(rawText) {
   }
 
   // If user used range shortcut without sites, ensure we still render parts
-  const partsText = parts.map(p => lgiRenderPart(p)).join("\n");
+  const partsText = parts.map(p => lgiRenderPart(p)).join("\n\n");
   const conclusion = lgiBuildConclusion(parts);
 
   return { parts_text: partsText, conclusion_text: conclusion };
@@ -1353,7 +1353,7 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
     let report_text = renderTemplate(template, extracted)
       .split("\n")
       .filter(line => !forbidden.some(f => line.toLowerCase().includes(f)))
-      .join("\n");
+      .join("\n\n");
 
     return jsonResp(200, {
       report_text,
