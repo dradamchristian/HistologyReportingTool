@@ -984,10 +984,12 @@ function lgiProcess(rawText) {
   }
 
   // If user used range shortcut without sites, ensure we still render parts
-  const partsText = parts.map(p => lgiRenderPart(p)).join("\n\n");
-  const conclusion = lgiBuildConclusion(parts);
+ const partsText = parts
+  .map(p => p.trim())
+  .filter(Boolean)
+  .join("\n\n");
 
-  return { parts_text: partsText, conclusion_text: conclusion };
+return partsText.trim() + "\n\n" + conclusionText.trim() + "\n";
 }
 
 function applyKeywordShortReport(extracted, rawText) {
