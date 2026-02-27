@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LGI biopsy shorthand v1 (deterministic)",
+  "type": "object",
+  "properties": {
+    "dataset_id": {
+      "type": "string",
+      "const": "lgi_biopsy_shorthand_v1"
+    },
+    "parts_text": {
+      "type": "string",
+      "default": ""
+    },
+    "conclusion_text": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "required": [
+    "parts_text",
+    "conclusion_text"
+  ],
+  "additionalProperties": true
+}

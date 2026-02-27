@@ -1,0 +1,8 @@
+DIAGNOSIS:
+Lower gastrointestinal biopsies.
+
+MICROSCOPY:
+{{parts_text}}
+
+CONCLUSION:
+{{conclusion_text}}

@@ -1,0 +1,15 @@
+{
+  "id": "lgi_biopsy_shorthand_v1",
+  "name": "Lower GI biopsies (shorthand, multi-part) v1",
+  "version": "1.0.0",
+  "match": {
+    "any": [
+      "LGI:",
+      "lower GI:",
+      "lower gi:"
+    ]
+  },
+  "pipeline": {
+    "mode": "lgi_shorthand_v1"
+  }
+}
