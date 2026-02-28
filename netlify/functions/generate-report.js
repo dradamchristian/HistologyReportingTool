@@ -1,4 +1,4 @@
-const ENGINE_VERSION = "accumulators-fixed5d-debug-LGI-v8";
+const ENGINE_VERSION = "accumulators-fixed5d-debug-LGI-v9";
 const fs = require("fs");
 const path = require("path");
 
@@ -466,7 +466,7 @@ function renderTemplate(template, data) {
     return (v === undefined || v === null) ? "" : String(v);
   });
 
-  return out.replace(/\n{3,}/g, "\n\n").trim() + "\n";
+  return out.replace(/\n{2,}/g, "\n").trim() + "\n";
 }
 
 // Generic deterministic parsers used by RCPath-style datasets
@@ -705,8 +705,8 @@ const LGI_SITE_ALIASES = new Map([
   ["cae", "Caecum"], ["cecum", "Caecum"], ["caecum", "Caecum"],
   ["asc", "Ascending colon"], ["ascending", "Ascending colon"],
   ["tra", "Transverse colon"], ["transverse", "Transverse colon"],
-  ["des", "Descending colon"], ["descending", "Descending colon"],
-  ["sig", "Sigmoid colon"], ["sigmoid", "Sigmoid colon"],
+  ["des", "Descending"], ["descending", "Descending"],
+  ["sig", "Sigmoid"], ["sigmoid", "Sigmoid"],
   ["rec", "Rectum"], ["rectum", "Rectum"], ["rectal", "Rectum"],
   ["colon", "Colon"]
 ]);
@@ -900,7 +900,7 @@ function lgiRenderPart(p) {
       else s += " Low-grade dysplasia is identified.";
       if (!inv) {
         if (grade === "high-grade") s += " No invasive malignancy is identified.";
-        else s += " No high-grade dysplasia or invasive malignancy is identified.";
+        else s += " No high-grade dysplasia is identified. No invasive malignancy is identified.";
       }
       else s += " Invasive malignancy is identified.";
     } else {
