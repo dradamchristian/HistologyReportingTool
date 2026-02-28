@@ -1,6 +1,6 @@
 {
   "meta": {
-    "notes": "Expanded resection + GIST suite. Substring checks; prefix '! ' means must not appear. Bundle collects failed cases (input+missing+output)."
+    "notes": "Expanded resection + GIST suite. Substring checks; prefix '! ' means must not appear. Bundle collects failed cases (input+missing+output). Added LGI polyp/colitis/ischaemia/CMV/drug and range/site tests."
   },
   "cases": [
     {
@@ -355,6 +355,131 @@
       "INPUT": "Gastrointestinal stromal tumour (GIST).\nTumour size 9 cm.\nMitotic count 15 per 5 mm2.\n",
       "EXPECTED_CHECKS": [
         "Gastrointestinal Stromal Tumour report"
+      ]
+    },
+    {
+      "id": "LGI_TInormal_single",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - TI n\n",
+      "EXPECTED_CHECKS": [
+        "A (Terminal ileum):",
+        "within normal limits",
+        "CONCLUSION:",
+        "No histological evidence of colitis"
+      ]
+    },
+    {
+      "id": "LGI_normal_two_sites",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - TI n; B - rectum n\n",
+      "EXPECTED_CHECKS": [
+        "A (Terminal ileum):",
+        "B (Rectum):",
+        "No histological evidence of colitis"
+      ]
+    },
+    {
+      "id": "LGI_range_A_D_normal",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A-D n\n",
+      "EXPECTED_CHECKS": [
+        "A (Colon):",
+        "D (Colon):",
+        "! E ("
+      ]
+    },
+    {
+      "id": "LGI_polyp_TA_excised",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - sigmoid 3mm TA e\n",
+      "EXPECTED_CHECKS": [
+        "tubular adenoma",
+        "low-grade",
+        "appears excised",
+        "No high-grade dysplasia",
+        "No invasive malignancy"
+      ]
+    },
+    {
+      "id": "LGI_polyp_TVA_HGD_ne",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - rectum 8mm TVA HGD ne\n",
+      "EXPECTED_CHECKS": [
+        "tubulovillous adenoma",
+        "high-grade",
+        "Excision cannot be guaranteed",
+        "High-grade dysplasia"
+      ]
+    },
+    {
+      "id": "LGI_polyp_SSL_excised",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - sigmoid 5mm SSL e\n",
+      "EXPECTED_CHECKS": [
+        "sessile serrated lesion",
+        "appears excised"
+      ]
+    },
+    {
+      "id": "LGI_colitis_chronic_active",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - rectum ad cryp absc\n",
+      "EXPECTED_CHECKS": [
+        "architectural distortion",
+        "cryptitis",
+        "crypt abscess",
+        "There is no dysplasia"
+      ]
+    },
+    {
+      "id": "LGI_colitis_granulomas",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - cae ad cryp gran\n",
+      "EXPECTED_CHECKS": [
+        "Caecum",
+        "granulomas",
+        "There is no dysplasia"
+      ]
+    },
+    {
+      "id": "LGI_ischaemia_withered",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - sigmoid isch wither\n",
+      "EXPECTED_CHECKS": [
+        "ischaemic-type mucosal injury",
+        "withered crypts"
+      ]
+    },
+    {
+      "id": "LGI_drug_eosinophils",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - descending drug eos\n",
+      "EXPECTED_CHECKS": [
+        "drug-related",
+        "There is no dysplasia"
+      ]
+    },
+    {
+      "id": "LGI_cmv_superimposed",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - rectum ad cryp cmv\n",
+      "EXPECTED_CHECKS": [
+        "CMV infection is suspected",
+        "CONCLUSION:"
+      ]
+    },
+    {
+      "id": "LGI_mixed_multi_specimens",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - rectum ad cryp cmv; B - sigmoid isch wither; C - descending drug eos\n",
+      "EXPECTED_CHECKS": [
+        "A (Rectum):",
+        "CMV",
+        "B (Sigmoid):",
+        "ischaemic-type",
+        "C (Descending):",
+        "drug-related",
+        "CONCLUSION:"
       ]
     }
   ]
