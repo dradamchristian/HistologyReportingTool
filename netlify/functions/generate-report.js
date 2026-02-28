@@ -466,7 +466,9 @@ function renderTemplate(template, data) {
     return (v === undefined || v === null) ? "" : String(v);
   });
 
-  return out.replace(/\n{2,}/g, "\n").trim() + "\n";
+  return out
+    .replace(/\n{3,}/g, "\n\n")
+    .trim() + "\n";
 }
 
 // Generic deterministic parsers used by RCPath-style datasets
