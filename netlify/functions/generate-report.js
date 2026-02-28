@@ -728,6 +728,11 @@ function lgiNormalizeToken(tok) {
   if (t === "cryp" || t === "cryptitis") return "cryp";
   if (t === "absc" || t === "crypt abscess" || t === "crypt abscesses") return "absc";
   if (t === "gran" || t === "granuloma" || t === "granulomas") return "gran";
+  if (t === "cgran" || t === "cryptolytic granuloma" || t === "cryptolytic granulomas" || t === "ruptured crypt granuloma" || t === "ruptured crypt granulomas") return "cgran";
+  if (t === "ulc" || t === "ulcer" || t === "ulceration" || t === "ulcerated") return "ulc";
+  if (t === "pat" || t === "patch" || t === "patchy") return "pat";
+  if (t === "dif" || t === "diff" || t === "diffuse") return "dif";
+  if (t === "uc" || t === "ulcerative colitis") return "uc";
 
   if (t === "isch" || t === "ischaemia" || t === "ischemia" || t === "ischaemic" || t === "ischemic") return "isch";
   if (t === "wither" || t === "withered crypts" || t === "withered") return "wither";
@@ -836,6 +841,9 @@ function lgiParseLine(line) {
   const joined = rawToks.slice(startIdx).join(" ").toLowerCase();
   const phraseTokens = [];
   if (joined.includes("withered crypt")) phraseTokens.push("withered crypts");
+  if (joined.includes("cryptolytic granuloma")) phraseTokens.push("cryptolytic granulomas");
+  if (joined.includes("ruptured crypt granuloma")) phraseTokens.push("ruptured crypt granulomas");
+  if (joined.includes("ulcerative colitis")) phraseTokens.push("ulcerative colitis");
   // split remaining
   const toks = [];
   for (const pt of phraseTokens) {
@@ -866,6 +874,10 @@ function lgiRenderPart(p) {
   const hasChronic = toks.has("ad") || toks.has("bp");
   const hasActive = toks.has("cryp") || toks.has("absc");
   const hasGran = toks.has("gran");
+  const hasCryptolyticGran = toks.has("cgran");
+  const hasUlc = toks.has("ulc");
+  const hasUc = toks.has("uc");
+  const extent = toks.has("dif") ? "diffuse" : toks.has("pat") ? "patchy" : "";
 
   // Normal
   if (toks.has("n") && !polypType && !hasIsch && !hasCmv && !hasDrug && !hasChronic && !hasActive && !hasGran) {
@@ -927,13 +939,23 @@ function lgiRenderPart(p) {
   }
 
   const bits = [];
+  if (extent) bits.push(`${extent} chronic inflammatory change`);
   if (hasChronic) bits.push("architectural distortion");
   if (hasActive) bits.push(toks.has("absc") ? "cryptitis and crypt abscesses" : "cryptitis");
+  if (hasUlc) bits.push("ulceration");
   if (hasGran) bits.push("granulomas");
+  if (hasCryptolyticGran) bits.push("cryptolytic granulomas");
   if (bits.length) {
     s += "Colonic mucosa shows " + bits.join(" with ") + ".";
   } else {
     s += "Colonic mucosa shows non-specific inflammatory changes.";
+  }
+
+  if (hasCryptolyticGran) s += " These are interpreted as crypt injury-related granulomas and are not specific for Crohn disease.";
+
+  if (hasUc) {
+    const nancy = hasUlc ? 4 : toks.has("absc") ? 3 : toks.has("cryp") ? 2 : hasChronic ? 1 : 0;
+    s += ` In ulcerative colitis context, Nancy index score is ${nancy}.`;
   }
 
   if (hasCmv) s += " CMV infection is suspected; correlate with immunohistochemistry.";
@@ -952,7 +974,16 @@ function lgiBuildConclusion(parts) {
   const hasChronic = allTokens.has("ad") || allTokens.has("bp");
   const hasActive = allTokens.has("cryp") || allTokens.has("absc");
   const hasGran = allTokens.has("gran");
+  const hasCryptolyticGran = allTokens.has("cgran");
+  const hasUlc = allTokens.has("ulc");
+  const hasUc = allTokens.has("uc");
+  const hasPatchy = allTokens.has("pat");
+  const hasDiffuse = allTokens.has("dif");
   const hasPolyp = [...allTokens].some(t => ["TA","TVA","V","HP","SSL","TSA"].includes(t));
+
+  const distribution = hasDiffuse ? "diffuse" : hasPatchy ? "patchy" : "";
+  const activity = hasUlc ? "severely active" : allTokens.has("absc") ? "moderately active" : hasActive ? "mildly active" : hasChronic ? "chronic inactive" : "quiescent";
+  const nancy = hasUlc ? 4 : allTokens.has("absc") ? 3 : allTokens.has("cryp") ? 2 : hasChronic ? 1 : 0;
 
   // Priority: ischemia -> CMV -> IBD -> acute -> polyp -> normal
   if (hasIsch && !hasChronic && !hasGran) return "Features are in keeping with ischaemic-type mucosal injury. Correlate clinically/endoscopically.";
@@ -960,8 +991,13 @@ function lgiBuildConclusion(parts) {
     if (hasChronic) return "Features are in keeping with chronic colitis with superimposed CMV infection suspected. Correlate clinically and perform CMV immunohistochemistry as appropriate.";
     return "CMV infection is suspected. Correlate clinically and perform CMV immunohistochemistry as appropriate.";
   }
+  if (hasUc) {
+    const dist = distribution ? `${distribution} ` : "";
+    return `Features are in keeping with ${dist}${activity} ulcerative colitis (Nancy index score ${nancy}). Correlate with endoscopic findings and treatment context.`;
+  }
+  if (hasCryptolyticGran && !hasGran) return "Features are in keeping with colitis with cryptolytic granulomas (crypt injury-related); these do not in themselves indicate Crohn disease. Correlate clinically/endoscopically.";
   if (hasChronic || hasGran) {
-    if (hasGran) return "Features are in keeping with chronic colitis; inflammatory bowel disease is favoured (Crohn disease is suggested by granulomas). Correlate clinically/endoscopically.";
+    if (hasGran) return "Features are in keeping with chronic colitis; inflammatory bowel disease is favoured (Crohn disease is suggested by non-cryptolytic granulomas). Correlate clinically/endoscopically.";
     return "Features are in keeping with chronic colitis; inflammatory bowel disease is favoured. Correlate clinically/endoscopically.";
   }
   if (hasActive) return "Features are in keeping with active colitis without convincing chronicity. Correlate clinically (infective/drug-related causes may be considered).";

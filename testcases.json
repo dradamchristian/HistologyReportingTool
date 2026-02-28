@@ -442,6 +442,37 @@
       ]
     },
     {
+      "id": "LGI_colitis_cryptolytic_granulomas_not_crohn",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - rectum ad cryp cgran\n",
+      "EXPECTED_CHECKS": [
+        "cryptolytic granulomas",
+        "not specific for Crohn disease",
+        "do not in themselves indicate Crohn disease"
+      ]
+    },
+    {
+      "id": "LGI_colitis_patchy_ulceration_uc_nancy",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - rectum uc ad cryp absc ulc pat\n",
+      "EXPECTED_CHECKS": [
+        "patchy chronic inflammatory change",
+        "ulceration",
+        "Nancy index score is 4",
+        "Nancy index score 4"
+      ]
+    },
+    {
+      "id": "LGI_colitis_diffuse_uc_nancy2",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - rectum ulcerative colitis ad cryp dif\n",
+      "EXPECTED_CHECKS": [
+        "diffuse chronic inflammatory change",
+        "Nancy index score is 2",
+        "diffuse mildly active ulcerative colitis"
+      ]
+    },
+    {
       "id": "LGI_ischaemia_withered",
       "EXPECTED_DATASET": "lgi",
       "INPUT": "LGI: A - sigmoid isch wither\n",
