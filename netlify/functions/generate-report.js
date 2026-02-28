@@ -1371,7 +1371,7 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
     let report_text = renderTemplate(template, extracted)
       .split("\n")
       .filter(line => !forbidden.some(f => line.toLowerCase().includes(f)))
-      .join("\n\n");
+      .join("\n");
 
     return jsonResp(200, {
       report_text,
