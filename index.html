@@ -86,7 +86,7 @@ input[type="text"]{
 <body>
 <header>
   <h1>RCPath Report Generator</h1>
-  <div class="sub">Prototype: free text → structured extraction → RCPath-style report. Always review before use. Currently live for Oesophageal, Gastric and Colorectal cancer resections, GIST resections, Gallbladder reporting and Duodenal biopsies</div>
+  <div class="sub">Prototype: free text → structured extraction → RCPath-style report. Always review before use. Currently live for Oesophageal, Gastric and Colorectal cancer resections, GIST resections, Gallbladder reporting, Duodenal biopsies and Colonic biopsies</div>
 </header>
 
 <main>
@@ -117,6 +117,14 @@ input[type="text"]{
       <ul>
         <li><span class="kbd">"1/3 nodes, 4 nodes, 5/7 nodes, pT2 pT3"</span></li>
         <li><span class="small">Expected behaviour: nodes positive/examined = <span class="kbd">6/14</span> and pT = <span class="kbd">pT3</span>.</span></li>
+      </ul>
+    </div>
+    <div class="caveats">
+      <div style="font-weight:700;">Gallbladder and duodenal biopsy examples (with modifiers)</div>
+      <div class="small" style="margin-top:6px;">These examples include modifier terms that change the generated wording.</div>
+      <ul>
+        <li><span class="kbd">Gallbladder: acute and chronic cholecystitis with patchy chronic inflammation, focal cholesterolosis, adenomyomatosis and denuded epithelium. No dysplasia or malignancy.</span></li>
+        <li><span class="kbd">Duodenal biopsy: villous blunting with increased IELs and focal gastric metaplasia.</span></li>
       </ul>
     </div>
   </section>
