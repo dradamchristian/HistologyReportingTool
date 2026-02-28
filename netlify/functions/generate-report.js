@@ -594,6 +594,7 @@ function depthPhraseFromPT(pT) {
 function computePNFromRules(rules, nodesPositive) {
   const mapping = rules?.pn_mapping_by_positive_nodes || [];
   const n = Number(nodesPositive || 0);
+  if (Number.isFinite(n) && n === 0) return "N0";
   for (const band of mapping) if (n >= band.min && n <= band.max) return band.set;
   return "NX";
 }
@@ -782,7 +783,8 @@ function lgiSplitSegments(rawText) {
 
 function lgiExpandRangeShortcut(seg) {
   // e.g. "A-D n" or "A - D n"
-  const m = seg.match(/^([A-Z])\s*-\s*([A-Z])\s*(.*)$/);
+  // Only treat as a range if the second label is a *single* letter (so "A - TI n" is NOT misread as A–T)
+  const m = seg.match(/^([A-Z])\s*-\s*([A-Z])(?![A-Za-z])\s*(.*)$/);
   if (!m) return null;
   const a = m[1].charCodeAt(0);
   const b = m[2].charCodeAt(0);
@@ -981,7 +983,10 @@ function lgiProcess(rawText) {
   }
 
   // If user used range shortcut without sites, ensure we still render parts
-  const partsText = parts.map(p => lgiRenderPart(p)).join("\n\n");
+  const partsText = parts
+    .map(p => String(lgiRenderPart(p) || "").trim())
+    .filter(Boolean)
+    .join("\n\n");
   const conclusion = lgiBuildConclusion(parts);
 
   return { parts_text: partsText, conclusion_text: conclusion };
@@ -1026,8 +1031,15 @@ exports.handler = async (event) => {
 
     const rawText = String(text);
     const manifests = listDatasetManifests();
-    const picked = pickDataset(rawText, manifests);
+    // Hard override: if the user explicitly starts with "LGI:", do NOT let keyword scoring pick colorectal cancer etc.
+    let picked = null;
+    if (/^\s*lgi\s*:/i.test(rawText)) {
+      const m = manifests.find(x => x.id === "lgi_biopsy_shorthand_v1" || x.id === "lgi_shorthand_v1" || x.id === "lgi_biopsies_v1");
+      if (m) picked = { id: m.id, manifest: m, score: 999 };
+    }
+    if (!picked) picked = pickDataset(rawText, manifests);
     if (!picked) return jsonResp(400, { error: "Could not confidently select a dataset. Please include site/specimen." });
+
 
     const datasetId = picked.id;
     const manifest = picked.manifest;
@@ -1274,11 +1286,16 @@ if (datasetId === "colorectal_resection_rcpath_v1") {
         else extracted.circumferential_margin_status = "Not involved: carcinoma more than 1 mm from CRM";
       }
 
-      // Staging + phrases (oesoph etc.)
-      if ((!extracted.pT || extracted.pT === "TX") && !extracted.__acc_pt && datasetId !== "colorectal_resection_rcpath_v1" && datasetId !== "lgi_biopsies_v1") {
-        extracted.pT = computePTFromText(rawText);
+      // Staging + phrases (oesoph/gastric etc.): prefer deterministic cues from the raw text.
+      // Only override when we can confidently infer a stage.
+      if (datasetId !== "colorectal_resection_rcpath_v1" && datasetId !== "lgi_biopsies_v1") {
+        const detPT = computePTFromText(rawText);
+        if (detPT && detPT !== "TX") {
+          extracted.pT = detPT;
+          if (schema?.properties?.stage_pT) extracted.stage_pT = detPT;
+        }
       }
-extracted.depth_phrase = depthPhraseFromPT(extracted.pT);
+      extracted.depth_phrase = depthPhraseFromPT(extracted.pT || "TX");
 
 // Colorectal: derive local invasion pT + stage_pT from colorectal-specific wording
 if (datasetId === "colorectal_resection_rcpath_v1") {
