@@ -887,17 +887,17 @@ function lgiRenderPart(p) {
 
     const sizePhrase = size ? `${size.replace("mm"," mm")} ` : "";
     const grade = isAdenoma ? (dys === "HGD" ? "high-grade" : "low-grade") : "";
+    const polypDescriptor = `${sizePhrase}${grade ? grade + " " : ""}${typePhrase}`.trim();
+    const article = /^[aeiou8]/i.test(polypDescriptor) ? "an" : "a";
 
     // First sentence
-    let s = `${p.label} (${site}): Colonic mucosa contains a ${sizePhrase}${grade ? grade + " " : ""}${typePhrase}`;
+    let s = `${p.label} (${site}): Colonic mucosa contains ${article} ${polypDescriptor}`;
     if (exc === "e") s += " which appears excised.";
     else if (exc === "ne") s += ". Excision cannot be guaranteed.";
     else s += ".";
 
     // Dysplasia statements
     if (isAdenoma) {
-      if (grade === "high-grade") s += " High-grade dysplasia is identified.";
-      else s += " Low-grade dysplasia is identified.";
       if (!inv) {
         if (grade === "high-grade") s += " No invasive malignancy is identified.";
         else s += " No high-grade dysplasia or invasive malignancy is identified.";
