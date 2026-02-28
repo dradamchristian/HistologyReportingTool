@@ -71,22 +71,23 @@ async function copyOut(){
   const raw = $("output").textContent || "";
   if (!raw.trim()){ setStatus("Nothing to copy yet.", true); return; }
 
-  // Plain text: CRLF
+  // Plain text: CRLF for better compatibility with Outlook/LIMS fields.
   const plain = raw.replace(/\r?\n/g, "\r\n");
 
-  // HTML: Outlook-ish (div + <br>, no <pre>, minimal markup)
+  // HTML fallback used by rich-text paste targets.
   const escHtml = (s) => String(s).replace(/[&<>"]/g, ch => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"
   }[ch]));
 
-  // Preserve blank lines by turning empty lines into &nbsp;
-  const htmlLines = raw
+  // Keep line boundaries using one block element per line.
+  // Empty lines become <div><br></div> so paragraph breaks survive paste.
+  const htmlBlocks = raw
     .replace(/\r/g, "")
     .split("\n")
-    .map(line => line.length ? escHtml(line) : "&nbsp;")
-    .join("<br>");
+    .map(line => line.length ? `<div>${escHtml(line)}</div>` : "<div><br></div>")
+    .join("");
 
-  const html = `<div>${htmlLines}</div>`;
+  const html = `<div>${htmlBlocks}</div>`;
 
   try {
     await navigator.clipboard.write([
@@ -95,15 +96,16 @@ async function copyOut(){
         "text/html":  new Blob([html],  { type: "text/html"  }),
       })
     ]);
-    setStatus("Copied to clipboard (Outlook-style).");
+    setStatus("Copied to clipboard (format-preserving).");
     return;
   } catch (err) {
-    // Fallback to plain text CRLF
+    // Fallback to plain text CRLF.
     try {
       await navigator.clipboard.writeText(plain);
       setStatus("Copied to clipboard (plain text).");
+      return;
     } catch {
-      setStatus("Copy failed — select output and copy manually.", true);
+      setStatus("Copy failed - select output and copy manually.", true);
     }
   }
 }
