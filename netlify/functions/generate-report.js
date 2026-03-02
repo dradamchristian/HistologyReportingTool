@@ -1252,6 +1252,10 @@ exports.handler = async (event) => {
         }
 
         extracted.afip_risk_category = afip(siteBucket, size, mit);
+
+        if (extracted.afip_risk_category === "High") {
+          extracted.mutational_analysis_requested = "It will follow (requested and reported separately)";
+        }
       }
 
       // --------------------------
