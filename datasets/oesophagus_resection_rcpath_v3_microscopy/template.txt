@@ -1,7 +1,9 @@
 DIAGNOSIS:
-Oesophageal resection: {{tumour_type}}{{#if tumour_type_other_specify}} ({{tumour_type_other_specify}}){{/if}}{{#if tumour_subtype_phrase}} ({{tumour_subtype_phrase}}){{/if}}.
+Oesophageal resection: {{tumour_type}}{{#if tumour_type_other_specify}} ({{tumour_type_other_specify}}){{/if}}{{#if (eq tumour_type "Adenocarcinoma")}} (WHO subtype: {{who_adenocarcinoma_subtype}}{{#if (eq who_adenocarcinoma_subtype "Other")}}{{#if who_adenocarcinoma_subtype_other_specify}} - {{who_adenocarcinoma_subtype_other_specify}}{{/if}}{{/if}}){{/if}}.
 
 MICROSCOPY:
+{{#if (eq tumour_type "Adenocarcinoma")}}WHO adenocarcinoma subtype: {{who_adenocarcinoma_subtype}}{{#if (eq who_adenocarcinoma_subtype "Other")}}{{#if who_adenocarcinoma_subtype_other_specify}} ({{who_adenocarcinoma_subtype_other_specify}}){{/if}}{{/if}}.
+{{/if}}
 Tumour differentiation (predominant area): {{differentiation}}.
 Depth of invasion: {{pT}} ({{depth_phrase}})
 Serosal involvement: {{serosal_involvement}}.

@@ -19,6 +19,22 @@
       "type": "string",
       "default": ""
     },
+    "who_adenocarcinoma_subtype": {
+      "type": "string",
+      "enum": [
+        "Tubular",
+        "Papillary",
+        "Mucinous",
+        "Poorly cohesive (including signet ring cell type)",
+        "Mixed",
+        "Other"
+      ],
+      "default": "Tubular"
+    },
+    "who_adenocarcinoma_subtype_other_specify": {
+      "type": "string",
+      "default": ""
+    },
     "lauren_classification": {
       "type": "string",
       "enum": [
