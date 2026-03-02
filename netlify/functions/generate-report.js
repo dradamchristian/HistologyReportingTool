@@ -1252,6 +1252,10 @@ exports.handler = async (event) => {
         }
 
         extracted.afip_risk_category = afip(siteBucket, size, mit);
+
+        if (extracted.afip_risk_category === "High") {
+          extracted.mutational_analysis_requested = "It will follow (requested and reported separately)";
+        }
       }
 
       // --------------------------
@@ -1362,6 +1366,15 @@ if (datasetId === "colorectal_resection_rcpath_v1") {
         extracted.pN = computePNFromRules(rules, extracted.nodes_positive);
       }
 extracted.r_status = computeRStatusFromRules(rules, extracted);
+
+      const whoSubtype = String(extracted.who_adenocarcinoma_subtype || "").trim();
+      const whoSubtypeOther = String(extracted.who_adenocarcinoma_subtype_other_specify || "").trim();
+      if (whoSubtype) {
+        extracted.who_adenocarcinoma_subtype_display = whoSubtype;
+        if (whoSubtype === "Other" && whoSubtypeOther) {
+          extracted.who_adenocarcinoma_subtype_display = `${whoSubtype} - ${whoSubtypeOther}`;
+        }
+      }
 
       extracted.mandard_descriptor = mandardDescriptor(rules, extracted.tumour_regression_grade);
       if (String(extracted.tumour_regression_grade || "").trim()) {
