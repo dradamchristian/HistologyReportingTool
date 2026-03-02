@@ -1,9 +1,9 @@
 DIAGNOSIS:
-Gastrectomy: {{tumour_type}}{{#if tumour_type_other_specify}} ({{tumour_type_other_specify}}){{/if}}{{#if (eq tumour_type "Adenocarcinoma")}} (WHO subtype: {{who_adenocarcinoma_subtype}}{{#if (eq who_adenocarcinoma_subtype "Other")}}{{#if who_adenocarcinoma_subtype_other_specify}} - {{who_adenocarcinoma_subtype_other_specify}}{{/if}}{{/if}}){{/if}}.
+Gastrectomy: {{tumour_type}}{{#if tumour_type_other_specify}} ({{tumour_type_other_specify}}){{/if}}{{#if (eq tumour_type "Adenocarcinoma")}} (WHO subtype: {{who_adenocarcinoma_subtype_display}}){{/if}}.
 
 MICROSCOPY:
 Type of tumour: {{tumour_type}}{{#if tumour_type_other_specify}} ({{tumour_type_other_specify}}){{/if}}.
-{{#if (eq tumour_type "Adenocarcinoma")}}WHO adenocarcinoma subtype: {{who_adenocarcinoma_subtype}}{{#if (eq who_adenocarcinoma_subtype "Other")}}{{#if who_adenocarcinoma_subtype_other_specify}} ({{who_adenocarcinoma_subtype_other_specify}}){{/if}}{{/if}}.{{/if}}
+{{#if (eq tumour_type "Adenocarcinoma")}}WHO adenocarcinoma subtype: {{who_adenocarcinoma_subtype_display}}.{{/if}}
 Laurén classification: {{lauren_classification}}.
 Differentiation by predominant area: {{differentiation}}.
 Depth of invasion: {{pT}} ({{depth_phrase}})

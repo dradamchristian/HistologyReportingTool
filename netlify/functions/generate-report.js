@@ -1367,6 +1367,15 @@ if (datasetId === "colorectal_resection_rcpath_v1") {
       }
 extracted.r_status = computeRStatusFromRules(rules, extracted);
 
+      const whoSubtype = String(extracted.who_adenocarcinoma_subtype || "").trim();
+      const whoSubtypeOther = String(extracted.who_adenocarcinoma_subtype_other_specify || "").trim();
+      if (whoSubtype) {
+        extracted.who_adenocarcinoma_subtype_display = whoSubtype;
+        if (whoSubtype === "Other" && whoSubtypeOther) {
+          extracted.who_adenocarcinoma_subtype_display = `${whoSubtype} - ${whoSubtypeOther}`;
+        }
+      }
+
       extracted.mandard_descriptor = mandardDescriptor(rules, extracted.tumour_regression_grade);
       if (String(extracted.tumour_regression_grade || "").trim()) {
         extracted.neoadjuvant_therapy = "Yes";
