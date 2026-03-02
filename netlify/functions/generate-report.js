@@ -250,6 +250,12 @@ function pickDataset(text, manifests) {
     if (hit) return { id: hit.id, manifest: hit, score: 999 };
   }
 
+  // Colorectal shorthand routing: allow prompts like "CRC adenoca ..."
+  if (/^\s*crc\b/i.test(raw)) {
+    const hit = manifests.find(mm => mm.id === "colorectal_resection_rcpath_v1");
+    if (hit) return { id: hit.id, manifest: hit, score: 999 };
+  }
+
   let best = null;
 
   for (const m of manifests) {
@@ -756,6 +762,8 @@ function lgiNormalizeToken(tok) {
   if (t === "hg" || t === "high grade") return "HGD";
   if (t === "hgd" || t === "high grade dysplasia") return "HGD";
   if (t === "inv" || t === "invasive" || t === "invasive carcinoma" || t === "malignancy") return "inv";
+  if (t === "adc" || t === "adenoca" || t === "adenocarcinoma") return "adc";
+  if (t === "pd" || t === "poorly differentiated" || t === "poor differentiation") return "pd";
 
   // size token: 3mm / 12 mm
   const mm = t.match(/^(\d+(?:\.\d+)?)\s*mm$/);
@@ -879,6 +887,12 @@ function lgiRenderPart(p) {
   const hasUc = toks.has("uc");
   const extent = toks.has("dif") ? "diffuse" : toks.has("pat") ? "patchy" : "";
 
+  // Adenocarcinoma shorthand (adc; optional pd)
+  if (toks.has("adc")) {
+    const differentiation = toks.has("pd") ? "poorly differentiated" : "well to moderately differentiated";
+    return `${p.label} (${site}): Colonic biopsies contain ${differentiation} adenocarcinoma. MMR to follow.`;
+  }
+
   // Normal
   if (toks.has("n") && !polypType && !hasIsch && !hasCmv && !hasDrug && !hasChronic && !hasActive && !hasGran) {
     if (site === "Terminal ileum") {
@@ -980,12 +994,18 @@ function lgiBuildConclusion(parts) {
   const hasPatchy = allTokens.has("pat");
   const hasDiffuse = allTokens.has("dif");
   const hasPolyp = [...allTokens].some(t => ["TA","TVA","V","HP","SSL","TSA"].includes(t));
+  const hasAdc = allTokens.has("adc");
+  const hasPoorlyDifferentiatedAdc = hasAdc && allTokens.has("pd");
 
   const distribution = hasDiffuse ? "diffuse" : hasPatchy ? "patchy" : "";
   const activity = hasUlc ? "severely active" : allTokens.has("absc") ? "moderately active" : hasActive ? "mildly active" : hasChronic ? "chronic inactive" : "quiescent";
   const nancy = hasUlc ? 4 : allTokens.has("absc") ? 3 : allTokens.has("cryp") ? 2 : hasChronic ? 1 : 0;
 
-  // Priority: ischemia -> CMV -> IBD -> acute -> polyp -> normal
+  // Priority: adenocarcinoma -> ischemia -> CMV -> IBD -> acute -> polyp -> normal
+  if (hasAdc) {
+    if (hasPoorlyDifferentiatedAdc) return "Colonic biopsies contain poorly differentiated adenocarcinoma. MMR to follow.";
+    return "Colonic biopsies contain well to moderately differentiated adenocarcinoma. MMR to follow.";
+  }
   if (hasIsch && !hasChronic && !hasGran) return "Features are in keeping with ischaemic-type mucosal injury. Correlate clinically/endoscopically.";
   if (hasCmv) {
     if (hasChronic) return "Features are in keeping with chronic colitis with superimposed CMV infection suspected. Correlate clinically and perform CMV immunohistochemistry as appropriate.";
@@ -1252,6 +1272,10 @@ exports.handler = async (event) => {
         }
 
         extracted.afip_risk_category = afip(siteBucket, size, mit);
+
+        if (extracted.afip_risk_category === "High") {
+          extracted.mutational_analysis_requested = "It will follow (requested and reported separately)";
+        }
       }
 
       // --------------------------
@@ -1259,6 +1283,12 @@ exports.handler = async (event) => {
       // --------------------------
       if (datasetId === "colorectal_resection_rcpath_v1") {
         const t = rawText.toLowerCase();
+
+        // Accept common shorthand in prompts, e.g. "CRC adenoca".
+        if (/\badenoca\b/i.test(t)) {
+          extracted.tumour_type = "Adenocarcinoma";
+        }
+
         const mentionsHighest = /highest\s+node/i.test(t);
 
         if (!mentionsHighest) {
@@ -1362,6 +1392,15 @@ if (datasetId === "colorectal_resection_rcpath_v1") {
         extracted.pN = computePNFromRules(rules, extracted.nodes_positive);
       }
 extracted.r_status = computeRStatusFromRules(rules, extracted);
+
+      const whoSubtype = String(extracted.who_adenocarcinoma_subtype || "").trim();
+      const whoSubtypeOther = String(extracted.who_adenocarcinoma_subtype_other_specify || "").trim();
+      if (whoSubtype) {
+        extracted.who_adenocarcinoma_subtype_display = whoSubtype;
+        if (whoSubtype === "Other" && whoSubtypeOther) {
+          extracted.who_adenocarcinoma_subtype_display = `${whoSubtype} - ${whoSubtypeOther}`;
+        }
+      }
 
       extracted.mandard_descriptor = mandardDescriptor(rules, extracted.tumour_regression_grade);
       if (String(extracted.tumour_regression_grade || "").trim()) {
