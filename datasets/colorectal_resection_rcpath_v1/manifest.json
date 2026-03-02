@@ -17,7 +17,9 @@
       "colon cancer",
       "rectal cancer",
       "colorectal cancer",
-      "colorectal adenocarcinoma"
+      "colorectal adenocarcinoma",
+      "crc",
+      "crc adenoca"
     ]
   },
   "pipeline": {

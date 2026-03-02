@@ -512,6 +512,26 @@
         "drug-related",
         "CONCLUSION:"
       ]
+    },
+    {
+      "id": "LGI_adc_default",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - adc\n",
+      "EXPECTED_CHECKS": [
+        "well to moderately differentiated adenocarcinoma",
+        "MMR to follow",
+        "CONCLUSION:"
+      ]
+    },
+    {
+      "id": "LGI_adc_pd",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - adc pd\n",
+      "EXPECTED_CHECKS": [
+        "poorly differentiated adenocarcinoma",
+        "MMR to follow",
+        "CONCLUSION:"
+      ]
     }
   ]
 }
