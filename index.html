@@ -39,6 +39,8 @@ border-radius:12px;padding:12px;min-height:190px;font-size:13px;line-height:1.35
 .caveats{margin-top:10px;padding:10px;border-radius:12px;border:1px dashed rgba(255,255,255,.18);background:rgba(0,0,0,.18);}
 .caveats ul{margin:6px 0 0 18px;padding:0;}
 .small{font-size:12px;color:var(--muted)}
+.code-list{font-size:13px;line-height:1.6;color:var(--muted)}
+.code-list .code{font-weight:800;font-size:14px;color:var(--text)}
 
 /* --- Modal (Phone dictation QR) --- */
 .modalOverlay{
@@ -158,15 +160,15 @@ input[type="text"]{
     <div class="row" style="align-items:flex-start; margin-top:12px;">
       <div class="caveats" style="flex:1; min-width:230px; margin-top:0;">
         <div style="font-weight:700;">Sites</div>
-        <div class="small">ti = terminal ileum, cae = caecum, asc = ascending, tra = transverse, des = descending, sig = sigmoid, rec = rectum.</div>
+        <div class="code-list"><span class="code">ti</span> = terminal ileum, <span class="code">cae</span> = caecum, <span class="code">asc</span> = ascending, <span class="code">tra</span> = transverse, <span class="code">des</span> = descending, <span class="code">sig</span> = sigmoid, <span class="code">rec</span> = rectum.</div>
       </div>
       <div class="caveats" style="flex:1; min-width:230px; margin-top:0;">
         <div style="font-weight:700;">Inflammatory / other findings</div>
-        <div class="small">n normal, ad architectural distortion, bp basal plasmacytosis, cryp cryptitis, absc crypt abscesses, gran granulomas (Crohn-favouring when non-cryptolytic), cgran cryptolytic/ruptured-crypt granulomas, ulc ulceration, pat patchy, dif diffuse, uc ulcerative colitis context, isch ischaemia, wither withered crypts, cmv CMV concern, drug drug-type injury, eos eosinophilia.</div>
+        <div class="code-list"><span class="code">n</span> = normal, <span class="code">ad</span> = architectural distortion, <span class="code">bp</span> = basal plasmacytosis, <span class="code">cryp</span> = cryptitis, <span class="code">absc</span> = crypt abscesses, <span class="code">gran</span> = granulomas (Crohn-favouring when non-cryptolytic), <span class="code">cgran</span> = cryptolytic/ruptured-crypt granulomas, <span class="code">ulc</span> = ulceration, <span class="code">pat</span> = patchy, <span class="code">dif</span> = diffuse, <span class="code">uc</span> = ulcerative colitis context, <span class="code">isch</span> = ischaemia, <span class="code">wither</span> = withered crypts, <span class="code">cmv</span> = CMV concern, <span class="code">drug</span> = drug-type injury, <span class="code">eos</span> = eosinophilia, <span class="code">crc</span> = well to moderately differentiated adenocarcinoma (MMR to follow), <span class="code">crc p</span> = poorly differentiated adenocarcinoma (MMR to follow).</div>
       </div>
       <div class="caveats" style="flex:1; min-width:230px; margin-top:0;">
         <div style="font-weight:700;">Polyp / dysplasia codes</div>
-        <div class="small">TA tubular adenoma, TVA tubulovillous adenoma, V villous adenoma, HP hyperplastic polyp, SSL sessile serrated lesion, TSA traditional serrated adenoma, HGD high-grade dysplasia, inv invasive malignancy, e excised, ne not fully excised, plus size e.g. <span class="kbd">12mm</span>.</div>
+        <div class="code-list"><span class="code">TA</span> = tubular adenoma, <span class="code">TVA</span> = tubulovillous adenoma, <span class="code">V</span> = villous adenoma, <span class="code">HP</span> = hyperplastic polyp, <span class="code">SSL</span> = sessile serrated lesion, <span class="code">TSA</span> = traditional serrated adenoma, <span class="code">HGD</span> = high-grade dysplasia, <span class="code">inv</span> = invasive malignancy, <span class="code">e</span> = excised, <span class="code">ne</span> = not fully excised, plus size e.g. <span class="kbd">12mm</span>.</div>
       </div>
     </div>
   </section>
