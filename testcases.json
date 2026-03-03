@@ -407,8 +407,7 @@
       "EXPECTED_CHECKS": [
         "tubulovillous adenoma",
         "high-grade",
-        "Excision cannot be guaranteed",
-        "High-grade dysplasia"
+        "Excision cannot be guaranteed"
       ]
     },
     {
@@ -421,6 +420,33 @@
       ]
     },
     {
+      "id": "LGI_polyp_V_inv",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - sigmoid 9mm V inv\n",
+      "EXPECTED_CHECKS": [
+        "villous adenoma",
+        "Invasive malignancy is identified"
+      ]
+    },
+    {
+      "id": "LGI_polyp_HP_dys",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - rectum 4mm HP dys\n",
+      "EXPECTED_CHECKS": [
+        "hyperplastic polyp",
+        "Dysplasia is identified"
+      ]
+    },
+    {
+      "id": "LGI_polyp_TSA",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - caecum 7mm TSA\n",
+      "EXPECTED_CHECKS": [
+        "traditional serrated adenoma",
+        "No high-grade dysplasia"
+      ]
+    },
+    {
       "id": "LGI_colitis_chronic_active",
       "EXPECTED_DATASET": "lgi",
       "INPUT": "LGI: A - rectum ad cryp absc\n",
@@ -429,6 +455,27 @@
         "cryptitis",
         "crypt abscess",
         "There is no dysplasia"
+      ]
+    },
+    {
+      "id": "LGI_colitis_basal_plasmacytosis_chronicity",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - rectum bp\n",
+      "EXPECTED_CHECKS": [
+        "basal plasmacytosis",
+        "! architectural distortion",
+        "features of chronicity (basal plasmacytosis)",
+        "inflammatory bowel disease is favoured"
+      ]
+    },
+    {
+      "id": "LGI_colitis_ad_chronicity_conclusion",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - rectum ad\n",
+      "EXPECTED_CHECKS": [
+        "architectural distortion",
+        "features of chronicity (architectural distortion)",
+        "inflammatory bowel disease is favoured"
       ]
     },
     {

@@ -984,7 +984,8 @@ function lgiRenderPart(p) {
 
   const bits = [];
   if (extent) bits.push(`${extent} chronic inflammatory change`);
-  if (hasChronic) bits.push("architectural distortion");
+  if (toks.has("ad")) bits.push("architectural distortion");
+  if (toks.has("bp")) bits.push("basal plasmacytosis");
   if (hasActive) bits.push(toks.has("absc") ? "cryptitis and crypt abscesses" : "cryptitis");
   if (hasUlc) bits.push("ulceration");
   if (hasGran) bits.push("granulomas");
@@ -1026,6 +1027,12 @@ function lgiBuildConclusion(parts) {
   const hasPatchy = allTokens.has("pat");
   const hasDiffuse = allTokens.has("dif");
   const hasPolyp = [...allTokens].some(t => ["TA","TVA","V","HP","SSL","TSA"].includes(t));
+  const chronicFeatures = [];
+  if (allTokens.has("ad")) chronicFeatures.push("architectural distortion");
+  if (allTokens.has("bp")) chronicFeatures.push("basal plasmacytosis");
+  const chronicityPhrase = chronicFeatures.length
+    ? ` with features of chronicity (${chronicFeatures.join(" and ")})`
+    : "";
 
   const distribution = hasDiffuse ? "diffuse" : hasPatchy ? "patchy" : "";
   const activity = hasUlc ? "severely active" : allTokens.has("absc") ? "moderately active" : hasActive ? "mildly active" : hasChronic ? "chronic inactive" : "quiescent";
@@ -1047,8 +1054,8 @@ function lgiBuildConclusion(parts) {
   }
   if (hasCryptolyticGran && !hasGran) return "Features are in keeping with colitis with cryptolytic granulomas (crypt injury-related); these do not in themselves indicate Crohn disease. Correlate clinically/endoscopically.";
   if (hasChronic || hasGran) {
-    if (hasGran) return "Features are in keeping with chronic colitis; inflammatory bowel disease is favoured (Crohn disease is suggested by non-cryptolytic granulomas). Correlate clinically/endoscopically.";
-    return "Features are in keeping with chronic colitis; inflammatory bowel disease is favoured. Correlate clinically/endoscopically.";
+    if (hasGran) return `Features are in keeping with chronic colitis${chronicityPhrase}; inflammatory bowel disease is favoured (Crohn disease is suggested by non-cryptolytic granulomas). Correlate clinically/endoscopically.`;
+    return `Features are in keeping with chronic colitis${chronicityPhrase}; inflammatory bowel disease is favoured. Correlate clinically/endoscopically.`;
   }
   if (hasActive) return "Features are in keeping with active colitis without convincing chronicity. Correlate clinically (infective/drug-related causes may be considered).";
   if (hasPolyp) return "Biopsies show a polyp/adenoma as described. Background mucosa is otherwise unremarkable.";
