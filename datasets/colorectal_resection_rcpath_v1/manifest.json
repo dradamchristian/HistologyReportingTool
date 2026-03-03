@@ -4,6 +4,7 @@
   "match": {
     "any": [
       "colorectal",
+      "crc",
       "colon",
       "rectal",
       "rectum",
