@@ -666,6 +666,19 @@ function finalizeStaging(schema, extracted) {
   if (!props.pN) extracted.pN = derived;
 }
 
+function normalizeTumourType(extracted, schema) {
+  const tumourType = String(extracted?.tumour_type || "").trim();
+  if (!tumourType) return;
+
+  const enums = schema?.properties?.tumour_type?.enum || [];
+  if (!Array.isArray(enums) || !enums.length) return;
+
+  if (/\badenoca\b|\badenocarcinoma\b/i.test(tumourType)) {
+    const preferred = enums.find(v => String(v).toLowerCase() === "adenocarcinoma");
+    if (preferred) extracted.tumour_type = preferred;
+  }
+}
+
 
 
 
@@ -1149,6 +1162,7 @@ exports.handler = async (event) => {
       if (!extracted0) return jsonResp(500, { error: "Model did not return valid JSON.", model_output: content });
 
       extracted = applyDefaults(schema, extracted0);
+      normalizeTumourType(extracted, schema);
 
       // Apply accumulators: multiple pT mentions + multiple node tallies
       applyAccumulators(rawText, schema, extracted);
