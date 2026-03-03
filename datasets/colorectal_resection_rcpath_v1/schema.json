@@ -1,5 +1,5 @@
 {
-  "title": "RCPath colorectal carcinoma resection \u2013 microscopy (minimal set)",
+  "title": "RCPath colorectal carcinoma resection – microscopy (minimal set)",
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -229,6 +229,10 @@
         "R2"
       ],
       "default": "R0"
+    },
+    "tumour_block": {
+      "type": "string",
+      "default": ""
     }
   }
 }

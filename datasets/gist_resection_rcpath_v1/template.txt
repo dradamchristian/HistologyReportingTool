@@ -36,4 +36,4 @@ Mutational analysis requested: {{mutational_analysis_requested}}
 TUMOUR STAGE (TNM 9)
 p{{tnm_pT}} p{{tnm_pN}} pM: {{tnm_pM_display}}
 
-TUMOUR BLOCK:
+TUMOUR BLOCK: {{tumour_block}}

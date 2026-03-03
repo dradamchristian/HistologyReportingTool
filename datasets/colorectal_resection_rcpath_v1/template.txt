@@ -32,4 +32,4 @@ RESECTION STATUS:
 TNM (9th edition):
 {{#if y_prefix}}y{{/if}}p{{stage_pT}}  {{#if y_prefix}}y{{/if}}p{{stage_pN}}  {{#if y_prefix}}y{{/if}}pM: {{stage_pM}}.
 
-TUMOUR BLOCK: 
+TUMOUR BLOCK: {{tumour_block}}

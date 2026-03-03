@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "RCPath Oesophageal Carcinoma Resection (Microscopy-only) \u2013 Appendix G derived + local fields",
+  "title": "RCPath Oesophageal Carcinoma Resection (Microscopy-only) – Appendix G derived + local fields",
   "type": "object",
   "properties": {
     "dataset_id": {
@@ -104,13 +104,13 @@
         null
       ],
       "default": null,
-      "description": "If Mandard: TRG 1\u20135"
+      "description": "If Mandard: TRG 1–5"
     },
     "proximal_margin": {
       "type": "string",
       "enum": [
         "Normal",
-        "Barrett\u2019s",
+        "Barrett’s",
         "Dysplasia",
         "Carcinoma"
       ],
@@ -234,6 +234,10 @@
       "type": "boolean",
       "default": false,
       "description": "If true, use yTNM categories."
+    },
+    "tumour_block": {
+      "type": "string",
+      "default": ""
     }
   },
   "required": [

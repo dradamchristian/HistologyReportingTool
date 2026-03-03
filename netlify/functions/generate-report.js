@@ -157,6 +157,25 @@ function extractNodeTallies(rawText) {
   return { examined, positive, isFinal: false };
 }
 
+function extractTumourBlock(rawText) {
+  const text = String(rawText || "");
+  if (!text.trim()) return "";
+
+  const patterns = [
+    /\btb\s*[-:=]\s*([a-z]\d+[a-z]?)/ig,
+    /\btumou?r\s*block\s*[-:=]?\s*([a-z]\d+[a-z]?)/ig,
+  ];
+
+  let found = "";
+  for (const re of patterns) {
+    let m;
+    while ((m = re.exec(text)) !== null) found = m[1];
+    if (found) break;
+  }
+
+  return found ? found.toUpperCase() : "";
+}
+
 
 function applyAccumulators(rawText, schema, extracted) {
   const props = schema?.properties || {};
@@ -1181,6 +1200,9 @@ exports.handler = async (event) => {
 
       extracted = applyDefaults(schema, extracted0);
       normalizeTumourType(extracted, schema);
+
+      const tumourBlock = extractTumourBlock(rawText);
+      if (tumourBlock) extracted.tumour_block = tumourBlock;
 
       // Apply accumulators: multiple pT mentions + multiple node tallies
       applyAccumulators(rawText, schema, extracted);
