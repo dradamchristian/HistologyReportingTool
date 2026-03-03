@@ -769,6 +769,9 @@ function lgiNormalizeToken(tok) {
   if (t === "hg" || t === "high grade") return "HGD";
   if (t === "hgd" || t === "high grade dysplasia") return "HGD";
   if (t === "inv" || t === "invasive" || t === "invasive carcinoma" || t === "malignancy") return "inv";
+  if (t === "crc" || t === "adenocarcinoma" || t === "colorectal adenocarcinoma") return "crc";
+  if (t === "crc p" || t === "crcp" || t === "poorly differentiated adenocarcinoma" || t === "poor adenocarcinoma") return "crc_poor";
+  if (t === "p" || t === "poor" || t === "poorly" || t === "poorly differentiated") return "poor";
 
   // size token: 3mm / 12 mm
   const mm = t.match(/^(\d+(?:\.\d+)?)\s*mm$/);
@@ -857,6 +860,7 @@ function lgiParseLine(line) {
   if (joined.includes("cryptolytic granuloma")) phraseTokens.push("cryptolytic granulomas");
   if (joined.includes("ruptured crypt granuloma")) phraseTokens.push("ruptured crypt granulomas");
   if (joined.includes("ulcerative colitis")) phraseTokens.push("ulcerative colitis");
+  if (/\bcrc\s+p\b/.test(joined)) phraseTokens.push("crc p");
   // split remaining
   const toks = [];
   for (const pt of phraseTokens) {
@@ -880,6 +884,8 @@ function lgiRenderPart(p) {
   const exc = toks.has("e") ? "e" : toks.has("ne") ? "ne" : "";
   const dys = toks.has("HGD") ? "HGD" : toks.has("dys") ? "dys" : "";
   const inv = toks.has("inv");
+  const hasCrc = toks.has("crc") || toks.has("crc_poor");
+  const hasPoorCrc = toks.has("crc_poor") || (toks.has("crc") && toks.has("poor"));
 
   const hasIsch = toks.has("isch") || toks.has("wither");
   const hasCmv = toks.has("cmv");
@@ -898,6 +904,12 @@ function lgiRenderPart(p) {
       return `${p.label} (${site}): Small bowel mucosa is within normal limits. No active ileitis is seen.`;
     }
     return `${p.label} (${site}): Colonic mucosa is within normal limits. No active colitis is seen.`;
+  }
+
+  // Colorectal adenocarcinoma shortcut
+  if (hasCrc) {
+    const diff = hasPoorCrc ? "poorly differentiated" : "well to moderately differentiated";
+    return `${p.label} (${site}): Colorectal mucosa containing ${diff} adenocarcinoma. MMR to follow.`;
   }
 
   // Polyp
@@ -990,6 +1002,8 @@ function lgiBuildConclusion(parts) {
   const hasCryptolyticGran = allTokens.has("cgran");
   const hasUlc = allTokens.has("ulc");
   const hasUc = allTokens.has("uc");
+  const hasCrc = allTokens.has("crc") || allTokens.has("crc_poor");
+  const hasPoorCrc = allTokens.has("crc_poor") || (allTokens.has("crc") && allTokens.has("poor"));
   const hasPatchy = allTokens.has("pat");
   const hasDiffuse = allTokens.has("dif");
   const hasPolyp = [...allTokens].some(t => ["TA","TVA","V","HP","SSL","TSA"].includes(t));
@@ -999,6 +1013,10 @@ function lgiBuildConclusion(parts) {
   const nancy = hasUlc ? 4 : allTokens.has("absc") ? 3 : allTokens.has("cryp") ? 2 : hasChronic ? 1 : 0;
 
   // Priority: ischemia -> CMV -> IBD -> acute -> polyp -> normal
+  if (hasCrc) {
+    if (hasPoorCrc) return "Adenocarcinoma is present (poorly differentiated).";
+    return "Adenocarcinoma is present (well to moderately differentiated).";
+  }
   if (hasIsch && !hasChronic && !hasGran) return "Features are in keeping with ischaemic-type mucosal injury. Correlate clinically/endoscopically.";
   if (hasCmv) {
     if (hasChronic) return "Features are in keeping with chronic colitis with superimposed CMV infection suspected. Correlate clinically and perform CMV immunohistochemistry as appropriate.";

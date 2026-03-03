@@ -500,6 +500,27 @@
       ]
     },
     {
+      "id": "LGI_crc_well_moderate",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - rectum crc\n",
+      "EXPECTED_CHECKS": [
+        "well to moderately differentiated adenocarcinoma",
+        "MMR to follow",
+        "CONCLUSION:",
+        "Adenocarcinoma is present"
+      ]
+    },
+    {
+      "id": "LGI_crc_poor",
+      "EXPECTED_DATASET": "lgi",
+      "INPUT": "LGI: A - sigmoid crc p\n",
+      "EXPECTED_CHECKS": [
+        "poorly differentiated adenocarcinoma",
+        "MMR to follow",
+        "Adenocarcinoma is present (poorly differentiated)"
+      ]
+    },
+    {
       "id": "LGI_mixed_multi_specimens",
       "EXPECTED_DATASET": "lgi",
       "INPUT": "LGI: A - rectum ad cryp cmv; B - sigmoid isch wither; C - descending drug eos\n",
