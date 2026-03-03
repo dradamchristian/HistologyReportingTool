@@ -1382,6 +1382,12 @@ if (datasetId === "colorectal_resection_rcpath_v1") {
         else extracted.circumferential_margin_status = "Not involved: carcinoma more than 1 mm from CRM";
       }
 
+      // Oesophageal proforma prompt: if CRM is involved, force a visible prompt for location.
+      const crmInvolved = String(extracted.circumferential_margin_status || "").includes("Involved");
+      if (datasetId === "oesophagus_resection_rcpath_v3_microscopy" && crmInvolved && !String(extracted.positive_crm_location || "").trim()) {
+        extracted.positive_crm_location = "[enter location]";
+      }
+
       // Staging + phrases (oesoph/gastric etc.): prefer deterministic cues from the raw text.
       // Only override when we can confidently infer a stage.
       if (datasetId !== "colorectal_resection_rcpath_v1" && datasetId !== "lgi_biopsies_v1") {

@@ -17,6 +17,8 @@ Proximal margin: {{proximal_margin}}.
 Distal margin: {{distal_margin}}.
 Circumferential resection margin (CRM): {{circumferential_margin_status}}.
 Distance to nearest CRM: {{distance_to_crm_mm}} mm.
+{{#if positive_crm_location}}Location of positive CRM: {{positive_crm_location}}.
+{{/if}}
 
 LYMPH NODES:
 {{nodes_positive}} / {{nodes_examined}} involved.

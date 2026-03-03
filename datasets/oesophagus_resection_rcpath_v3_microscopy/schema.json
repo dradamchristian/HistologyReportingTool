@@ -140,6 +140,11 @@
       "default": 2.0,
       "description": "LOCAL: always record an actual distance (mm), even if CRM involved."
     },
+    "positive_crm_location": {
+      "type": "string",
+      "default": "",
+      "description": "LOCAL: If CRM is involved (<1 mm), record the location of positive CRM."
+    },
     "lvi": {
       "type": "string",
       "enum": [
