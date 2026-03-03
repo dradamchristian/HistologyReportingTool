@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "RCPath Gastric Carcinoma Resection (Microscopy-only) \u2013 Appendix D derived + local fields",
+  "title": "RCPath Gastric Carcinoma Resection (Microscopy-only) – Appendix D derived + local fields",
   "type": "object",
   "properties": {
     "dataset_id": {
@@ -233,6 +233,10 @@
       "default": "Unknown"
     },
     "tumour_block_id": {
+      "type": "string",
+      "default": ""
+    },
+    "tumour_block": {
       "type": "string",
       "default": ""
     }

@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "RCPath GIST proforma (G103) \u2013 macro + micro",
+  "title": "RCPath GIST proforma (G103) – macro + micro",
   "type": "object",
   "properties": {
     "specimen_type": {
@@ -171,7 +171,7 @@
         "Not appropriate"
       ],
       "default": "Not appropriate",
-      "description": "AFIP/Lasota\u2013Miettinen risk category. Compute STRICTLY from tumour site, maximum size (cm) and mitotic count per 5 mm2.\nBins:\nMitotic \u22645 and size \u22642: None (all sites)\nMitotic \u22645 and size >2\u2013\u22645: Gastric Very low; Duodenum Low; Jejunum/Ileum Low; Rectum Low\nMitotic \u22645 and size >5\u2013\u226410: Gastric Low; Jejunum/Ileum Moderate; Duodenum Not appropriate; Rectum Not appropriate\nMitotic \u22645 and size >10: Gastric Moderate; Duodenum High; Jejunum/Ileum High; Rectum High\nMitotic >5 and size \u22642: Rectum High; Gastric Not appropriate; Duodenum Not appropriate; Jejunum/Ileum Not appropriate\nMitotic >5 and size >2\u2013\u22645: Gastric Moderate; Duodenum High; Jejunum/Ileum High; Rectum High\nMitotic >5 and size >5\u2013\u226410: Gastric High; Jejunum/Ileum High; Duodenum Not appropriate; Rectum Not appropriate\nMitotic >5 and size >10: Gastric High; Duodenum High; Jejunum/Ileum High; Rectum High\nIf any of size/mitoses/site missing, return Not appropriate."
+      "description": "AFIP/Lasota–Miettinen risk category. Compute STRICTLY from tumour site, maximum size (cm) and mitotic count per 5 mm2.\nBins:\nMitotic ≤5 and size ≤2: None (all sites)\nMitotic ≤5 and size >2–≤5: Gastric Very low; Duodenum Low; Jejunum/Ileum Low; Rectum Low\nMitotic ≤5 and size >5–≤10: Gastric Low; Jejunum/Ileum Moderate; Duodenum Not appropriate; Rectum Not appropriate\nMitotic ≤5 and size >10: Gastric Moderate; Duodenum High; Jejunum/Ileum High; Rectum High\nMitotic >5 and size ≤2: Rectum High; Gastric Not appropriate; Duodenum Not appropriate; Jejunum/Ileum Not appropriate\nMitotic >5 and size >2–≤5: Gastric Moderate; Duodenum High; Jejunum/Ileum High; Rectum High\nMitotic >5 and size >5–≤10: Gastric High; Jejunum/Ileum High; Duodenum Not appropriate; Rectum Not appropriate\nMitotic >5 and size >10: Gastric High; Duodenum High; Jejunum/Ileum High; Rectum High\nIf any of size/mitoses/site missing, return Not appropriate."
     },
     "mutational_analysis_requested": {
       "type": "string",
@@ -193,7 +193,7 @@
         "T4"
       ],
       "default": "TX",
-      "description": "TNM pT for GIST based on SIZE ONLY: T1 \u22642 cm; T2 >2\u2013\u22645 cm; T3 >5\u2013\u226410 cm; T4 >10 cm. If size missing, TX."
+      "description": "TNM pT for GIST based on SIZE ONLY: T1 ≤2 cm; T2 >2–≤5 cm; T3 >5–≤10 cm; T4 >10 cm. If size missing, TX."
     },
     "tnm_pN": {
       "type": "string",
@@ -218,6 +218,10 @@
       "type": "string",
       "default": "Not applicable",
       "description": "Display: 'M1' if tnmpM is M1, else 'Not applicable'."
+    },
+    "tumour_block": {
+      "type": "string",
+      "default": ""
     }
   }
 }
