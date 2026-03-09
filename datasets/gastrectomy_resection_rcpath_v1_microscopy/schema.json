@@ -239,6 +239,10 @@
     "tumour_block": {
       "type": "string",
       "default": ""
+    },
+    "comment": {
+      "type": "string",
+      "default": ""
     }
   },
   "required": [

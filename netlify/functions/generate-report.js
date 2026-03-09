@@ -628,6 +628,22 @@ function depthPhraseFromPT(pT) {
   return "Depth of invasion cannot be assessed from the description.";
 }
 
+function extractAdditionalComment(rawText) {
+  const text = String(rawText || "");
+  if (!text.trim()) return "";
+
+  const explicit = text.match(/\b(?:additional\s+)?comments?\s*[:\-]\s*([^\n]+)/i) ||
+                   text.match(/\bnotes?\s*[:\-]\s*([^\n]+)/i);
+  if (explicit && explicit[1]) return explicit[1].trim();
+
+  const background = text.match(/\b(?:on\s+a\s+)?background\s+of\s+([^\n.;]+)/i);
+  if (background && background[0]) {
+    return background[0].replace(/\s+/g, " ").trim().replace(/[.,;:]+$/, "");
+  }
+
+  return "";
+}
+
 function computePNFromRules(rules, nodesPositive) {
   const mapping = rules?.pn_mapping_by_positive_nodes || [];
   const n = Number(nodesPositive || 0);
@@ -1449,6 +1465,10 @@ if (datasetId === "colorectal_resection_rcpath_v1") {
         extracted.pN = computePNFromRules(rules, extracted.nodes_positive);
       }
 extracted.r_status = computeRStatusFromRules(rules, extracted);
+
+      if ((datasetId === "oesophagus_resection_rcpath_v3_microscopy" || datasetId === "gastrectomy_resection_rcpath_v1_microscopy") && !String(extracted.comment || "").trim()) {
+        extracted.comment = extractAdditionalComment(rawText);
+      }
 
       const whoSubtype = String(extracted.who_adenocarcinoma_subtype || "").trim();
       const whoSubtypeOther = String(extracted.who_adenocarcinoma_subtype_other_specify || "").trim();

@@ -202,6 +202,26 @@
       ]
     },
     {
+      "id": "OE_T1a_0of10",
+      "EXPECTED_DATASET": "oesophagus",
+      "INPUT": "Oesophageal resection.\nAdenocarcinoma.\ninvades lamina propria.\nCRM 5 mm.\nNodes 0 of 10 positive.\nNo pM1 disease.\n",
+      "EXPECTED_CHECKS": [
+        "pT: T1a",
+        "0 / 10 involved.",
+        "pN: N0"
+      ]
+    },
+    {
+      "id": "OE_T1b_0of10",
+      "EXPECTED_DATASET": "oesophagus",
+      "INPUT": "Oesophageal resection.\nAdenocarcinoma.\ninvades submucosa.\nCRM 5 mm.\nNodes 0 of 10 positive.\nNo pM1 disease.\n",
+      "EXPECTED_CHECKS": [
+        "pT: T1b",
+        "0 / 10 involved.",
+        "pN: N0"
+      ]
+    },
+    {
       "id": "OE_T3_0of10",
       "EXPECTED_DATASET": "oesophagus",
       "INPUT": "Oesophageal resection.\nAdenocarcinoma.\ninvades adventitia.\nCRM 5 mm.\nNodes 0 of 10 positive.\nNo pM1 disease.\n",
@@ -269,6 +289,26 @@
         "pT: T3",
         "5 / 12 involved.",
         "pN: N2"
+      ]
+    },
+    {
+      "id": "OE_comment_explicit_marker",
+      "EXPECTED_DATASET": "oesophagus",
+      "INPUT": "Oesophageal resection.\nAdenocarcinoma through the wall.\nNodes 0 of 10 positive.\nCRM 5 mm.\nNo pM1 disease.\nAdditional comment: tumour through the wall, on a background of dysplastic Barrett's.\n",
+      "EXPECTED_CHECKS": [
+        "pT: T3",
+        "COMMENT:",
+        "tumour through the wall, on a background of dysplastic Barrett's"
+      ]
+    },
+    {
+      "id": "OE_comment_background_barrett",
+      "EXPECTED_DATASET": "oesophagus",
+      "INPUT": "Oesophageal resection.\nAdenocarcinoma through the wall.\nNodes 0 of 10 positive.\nCRM 5 mm.\nNo pM1 disease.\nOn a background of dysplastic Barrett's.\n",
+      "EXPECTED_CHECKS": [
+        "pT: T3",
+        "COMMENT:",
+        "background of dysplastic Barrett's"
       ]
     },
     {
