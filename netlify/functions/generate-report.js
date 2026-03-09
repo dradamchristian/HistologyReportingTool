@@ -586,6 +586,11 @@ function parseCrmDistanceMmColorectal(text) {
 }
 function computePTFromText(text) {
   const t = (text || "").toLowerCase();
+  const hasNegated = (needle) => (
+    t.includes(`no ${needle}`) ||
+    t.includes(`not ${needle}`) ||
+    t.includes(`without ${needle}`)
+  );
 
   // Oesophagus-specific advanced invasion triggers (TNM 9 style)
   // T4a: pleura / pericardium / diaphragm
@@ -598,7 +603,14 @@ function computePTFromText(text) {
   if (t.includes("beyond muscularis propria") || t.includes("through the wall") || t.includes("through wall") ||
       t.includes("beyond the wall") || t.includes("through muscularis propria") || t.includes("adventitia")) return "T3";
 
-  if (t.includes("within the wall") || t.includes("into the wall") || t.includes("muscularis propria")) return "T2";
+  // Early-stage cues
+  if (t.includes("high-grade dysplasia") || t.includes("in situ")) return "Tis";
+  if (t.includes("no tumour") || t.includes("no tumor")) return "T0";
+
+  if (t.includes("submucosa") || t.includes("submucosal")) return "T1b";
+  if (t.includes("lamina propria")) return "T1a";
+
+  if ((t.includes("within the wall") || t.includes("into the wall") || t.includes("muscularis propria")) && !hasNegated("muscularis propria")) return "T2";
 
   return "TX";
 }
@@ -609,6 +621,10 @@ function depthPhraseFromPT(pT) {
   if (pT === "T4a") return "Tumour invades pleura/pericardium/diaphragm.";
   if (pT === "T3") return "Invasion beyond muscularis propria.";
   if (pT === "T2") return "Invasion into muscularis propria.";
+  if (pT === "T1b") return "Invasion into submucosa.";
+  if (pT === "T1a") return "Invasion into lamina propria.";
+  if (pT === "Tis") return "High-grade dysplasia / in situ carcinoma.";
+  if (pT === "T0") return "No residual tumour identified.";
   return "Depth of invasion cannot be assessed from the description.";
 }
 
