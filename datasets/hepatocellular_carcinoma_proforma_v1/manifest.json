@@ -1,0 +1,15 @@
+{
+  "id": "hepatocellular_carcinoma_proforma_v1",
+  "kind": "rcpath",
+  "match": {
+    "any": [
+      "hcc",
+      "hepatocellular",
+      "fibrolamellar",
+      "hepatocellular carcinoma"
+    ]
+  },
+  "pipeline": {
+    "mode": "schema_extract_then_rules"
+  }
+}

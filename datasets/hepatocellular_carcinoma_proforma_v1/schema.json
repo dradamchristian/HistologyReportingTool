@@ -1,0 +1,152 @@
+{
+  "title": "Hepatocellular carcinoma (HCC) proforma",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "tumour_type": {
+      "type": "string",
+      "enum": [
+        "HCC NOS",
+        "Fibrolamellar carcinoma",
+        "Other histological subtype"
+      ],
+      "default": "HCC NOS"
+    },
+    "tumour_type_other_specify": {
+      "type": "string",
+      "default": ""
+    },
+    "tumour_grade_differentiation": {
+      "type": "string",
+      "enum": [
+        "Well",
+        "Moderate",
+        "Poor"
+      ],
+      "default": "Moderate"
+    },
+    "tumour_cells_present_at_excision_margin": {
+      "type": "string",
+      "enum": [
+        "Yes",
+        "No"
+      ],
+      "default": "No"
+    },
+    "distance_to_resection_margin_mm": {
+      "type": "string",
+      "default": ""
+    },
+    "distance_category_to_resection_margin": {
+      "type": "string",
+      "enum": [
+        "<1 mm",
+        "1–10 mm",
+        ">10 mm",
+        "N/A"
+      ],
+      "default": "N/A"
+    },
+    "macroscopic_vascular_invasion_confirmed": {
+      "type": "string",
+      "enum": [
+        "Yes",
+        "No"
+      ],
+      "default": "No"
+    },
+    "microscopic_vascular_invasion_identified": {
+      "type": "string",
+      "enum": [
+        "Present",
+        "Not identified"
+      ],
+      "default": "Not identified"
+    },
+    "evidence_of_response_to_preoperative_treatment": {
+      "type": "string",
+      "enum": [
+        "Yes, complete",
+        "Yes, incomplete",
+        "No",
+        "Not applicable"
+      ],
+      "default": "Not applicable"
+    },
+    "background_liver": {
+      "type": "string",
+      "enum": [
+        "Awaiting additional stains",
+        "Fibrosis",
+        "None",
+        "Periportal",
+        "Bridging",
+        "Bridging with nodules",
+        "Cirrhosis",
+        "Insufficient for assessment"
+      ],
+      "default": "Awaiting additional stains"
+    },
+    "aetiology": {
+      "type": "string",
+      "default": "Not known"
+    },
+    "lymph_nodes_examined": {
+      "type": "integer",
+      "default": 0
+    },
+    "lymph_nodes_with_metastases": {
+      "type": "integer",
+      "default": 0
+    },
+    "comments_additional_information": {
+      "type": "string",
+      "default": ""
+    },
+    "pT": {
+      "type": "string",
+      "enum": [
+        "T0",
+        "T1a",
+        "T1b",
+        "T2",
+        "T3",
+        "T4",
+        "TX"
+      ],
+      "default": "TX"
+    },
+    "pN": {
+      "type": "string",
+      "enum": [
+        "N0",
+        "N1",
+        "NX"
+      ],
+      "default": "N0"
+    },
+    "tumour_block": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "required": [
+    "tumour_type",
+    "tumour_type_other_specify",
+    "tumour_grade_differentiation",
+    "tumour_cells_present_at_excision_margin",
+    "distance_to_resection_margin_mm",
+    "distance_category_to_resection_margin",
+    "macroscopic_vascular_invasion_confirmed",
+    "microscopic_vascular_invasion_identified",
+    "evidence_of_response_to_preoperative_treatment",
+    "background_liver",
+    "aetiology",
+    "lymph_nodes_examined",
+    "lymph_nodes_with_metastases",
+    "comments_additional_information",
+    "pT",
+    "pN",
+    "tumour_block"
+  ]
+}

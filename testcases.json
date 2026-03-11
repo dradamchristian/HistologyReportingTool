@@ -641,6 +641,23 @@
         "necrosis present",
         "TUMOUR BLOCK: TB1"
       ]
+    },
+    {
+      "id": "HCC_default_prompt_30mm_cirrhosis",
+      "EXPECTED_DATASET": "hepatocellular_carcinoma",
+      "INPUT": "HCC 30mm 3mm margin, no nodes, background cirrhosis.",
+      "EXPECTED_CHECKS": [
+        "Tumour type: HCC NOS.",
+        "Tumour grade/differentiation by worst area: Moderate.",
+        "Tumour cells present at excision margin: No.",
+        "If no, distance to resection margin: 3 mm (1–10 mm).",
+        "Macroscopic vascular invasion confirmed: No.",
+        "Microscopic vascular invasion identified: Not identified.",
+        "background liver:",
+        "Cirrhosis.",
+        "pT: T1b",
+        "pN: N0"
+      ]
     }
   ]
 }
