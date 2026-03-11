@@ -1,0 +1,19 @@
+DIAGNOSIS:
+Adenocarcinoma in keeping with a colorectal primary.
+
+MICROSCOPY:
+Tumour grade/differentiation: {{tumour_grade_differentiation}}.
+Tumour cells present at resection margin: {{tumour_cells_present_at_resection_margin}}.
+{{#if distance_to_resection_margin_mm}}Distance to resection margin: {{distance_to_resection_margin_mm}} mm ({{distance_category_to_resection_margin}}).{{/if}}
+Microscopic vascular invasion identified: {{microscopic_vascular_invasion_identified}}.
+Neoadjuvant therapy given: {{neoadjuvant_therapy_given}}.
+{{#if if_yes_neoadjuvant_response}}If yes, response: {{if_yes_neoadjuvant_response}}.{{/if}}
+
+BACKGROUND LIVER:
+{{background_liver}}.
+
+COMMENTS/ADDITIONAL INFORMATION:
+{{comments_additional_information}}
+{{#if tumour_block}}
+TUMOUR BLOCK: {{tumour_block}}
+{{/if}}

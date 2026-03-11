@@ -1,0 +1,95 @@
+{
+  "title": "Colorectal liver metastasis (CRLM) proforma",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "tumour_grade_differentiation": {
+      "type": "string",
+      "enum": [
+        "Well/moderate",
+        "Poor"
+      ],
+      "default": "Well/moderate"
+    },
+    "tumour_cells_present_at_resection_margin": {
+      "type": "string",
+      "enum": [
+        "Yes",
+        "No"
+      ],
+      "default": "No"
+    },
+    "distance_to_resection_margin_mm": {
+      "type": "string",
+      "default": ""
+    },
+    "distance_category_to_resection_margin": {
+      "type": "string",
+      "enum": [
+        "<1 mm",
+        "1\u201310 mm",
+        ">10 mm",
+        "N/A"
+      ],
+      "default": "N/A"
+    },
+    "microscopic_vascular_invasion_identified": {
+      "type": "string",
+      "enum": [
+        "Present",
+        "Not identified"
+      ],
+      "default": "Not identified"
+    },
+    "neoadjuvant_therapy_given": {
+      "type": "string",
+      "enum": [
+        "Yes",
+        "No",
+        "Not known"
+      ],
+      "default": "No"
+    },
+    "if_yes_neoadjuvant_response": {
+      "type": "string",
+      "enum": [
+        "No residual tumour cells",
+        "Rare small groups of viable cells",
+        "Residual cancer cells with evident regression",
+        "No evident tumour regression",
+        "Not applicable"
+      ],
+      "default": ""
+    },
+    "background_liver": {
+      "type": "string",
+      "enum": [
+        "Normal",
+        "Steatosis",
+        "Chronic liver disease with fibrosis",
+        "Sinusoidal obstruction syndrome"
+      ],
+      "default": "Normal"
+    },
+    "comments_additional_information": {
+      "type": "string",
+      "default": ""
+    },
+    "tumour_block": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "required": [
+    "tumour_grade_differentiation",
+    "tumour_cells_present_at_resection_margin",
+    "distance_to_resection_margin_mm",
+    "distance_category_to_resection_margin",
+    "microscopic_vascular_invasion_identified",
+    "neoadjuvant_therapy_given",
+    "if_yes_neoadjuvant_response",
+    "background_liver",
+    "comments_additional_information",
+    "tumour_block"
+  ]
+}
