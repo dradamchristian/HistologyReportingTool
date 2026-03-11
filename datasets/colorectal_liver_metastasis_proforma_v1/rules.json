@@ -1,0 +1,10 @@
+{
+  "r_status_rules": {
+    "R1_if_any": [
+      {
+        "field": "tumour_cells_present_at_resection_margin",
+        "equals": "Yes"
+      }
+    ]
+  }
+}

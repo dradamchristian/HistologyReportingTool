@@ -1,0 +1,18 @@
+{
+  "id": "colorectal_liver_metastasis_proforma_v1",
+  "kind": "rcpath",
+  "match": {
+    "any": [
+      "crlm",
+      "colorectal liver mets",
+      "colorectal liver metastasis",
+      "liver metastasis",
+      "liver metastases",
+      "hepatic metastasis",
+      "hepatic metastases"
+    ]
+  },
+  "pipeline": {
+    "mode": "schema_extract_then_rules"
+  }
+}

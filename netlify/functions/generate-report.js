@@ -1510,6 +1510,54 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
         extracted.comment = extractAdditionalComment(rawText);
       }
 
+      // --------------------------
+      // CRLM deterministic patch
+      // --------------------------
+      if (datasetId === "colorectal_liver_metastasis_proforma_v1") {
+        const t = String(rawText || "").toLowerCase();
+
+        // Margin distance: supports "crlm 3mm" shorthand and explicit margin phrasing.
+        const marginMatch =
+          rawText.match(/\bcrlm\b[^\d]{0,8}(\d+(?:\.\d+)?)\s*mm\b/i) ||
+          rawText.match(/\b(?:margin|resection\s+margin)\b[^\d]{0,20}(\d+(?:\.\d+)?)\s*mm\b/i) ||
+          rawText.match(/(\d+(?:\.\d+)?)\s*mm\b[^.\n]{0,40}\b(?:from|to)\b[^.\n]{0,20}\b(?:margin|resection\s+margin)\b/i);
+
+        if (marginMatch) {
+          const dist = Number(marginMatch[1]);
+          if (Number.isFinite(dist)) {
+            extracted.distance_to_resection_margin_mm = String(dist);
+            extracted.tumour_cells_present_at_resection_margin = (dist === 0) ? "Yes" : "No";
+            if (dist < 1) extracted.distance_category_to_resection_margin = "<1 mm";
+            else if (dist <= 10) extracted.distance_category_to_resection_margin = "1–10 mm";
+            else extracted.distance_category_to_resection_margin = ">10 mm";
+          }
+        }
+
+        // Common shorthand cues.
+        if (/\bpoor\b/.test(t)) extracted.tumour_grade_differentiation = "Poor";
+        if (/\bsteat(?:osis)?\b/.test(t)) extracted.background_liver = "Steatosis";
+        if (/\bfibrosis\b|\bchronic\s+liver\s+disease\b|\bcld\b/.test(t)) extracted.background_liver = "Chronic liver disease with fibrosis";
+        if (/\bsinusoidal\s+obstruction\b|\bsos\b/.test(t)) extracted.background_liver = "Sinusoidal obstruction syndrome";
+
+        if (/\b(?:neoadj|neoadjuvant)\b/.test(t) && !/\bno\s+(?:neoadj|neoadjuvant)\b/.test(t)) {
+          extracted.neoadjuvant_therapy_given = "Yes";
+        }
+
+        if (/\bvascular\s+invasion\s+(present|identified)\b|\bvi\s+present\b/.test(t)) {
+          extracted.microscopic_vascular_invasion_identified = "Present";
+        }
+
+        const extraComments = [];
+        if (/\bcapsular\s+invasion\b/.test(t)) extraComments.push("Capsular invasion is seen.");
+        if (/\bbdi\b|\bbile\s+duct\s+invasion\b/.test(t)) extraComments.push("Bile duct invasion is seen.");
+        if (/\bpni\b|\bperineural\s+invasion\b/.test(t)) extraComments.push("Perineural invasion is seen.");
+
+        if (extraComments.length) {
+          const existing = String(extracted.comments_additional_information || "").trim();
+          extracted.comments_additional_information = [existing, ...extraComments].filter(Boolean).join(" ").trim();
+        }
+      }
+
       const whoSubtype = String(extracted.who_adenocarcinoma_subtype || "").trim();
       const whoSubtypeOther = String(extracted.who_adenocarcinoma_subtype_other_specify || "").trim();
       if (whoSubtype) {
