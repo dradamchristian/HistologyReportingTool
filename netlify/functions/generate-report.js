@@ -119,6 +119,14 @@ function extractNodeTallies(rawText) {
         positive += parseInt(m[1], 10);
         examined += parseInt(m[2], 10);
       }
+
+      // Also count standalone examined-only mentions in the same node clause,
+      // e.g. "1/2 nodes, 2 nodes, 3 nodes, 4/5 nodes" => add 2 + 3 examined.
+      const normalizedClause = clause.replace(/\b\d+\s*(?:\/|of)\s*\d+\s*nodes?\b/ig, " ");
+      const standaloneNodeCounts = [...normalizedClause.matchAll(/\b(\d+)\s*nodes?\b/ig)];
+      for (const m of standaloneNodeCounts) {
+        examined += parseInt(m[1], 10);
+      }
       continue;
     }
 
@@ -169,6 +177,28 @@ function extractNodeTallies(rawText) {
 
   if (examined === 0 && positive === 0) return { examined: null, positive: null, isFinal: false };
   return { examined, positive, isFinal: false };
+}
+
+function parseHccMarginDistanceMm(rawText) {
+  const text = String(rawText || "");
+  if (!text.trim()) return null;
+
+  const matches = [];
+  const patterns = [
+    /\b(?:margin|resection\s+margin|excision\s+margin)\b[^\d\n]{0,20}(\d+(?:\.\d+)?)\s*mm\b/ig,
+    /(\d+(?:\.\d+)?)\s*mm\b[^\d\n]{0,8}\b(?:margin|resection\s+margin|excision\s+margin)\b/ig,
+    /(\d+(?:\.\d+)?)\s*mm\b[^.\n]{0,40}\b(?:from|to)\b[^.\n]{0,20}\b(?:margin|resection\s+margin|excision\s+margin)\b/ig,
+  ];
+
+  for (const re of patterns) {
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      const val = Number(m[1]);
+      if (Number.isFinite(val)) matches.push(val);
+    }
+  }
+
+  return matches.length ? matches[matches.length - 1] : null;
 }
 
 function applyPositiveNodeLymphaticDefault(schema, extracted) {
@@ -1617,19 +1647,13 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
         if (/\bpoor\b/.test(t) && /\b(?:differentiat|grade)\b/.test(t)) extracted.tumour_grade_differentiation = "Poor";
 
         // Margin distance
-        const marginMatch =
-          rawText.match(/\b(?:margin|resection\s+margin|excision\s+margin)\b[^\d]{0,20}(\d+(?:\.\d+)?)\s*mm\b/i) ||
-          rawText.match(/(\d+(?:\.\d+)?)\s*mm\b[^.\n]{0,40}\b(?:from|to)\b[^.\n]{0,20}\b(?:margin|resection\s+margin|excision\s+margin)\b/i);
-
-        if (marginMatch) {
-          const dist = Number(marginMatch[1]);
-          if (Number.isFinite(dist)) {
-            extracted.distance_to_resection_margin_mm = String(dist);
-            extracted.tumour_cells_present_at_excision_margin = dist === 0 ? "Yes" : "No";
-            if (dist < 1) extracted.distance_category_to_resection_margin = "<1 mm";
-            else if (dist <= 10) extracted.distance_category_to_resection_margin = "1–10 mm";
-            else extracted.distance_category_to_resection_margin = ">10 mm";
-          }
+        const dist = parseHccMarginDistanceMm(rawText);
+        if (dist != null) {
+          extracted.distance_to_resection_margin_mm = String(dist);
+          extracted.tumour_cells_present_at_excision_margin = dist === 0 ? "Yes" : "No";
+          if (dist < 1) extracted.distance_category_to_resection_margin = "<1 mm";
+          else if (dist <= 10) extracted.distance_category_to_resection_margin = "1–10 mm";
+          else extracted.distance_category_to_resection_margin = ">10 mm";
         }
 
         if (/\bmargin\s+involved\b|\bat\s+margin\b/.test(t)) extracted.tumour_cells_present_at_excision_margin = "Yes";
