@@ -620,6 +620,27 @@
         "drug-related",
         "CONCLUSION:"
       ]
+    },
+    {
+      "id": "CRLM_blank_optional_sections",
+      "EXPECTED_DATASET": "colorectal_liver_metastasis",
+      "INPUT": "CRLM resection. Well/moderate metastatic adenocarcinoma. Tumour cells not present at resection margin. Microscopic vascular invasion not identified. No neoadjuvant therapy. Background liver normal.",
+      "EXPECTED_CHECKS": [
+        "DIAGNOSIS:",
+        "MICROSCOPY:",
+        "TUMOUR BLOCK:",
+        "! COMMENTS/ADDITIONAL INFORMATION:"
+      ]
+    },
+    {
+      "id": "CRLM_with_comment_and_block",
+      "EXPECTED_DATASET": "colorectal_liver_metastasis",
+      "INPUT": "CRLM: Poor metastatic adenocarcinoma. Tumour cells not at resection margin. Distance to resection margin 2 mm. Microscopic vascular invasion present. Neoadjuvant therapy given with residual cancer cells with evident regression. Background liver steatosis. Comments additional information: necrosis present. Tumour block TB1.",
+      "EXPECTED_CHECKS": [
+        "COMMENTS/ADDITIONAL INFORMATION:",
+        "necrosis present",
+        "TUMOUR BLOCK: TB1"
+      ]
     }
   ]
 }
