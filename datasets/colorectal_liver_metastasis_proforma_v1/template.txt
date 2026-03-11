@@ -12,8 +12,8 @@ Neoadjuvant therapy given: {{neoadjuvant_therapy_given}}.
 BACKGROUND LIVER:
 {{background_liver}}.
 
+{{#if comments_additional_information}}
 COMMENTS/ADDITIONAL INFORMATION:
 {{comments_additional_information}}
-{{#if tumour_block}}
-TUMOUR BLOCK: {{tumour_block}}
 {{/if}}
+TUMOUR BLOCK: {{tumour_block}}
