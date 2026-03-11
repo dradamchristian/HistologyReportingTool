@@ -97,18 +97,32 @@ function extractNodeTallies(rawText) {
   let examined = 0;
   let positive = 0;
 
-  // Split into small clauses to prevent double-counting within a phrase like "1/2 nodes"
+  // Split into clauses; keep commas inside a clause so lists like
+  // "nodes - 0/1, 2/3" are accumulated together.
   const clauses = text
     .replace(/\r/g, "\n")
     .replace(/[;]+/g, ".")
-    .replace(/[,\n]+/g, ".")
+    .replace(/[\n]+/g, ".")
     .split(".")
     .map(s => s.trim())
     .filter(Boolean);
 
   for (const clause of clauses) {
     const c = clause.toLowerCase();
-    if (!c.includes("node")) continue;
+    const hasNodeWord = c.includes("node");
+
+    // Accumulate repeated fraction tallies in one clause:
+    // "nodes - 0/1, 2/3" or "0/1 nodes, 0/3 nodes"
+    const fractionMatches = [...clause.matchAll(/(\d+)\s*(?:\/|of)\s*(\d+)/ig)];
+    if (fractionMatches.length && (hasNodeWord || /\b(?:final|overall)\s+nodes?\b/i.test(clause))) {
+      for (const m of fractionMatches) {
+        positive += parseInt(m[1], 10);
+        examined += parseInt(m[2], 10);
+      }
+      continue;
+    }
+
+    if (!hasNodeWord) continue;
 
     // Prefer fraction-style: "1/2 nodes", "1 of 2 nodes", "nodes 1/2", "nodes 1 of 2"
     let m = clause.match(/(\d+)\s*(?:\/|of)\s*(\d+)\s*nodes?\b/i) ||
@@ -155,6 +169,26 @@ function extractNodeTallies(rawText) {
 
   if (examined === 0 && positive === 0) return { examined: null, positive: null, isFinal: false };
   return { examined, positive, isFinal: false };
+}
+
+function applyPositiveNodeLymphaticDefault(schema, extracted) {
+  const field = "lymphatic_invasion_level";
+  const props = schema?.properties || {};
+  if (!props[field]) return;
+
+  const nPosRaw =
+    (extracted.nodes_positive != null) ? extracted.nodes_positive :
+    (extracted.nodes_involved != null) ? extracted.nodes_involved :
+    (extracted.number_positive != null) ? extracted.number_positive :
+    null;
+  const nPos = Number(nPosRaw || 0);
+  if (!Number.isFinite(nPos) || nPos <= 0) return;
+
+  const enums = props[field]?.enum || [];
+  if (!enums.includes("Extramural")) return;
+
+  const current = String(extracted[field] ?? "").trim();
+  if (!current || /^none$/i.test(current)) extracted[field] = "Extramural";
 }
 
 function extractTumourBlock(rawText) {
@@ -1521,6 +1555,7 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
     // Re-apply accumulators at the end to override any later single-match parsing
     applyAccumulators(rawText, schema, extracted);
     finalizeStaging(schema, extracted);
+    applyPositiveNodeLymphaticDefault(schema, extracted);
 
     let report_text = renderTemplate(template, extracted)
       .split("\n")
