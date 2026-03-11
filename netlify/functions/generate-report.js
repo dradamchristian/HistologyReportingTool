@@ -590,8 +590,8 @@ function computeColorectalLocalPTFromText(text) {
   // T4a: peritoneal surface/serosa
   if (/(serosa|serosal|peritoneal surface|visceral peritoneum|penetrates peritoneum)/i.test(t)) return "T4a";
 
-  // T3: beyond muscularis propria (extramural)
-  if (/(beyond muscularis propria|through the wall|transmural|extramural|pericolic fat|perirectal fat)/i.test(t)) return "T3";
+  // T3: beyond muscularis propria / bowel wall (extramural)
+  if (/(beyond muscularis propria|beyond (?:the )?wall|through (?:the )?wall|transmural|extramural|pericolic fat|perirectal fat)/i.test(t)) return "T3";
 
   // T2: muscularis propria
   if (/muscularis propria/i.test(t)) return "T2";
@@ -606,10 +606,16 @@ function computeColorectalLocalPTFromText(text) {
 function parseBeyondMPDistanceMm(text) {
   const t = String(text || "");
   // Look for an explicit association with beyond muscularis / extramural depth
-  const re = /(beyond\s+muscularis\s+propria|beyond\s+mp|extramural\s+(depth|spread)|distance\s+beyond\s+muscularis)[^\d]{0,40}(\d+(?:\.\d+)?)\s*mm/i;
-  const m = t.match(re);
-  if (!m) return null;
-  return m[3]; // return as string to match colorectal schema
+  const reAfter = /(beyond\s+muscularis\s+propria|beyond\s+mp|beyond\s+(?:the\s+)?wall|extramural\s+(depth|spread)|distance\s+beyond\s+muscularis)[^\d]{0,40}(\d+(?:\.\d+)?)\s*mm/i;
+  const mAfter = t.match(reAfter);
+  if (mAfter) return mAfter[3]; // return as string to match colorectal schema
+
+  // Also handle reversed phrasing: "6 mm beyond the wall"
+  const reBefore = /(\d+(?:\.\d+)?)\s*mm[^\n\.]{0,40}(beyond\s+muscularis\s+propria|beyond\s+mp|beyond\s+(?:the\s+)?wall|extramural\s+(depth|spread))/i;
+  const mBefore = t.match(reBefore);
+  if (mBefore) return mBefore[1];
+
+  return null;
 }
 
 function parseCrmDistanceMmColorectal(text) {
