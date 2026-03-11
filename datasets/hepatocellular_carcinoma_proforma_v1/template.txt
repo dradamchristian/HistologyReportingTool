@@ -1,0 +1,30 @@
+DIAGNOSIS:
+Hepatocellular carcinoma.
+
+MICROSCOPY:
+Tumour type: {{tumour_type}}{{#if tumour_type_other_specify}} ({{tumour_type_other_specify}}){{/if}}.
+Tumour grade/differentiation by worst area: {{tumour_grade_differentiation}}.
+Tumour cells present at excision margin: {{tumour_cells_present_at_excision_margin}}.
+{{#if distance_to_resection_margin_mm}}If no, distance to resection margin: {{distance_to_resection_margin_mm}} mm ({{distance_category_to_resection_margin}}).{{/if}}
+Macroscopic vascular invasion confirmed: {{macroscopic_vascular_invasion_confirmed}}.
+Microscopic vascular invasion identified: {{microscopic_vascular_invasion_identified}}.
+Evidence of response to preoperative treatment: {{evidence_of_response_to_preoperative_treatment}}.
+
+BACKGROUND LIVER:
+{{background_liver}}.
+Aetiology: {{aetiology}}.
+
+LYMPH NODES:
+Number of lymph nodes examined: {{lymph_nodes_examined}}.
+Number of lymph nodes with metastases: {{lymph_nodes_with_metastases}}.
+
+{{#if comments_additional_information}}
+COMMENTS/ADDITIONAL INFORMATION:
+{{comments_additional_information}}
+{{/if}}
+
+PATHOLOGICAL STAGING:
+pT: {{pT}}
+pN: {{pN}}
+
+TUMOUR BLOCK: {{tumour_block}}

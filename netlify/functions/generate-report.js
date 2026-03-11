@@ -692,6 +692,50 @@ function computePNFromRules(rules, nodesPositive) {
   return "NX";
 }
 
+function computeHccPTFromPrompt(rawText, extracted) {
+  const t = String(rawText || "").toLowerCase();
+
+  // Explicit stage mention in prompt always wins.
+  const explicit = t.match(/\bp\s*t\s*(0|1a|1b|2|3|4|x)\b/i) || t.match(/\bt\s*(0|1a|1b|2|3|4|x)\b/i);
+  if (explicit && explicit[1]) return `T${String(explicit[1]).toUpperCase()}`;
+
+  const macroOrMicroVasc =
+    /\b(?:macro|macroscopic)\s+vascular\s+invasion\s+(?:confirmed\s+)?(?:yes|present)\b/.test(t) ||
+    /\bmicroscopic\s+vascular\s+invasion\s+(?:identified\s+)?(?:present|yes)\b/.test(t) ||
+    /\bvascular\s+invasion\s+(?:present|identified)\b/.test(t);
+
+  const majorBranchOrAdjacent =
+    /\bmajor\s+branch\s+of\s+the\s+(?:portal|hepatic)\s+vein\b/.test(t) ||
+    /\bportal\s+vein\s+invasion\b/.test(t) ||
+    /\bhepatic\s+vein\s+invasion\b/.test(t) ||
+    /\bdirect\s+invasion\s+of\s+adjacent\s+organs?\b/.test(t) ||
+    /\bperforates?\s+visceral\s+peritoneum\b/.test(t);
+  if (majorBranchOrAdjacent) return "T4";
+
+  const sizeMatches = [...String(rawText || "").matchAll(/(\d+(?:\.\d+)?)\s*mm\b/ig)];
+  const sizes = sizeMatches.map(m => Number(m[1])).filter(Number.isFinite);
+  const maxSize = sizes.length ? Math.max(...sizes) : null;
+
+  const multipleTumours =
+    /\bmultiple\s+tumou?rs?\b/.test(t) ||
+    /\b(2|two|3|three|4|four|5|five|\d+)\s+tumou?rs?\b/.test(t);
+
+  if (multipleTumours) {
+    if (maxSize != null && maxSize > 50) return "T3";
+    return "T2";
+  }
+
+  if (maxSize != null) {
+    if (maxSize < 20) return "T1a";
+    if (maxSize > 20) return macroOrMicroVasc ? "T2" : "T1b";
+    // Exactly 20 mm is not explicitly covered in the supplied criteria; treat as >=20 threshold.
+    return macroOrMicroVasc ? "T2" : "T1b";
+  }
+
+  const fallback = String(extracted?.pT || "").trim();
+  return fallback || "TX";
+}
+
 function derivePNFromSchema(schema, nodesPositive) {
   const n = Number(nodesPositive || 0);
 
@@ -1556,6 +1600,85 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
           const existing = String(extracted.comments_additional_information || "").trim();
           extracted.comments_additional_information = [existing, ...extraComments].filter(Boolean).join(" ").trim();
         }
+      }
+
+      // --------------------------
+      // HCC deterministic patch
+      // --------------------------
+      if (datasetId === "hepatocellular_carcinoma_proforma_v1") {
+        const t = String(rawText || "").toLowerCase();
+
+        // Tumour subtype
+        if (/\bfibrolamellar\b/.test(t)) extracted.tumour_type = "Fibrolamellar carcinoma";
+        if (/\bother\s+histological\s+subtype\b/.test(t)) extracted.tumour_type = "Other histological subtype";
+
+        // Grade defaults to Moderate; override when explicit.
+        if (/\bwell\b/.test(t) && /\b(?:differentiat|grade)\b/.test(t)) extracted.tumour_grade_differentiation = "Well";
+        if (/\bpoor\b/.test(t) && /\b(?:differentiat|grade)\b/.test(t)) extracted.tumour_grade_differentiation = "Poor";
+
+        // Margin distance
+        const marginMatch =
+          rawText.match(/\b(?:margin|resection\s+margin|excision\s+margin)\b[^\d]{0,20}(\d+(?:\.\d+)?)\s*mm\b/i) ||
+          rawText.match(/(\d+(?:\.\d+)?)\s*mm\b[^.\n]{0,40}\b(?:from|to)\b[^.\n]{0,20}\b(?:margin|resection\s+margin|excision\s+margin)\b/i);
+
+        if (marginMatch) {
+          const dist = Number(marginMatch[1]);
+          if (Number.isFinite(dist)) {
+            extracted.distance_to_resection_margin_mm = String(dist);
+            extracted.tumour_cells_present_at_excision_margin = dist === 0 ? "Yes" : "No";
+            if (dist < 1) extracted.distance_category_to_resection_margin = "<1 mm";
+            else if (dist <= 10) extracted.distance_category_to_resection_margin = "1–10 mm";
+            else extracted.distance_category_to_resection_margin = ">10 mm";
+          }
+        }
+
+        if (/\bmargin\s+involved\b|\bat\s+margin\b/.test(t)) extracted.tumour_cells_present_at_excision_margin = "Yes";
+        if (/\bmargin\s+clear\b|\bno\s+tumou?r\s+at\s+margin\b/.test(t)) extracted.tumour_cells_present_at_excision_margin = "No";
+
+        // Vascular invasion fields
+        if (/\b(?:macro|macroscopic)\s+vascular\s+invasion\s+(?:confirmed\s+)?yes\b|\bmacro(?:scopic)?\s+vascular\s+invasion\s+present\b/.test(t)) {
+          extracted.macroscopic_vascular_invasion_confirmed = "Yes";
+        }
+        if (/\b(?:macro|macroscopic)\s+vascular\s+invasion\s+no\b|\bno\s+macroscopic\s+vascular\s+invasion\b/.test(t)) {
+          extracted.macroscopic_vascular_invasion_confirmed = "No";
+        }
+        if (/\bmicroscopic\s+vascular\s+invasion\s+(?:identified\s+)?(?:present|yes)\b|\bmicro(?:scopic)?\s+vascular\s+invasion\s+present\b/.test(t)) {
+          extracted.microscopic_vascular_invasion_identified = "Present";
+        }
+        if (/\bmicroscopic\s+vascular\s+invasion\s+(?:not\s+identified|no)\b|\bno\s+microscopic\s+vascular\s+invasion\b/.test(t)) {
+          extracted.microscopic_vascular_invasion_identified = "Not identified";
+        }
+
+        // Background liver choices
+        if (/\binsufficient\s+for\s+assessment\b/.test(t)) extracted.background_liver = "Insufficient for assessment";
+        else if (/\bcirrhosis\b/.test(t)) extracted.background_liver = "Cirrhosis";
+        else if (/\bbridging\s+with\s+nodules\b/.test(t)) extracted.background_liver = "Bridging with nodules";
+        else if (/\bbridging\b/.test(t)) extracted.background_liver = "Bridging";
+        else if (/\bperiportal\b/.test(t)) extracted.background_liver = "Periportal";
+        else if (/\bfibrosis\b/.test(t)) extracted.background_liver = "Fibrosis";
+        else if (/\bnone\b/.test(t) && /\bbackground\s+liver\b/.test(t)) extracted.background_liver = "None";
+
+        // Aetiology
+        if (/\baetiology\s*[:\-]\s*([^\n.]+)/i.test(rawText)) {
+          const m = rawText.match(/\baetiology\s*[:\-]\s*([^\n.]+)/i);
+          if (m && m[1]) extracted.aetiology = m[1].trim();
+        }
+
+        // Response to pre-op treatment
+        if (/\bnot\s+applicable\b/.test(t) && /\bpre-?op|preoperative\b/.test(t)) extracted.evidence_of_response_to_preoperative_treatment = "Not applicable";
+        else if (/\bcomplete\b/.test(t) && /\bresponse\b/.test(t)) extracted.evidence_of_response_to_preoperative_treatment = "Yes, complete";
+        else if (/\bincomplete\b/.test(t) && /\bresponse\b/.test(t)) extracted.evidence_of_response_to_preoperative_treatment = "Yes, incomplete";
+        else if (/\bno\s+response\b/.test(t)) extracted.evidence_of_response_to_preoperative_treatment = "No";
+
+        // Node fields from accumulated node counters
+        const nExam = Number(extracted.nodes_examined ?? extracted.lymph_nodes_examined ?? 0);
+        const nPos = Number(extracted.nodes_positive ?? extracted.lymph_nodes_with_metastases ?? 0);
+        if (Number.isFinite(nExam)) extracted.lymph_nodes_examined = nExam;
+        if (Number.isFinite(nPos)) extracted.lymph_nodes_with_metastases = nPos;
+        extracted.pN = nPos > 0 ? "N1" : "N0";
+
+        // pT derived from prompt and available cues.
+        extracted.pT = computeHccPTFromPrompt(rawText, extracted);
       }
 
       const whoSubtype = String(extracted.who_adenocarcinoma_subtype || "").trim();
