@@ -17,6 +17,7 @@ h1{margin:0 0 6px;font-size:22px}
 .sub{color:var(--muted);font-size:13px}
 main{max-width:1100px;margin:0 auto;padding:10px 18px 26px;display:grid;gap:14px;grid-template-columns:1fr;}
 @media(min-width:960px){main{grid-template-columns:1fr 1fr;}}
+.page-note{max-width:1100px;margin:0 auto;padding:0 18px 18px;color:var(--muted);font-size:11px;text-align:center;opacity:.85;}
 .span2{grid-column:1/-1;}
 .card{background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
 border:1px solid var(--border);border-radius:16px;padding:14px;box-shadow:0 10px 25px rgba(0,0,0,.25);}
@@ -225,6 +226,8 @@ input[type="text"]{
     </div>
   </div>
 </div>
+
+<footer class="page-note">© AC Pathology <span id="currentYear"></span></footer>
 
 <script defer src="assets/app.js"></script>
 <script defer src="assets/phone-bridge.js"></script>
