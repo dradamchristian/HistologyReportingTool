@@ -114,3 +114,6 @@ $("btnGenerate").addEventListener("click", generate);
 $("btnClear").addEventListener("click", () => { stopDictation(); finalText=""; $("inputText").value=""; $("output").textContent=""; $("caveatsBox").style.display="none"; setStatus(""); });
 $("btnCopy").addEventListener("click", copyOut);
 setMicPill();
+
+const yearEl = $("currentYear");
+if (yearEl) yearEl.textContent = new Date().getFullYear();
