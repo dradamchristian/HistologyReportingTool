@@ -1767,6 +1767,7 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
       report_text,
       caveats: buildCaveats(extracted, datasetId),
       dataset_id: datasetId,
+      extracted,
       engine_version: ENGINE_VERSION,
       debug: {
         nodes_examined: extracted.nodes_examined,

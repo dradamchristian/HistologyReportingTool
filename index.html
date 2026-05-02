@@ -139,7 +139,17 @@ input[type="text"]{
     <h2>Output</h2>
     <div class="row" style="margin-top:0;margin-bottom:10px;">
       <button class="primary" id="btnCopy">📋 Copy</button>
+      <button class="good" id="btnCopySaveAudit">📋💾 Copy + add to database</button>
       <span class="pill">Plain text</span>
+    </div>
+    <div id="auditPanel" class="caveats" style="display:none; margin-bottom:10px;">
+      <div style="font-weight:700;">Audit capture (cancer resections)</div>
+      <div class="small" style="margin:6px 0 8px;">Specimen number is used only to generate a server-side hash and is not stored as plain text.</div>
+      <div class="row" style="margin-top:0;">
+        <input id="auditSpecimenNumber" type="text" placeholder="Specimen number (required for audit save)" style="flex:1; min-width:240px;" />
+        <input id="auditConsultantName" type="text" placeholder="Consultant name (required for audit save)" style="flex:1; min-width:220px;" />
+      </div>
+      <div class="small" id="auditHint" style="margin-top:8px;"></div>
     </div>
     <pre id="output"></pre>
     <div id="caveatsBox" class="caveats" style="display:none;">

@@ -1,0 +1,194 @@
+const crypto = require('crypto');
+const { Pool } = require('pg');
+
+const ALLOWED_DATASETS = new Set([
+  'oesophagus_resection_rcpath_v3_microscopy',
+  'gastrectomy_resection_rcpath_v1_microscopy',
+  'colorectal_resection_rcpath_v1',
+  'gist_resection_rcpath_v1',
+  'hepatocellular_carcinoma_proforma_v1',
+  'colorectal_liver_metastasis_proforma_v1',
+]);
+
+let pool;
+
+function getPool() {
+  if (!pool) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) throw new Error('DATABASE_URL not set');
+    pool = new Pool({
+      connectionString,
+      ssl: { rejectUnauthorized: false },
+      max: 2,
+      idleTimeoutMillis: 5000,
+      connectionTimeoutMillis: 5000,
+    });
+  }
+  return pool;
+}
+
+function cleanString(value) {
+  if (value === null || value === undefined) return '';
+  return String(value).trim();
+}
+
+function toBool(value) {
+  const s = cleanString(value).toLowerCase();
+  if (!s) return null;
+  if (['yes', 'y', 'true', 'present', 'positive', 'involved'].includes(s)) return true;
+  if (['no', 'n', 'false', 'not identified', 'negative', 'none', 'not involved'].includes(s)) return false;
+  return null;
+}
+
+function toNumber(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function normalizeSpecimen(input) {
+  return cleanString(input).replace(/\s+/g, '').toUpperCase();
+}
+
+function hashSpecimen(specimenNumber) {
+  const secret = process.env.AUDIT_HASH_SECRET;
+  if (!secret) throw new Error('AUDIT_HASH_SECRET not set');
+  return crypto.createHmac('sha256', secret).update(specimenNumber).digest('hex');
+}
+
+function mapAuditFields(datasetId, extracted = {}) {
+  const out = {
+    tumour_site: null,
+    tumour_type: extracted.tumour_type || null,
+    differentiation: extracted.differentiation || extracted.differentiation_worst_area || extracted.tumour_grade_differentiation || null,
+    pt_stage: extracted.pT || extracted.stage_pT || extracted.local_invasion_pT || extracted.tnm_pT || null,
+    pn_stage: extracted.pN || extracted.stage_pN || extracted.tnm_pN || null,
+    pm_stage: extracted.pM || extracted.stage_pM || extracted.tnm_pM || null,
+    nodes_examined: extracted.nodes_examined ?? extracted.lymph_nodes_examined ?? extracted.lymph_nodes_present ?? null,
+    nodes_positive: extracted.nodes_positive ?? extracted.lymph_nodes_with_metastases ?? extracted.lymph_nodes_positive ?? null,
+    crm_involved: null,
+    crm_distance_mm: extracted.distance_to_crm_mm ?? extracted.distance_to_resection_margin_mm ?? null,
+    margin_longitudinal_involved: extracted.longitudinal_margin_involved,
+    margin_distal_involved: extracted.distal_margin_involved,
+    lvi_present: extracted.lvi ?? extracted.lymphatic_invasion_level ?? extracted.microscopic_vascular_invasion_identified,
+    pni_present: extracted.pni ?? extracted.perineural_invasion_level,
+    emvi_present: extracted.venous_invasion_level ?? extracted.macroscopic_vascular_invasion_confirmed,
+    neoadjuvant_given: extracted.neoadjuvant_therapy_history ?? extracted.neoadjuvant_therapy_given,
+    tumour_block: extracted.tumour_block || null,
+  };
+
+  if (datasetId === 'gist_resection_rcpath_v1') out.tumour_site = extracted.site_of_tumour || null;
+
+  const crmRaw = extracted.circumferential_margin_status
+    ?? extracted.circumferential_margin_involved
+    ?? extracted.tumour_cells_present_at_excision_margin
+    ?? extracted.tumour_cells_present_at_resection_margin;
+  out.crm_involved = toBool(crmRaw);
+
+  out.margin_longitudinal_involved = toBool(out.margin_longitudinal_involved);
+  out.margin_distal_involved = toBool(out.margin_distal_involved);
+
+  out.lvi_present = toBool(out.lvi_present);
+  out.pni_present = toBool(out.pni_present);
+  out.emvi_present = toBool(out.emvi_present);
+  out.neoadjuvant_given = toBool(out.neoadjuvant_given);
+
+  out.nodes_examined = toNumber(out.nodes_examined);
+  out.nodes_positive = toNumber(out.nodes_positive);
+  out.crm_distance_mm = toNumber(out.crm_distance_mm);
+
+  return out;
+}
+
+exports.handler = async (event) => {
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'Method not allowed' }) };
+  }
+
+  try {
+    const body = JSON.parse(event.body || '{}');
+    const datasetId = cleanString(body.dataset_id);
+    const consultantName = cleanString(body.consultant_name);
+    const reportText = cleanString(body.report_text);
+    const specimenNumber = normalizeSpecimen(body.specimen_number);
+    const extracted = body.extracted && typeof body.extracted === 'object' ? body.extracted : {};
+
+    if (!ALLOWED_DATASETS.has(datasetId)) {
+      return { statusCode: 400, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'Dataset not eligible for audit save' }) };
+    }
+    if (!consultantName) {
+      return { statusCode: 400, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'consultant_name is required' }) };
+    }
+    if (!specimenNumber) {
+      return { statusCode: 400, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'specimen_number is required' }) };
+    }
+
+    const specimenHash = hashSpecimen(specimenNumber);
+    const mapped = mapAuditFields(datasetId, extracted);
+
+    const db = getPool();
+    const sql = `
+      insert into audit.case_audit (
+        specimen_hash, consultant_name, dataset_id, report_text, raw_extracted_json,
+        tumour_site, tumour_type, differentiation,
+        pt_stage, pn_stage, pm_stage,
+        nodes_examined, nodes_positive,
+        crm_involved, crm_distance_mm,
+        margin_longitudinal_involved, margin_distal_involved,
+        lvi_present, pni_present, emvi_present,
+        neoadjuvant_given, tumour_block
+      )
+      values (
+        $1, $2, $3, $4, $5,
+        $6, $7, $8,
+        $9, $10, $11,
+        $12, $13,
+        $14, $15,
+        $16, $17,
+        $18, $19, $20,
+        $21, $22
+      )
+      returning id, created_at
+    `;
+
+    const params = [
+      specimenHash,
+      consultantName,
+      datasetId,
+      reportText || null,
+      JSON.stringify(extracted),
+      mapped.tumour_site,
+      mapped.tumour_type,
+      mapped.differentiation,
+      mapped.pt_stage,
+      mapped.pn_stage,
+      mapped.pm_stage,
+      mapped.nodes_examined,
+      mapped.nodes_positive,
+      mapped.crm_involved,
+      mapped.crm_distance_mm,
+      mapped.margin_longitudinal_involved,
+      mapped.margin_distal_involved,
+      mapped.lvi_present,
+      mapped.pni_present,
+      mapped.emvi_present,
+      mapped.neoadjuvant_given,
+      mapped.tumour_block,
+    ];
+
+    const result = await db.query(sql, params);
+    const row = result.rows[0] || {};
+
+    return {
+      statusCode: 200,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ok: true, id: row.id || null, created_at: row.created_at || null }),
+    };
+  } catch (err) {
+    return {
+      statusCode: 500,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ok: false, error: err.message || String(err) }),
+    };
+  }
+};
