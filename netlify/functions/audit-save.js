@@ -21,6 +21,8 @@ function toBool(value) {
   if (!s) return null;
   if (['yes', 'y', 'true', 'present', 'positive', 'involved'].includes(s)) return true;
   if (['no', 'n', 'false', 'not identified', 'negative', 'none', 'not involved', 'clear', 'uninvolved', 'free'].includes(s)) return false;
+  if (/\b(involved|positive|present|carcinoma)\b/.test(s) && !/\b(not involved|negative|uninvolved|no carcinoma|clear|free)\b/.test(s)) return true;
+  if (/\b(not involved|negative|uninvolved|no carcinoma|clear|free)\b/.test(s)) return false;
   return null;
 }
 
@@ -52,8 +54,8 @@ function mapAuditFields(datasetId, extracted = {}) {
     nodes_positive: extracted.nodes_positive ?? extracted.lymph_nodes_with_metastases ?? extracted.lymph_nodes_positive ?? null,
     crm_involved: null,
     crm_distance_mm: extracted.distance_to_crm_mm ?? extracted.distance_to_resection_margin_mm ?? null,
-    margin_longitudinal_involved: extracted.longitudinal_margin_involved,
-    margin_distal_involved: extracted.distal_margin_involved,
+    margin_longitudinal_involved: extracted.longitudinal_margin_involved ?? extracted.proximal_margin ?? extracted.proximal_margin_status,
+    margin_distal_involved: extracted.distal_margin_involved ?? extracted.distal_margin ?? extracted.distal_margin_status,
     lvi_present: extracted.lvi ?? extracted.lymphatic_invasion_level ?? extracted.microscopic_vascular_invasion_identified,
     pni_present: extracted.pni ?? extracted.perineural_invasion_level,
     emvi_present: extracted.venous_invasion_level ?? extracted.macroscopic_vascular_invasion_confirmed,
