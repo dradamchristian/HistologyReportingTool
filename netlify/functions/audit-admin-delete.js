@@ -10,25 +10,14 @@ exports.handler = async (event) => {
     if (!editedBy) return json(400, { ok: false, error: 'edited_by is required' });
 
     const db = getPool();
-    await db.query('begin');
-
-    const before = await db.query('select * from audit.case_audit where id = $1 for update', [b.id]);
-    if (!before.rows[0]) {
-      await db.query('rollback');
-      return json(404, { ok: false, error: 'Case not found' });
-    }
-
-    await db.query('delete from audit.case_audit where id = $1', [b.id]);
-    await db.query(
-      `insert into audit.case_audit_edits (case_audit_id, edited_by, edit_reason, before_json, after_json)
-       values ($1, $2, $3, $4::jsonb, $5::jsonb)`,
-      [b.id, editedBy, (b.edit_reason || '').trim() || 'Case deleted from audit admin', JSON.stringify(before.rows[0]), JSON.stringify({ deleted: true })]
+    const deleted = await db.query(
+      'delete from audit.case_audit where id = $1 returning id',
+      [b.id]
     );
 
-    await db.query('commit');
-    return json(200, { ok: true, deleted_id: b.id });
+    if (!deleted.rows[0]) return json(404, { ok: false, error: 'Case not found' });
+    return json(200, { ok: true, deleted_id: deleted.rows[0].id });
   } catch (err) {
-    try { await getPool().query('rollback'); } catch (_) {}
     return json(500, { ok: false, error: err.message || String(err) });
   }
 };
