@@ -13,7 +13,7 @@ exports.handler = async () => {
   try {
     const db = getPool();
     await db.query(`create table if not exists audit.consultant_directory (name text primary key, created_at timestamptz not null default now())`);
-    const consultants = await db.query("select name from audit.consultant_directory union select distinct consultant_name as name from audit.case_audit where consultant_name is not null and trim(consultant_name) <> '' order by name");
+    const consultants = await db.query("select name from audit.consultant_directory order by name");
     const datasets = await db.query("select distinct dataset_id from audit.case_audit where dataset_id is not null and trim(dataset_id) <> '' order by dataset_id");
     return json(200, {
       ok: true,
