@@ -100,11 +100,11 @@ input[type="text"]{
     <div class="row">
       <button class="primary" id="btnDictate">🎙️ Dictate (PC)</button>
       <button class="primary" id="btnPhone">📱 Phone dictation (QR)</button>
-      <button class="good" id="btnGenerate">⚡ Generate report</button>
+      <label class="small" for="modelSelect">Model</label><select id="modelSelect"><option value="gpt-5.4-nano">gpt-5.4-nano — Fast / cheapest</option><option value="gpt-5.4-mini">gpt-5.4-mini — Balanced</option><option value="gpt-5.4">gpt-5.4 — Higher accuracy</option><option value="gpt-4.1-mini">gpt-4.1-mini — Legacy comparison / fallback</option></select><label class="pill" style="gap:6px;"><input type="checkbox" id="benchmarkMode" /> Benchmark mode</label><button class="good" id="btnGenerate">⚡ Generate report</button>
       <button class="bad" id="btnClear">🧹 Clear</button>
       <span class="pill" id="micState">Mic: idle</span>
     </div>
-    <div class="status" id="status"></div>
+    <div class="status" id="status"></div><div class="small" id="metricsLine"></div>
     <div class="small">Chrome + mic permission required for dictation.</div>
     <div class="caveats">
       <div style="font-weight:700;">Cancer resection examples</div>

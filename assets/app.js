@@ -3,7 +3,9 @@ const $ = (id) => document.getElementById(id);
 let rec = null;
 let finalText = "";
 let dictating = false;
-let lastGenerated = { dataset_id: "", extracted: {}, report_text: "" };
+let lastGenerated = { dataset_id: "", extracted: {}, report_text: "", metrics: {} };
+const MODEL_ALLOWLIST = ["gpt-5.4-nano","gpt-5.4-mini","gpt-5.4","gpt-4.1-mini"];
+const DEFAULT_MODEL = "gpt-5.4-mini";
 
 const AUDIT_DATASETS = new Set([
   "oesophagus_resection_rcpath_v3_microscopy",
@@ -19,6 +21,28 @@ function setStatus(msg, isError=false){
   $("status").style.color = isError ? "var(--bad)" : "var(--muted)";
 }
 function setMicPill(){ $("micState").textContent = dictating ? "Mic: listening" : "Mic: idle"; }
+
+function initModelSelector() {
+  const sel = $("modelSelect");
+  if (!sel) return;
+  const stored = localStorage.getItem("reportModel");
+  const chosen = MODEL_ALLOWLIST.includes(stored) ? stored : DEFAULT_MODEL;
+  sel.value = chosen;
+  sel.addEventListener("change", () => {
+    if (MODEL_ALLOWLIST.includes(sel.value)) localStorage.setItem("reportModel", sel.value);
+  });
+}
+
+function renderMetricsLine(metrics, isError=false, message="") {
+  const el = $("metricsLine");
+  if (!el) return;
+  if (!metrics || !metrics.model) { el.textContent = ""; return; }
+  const secs = metrics.duration_ms != null ? `${(metrics.duration_ms/1000).toFixed(1)}s` : "n/a";
+  const cost = metrics.estimated_cost_usd != null ? `est. $${Number(metrics.estimated_cost_usd).toFixed(3)}` : "est. n/a";
+  const base = `${metrics.benchmark_mode ? "[Benchmark] " : ""}${metrics.model} in ${secs} · ${metrics.input_tokens ?? "?"} input tokens · ${metrics.output_tokens ?? "?"} output tokens · ${cost}`;
+  el.textContent = isError ? `${base} · ${message}` : `Generated with ${base}`;
+}
+
 function setAuditHint(msg, isError=false){
   const el = $("auditHint");
   if (!el) return;
@@ -76,9 +100,12 @@ function startDictation(){
   rec.continuous = true;
   rec.interimResults = true;
 
-  rec.onstart = () => { dictating = true; setMicPill(); setStatus("Listening…"); };
-  rec.onend = () => { dictating = false; setMicPill(); setStatus("Dictation stopped."); };
-  rec.onerror = (e) => { dictating = false; setMicPill(); setStatus(`Dictation error: ${e.error || "unknown"}`, true); };
+  rec.onstart = () => { dictating = true; initModelSelector();
+setMicPill(); setStatus("Listening…"); };
+  rec.onend = () => { dictating = false; initModelSelector();
+setMicPill(); setStatus("Dictation stopped."); };
+  rec.onerror = (e) => { dictating = false; initModelSelector();
+setMicPill(); setStatus(`Dictation error: ${e.error || "unknown"}`, true); };
 
   rec.onresult = (e) => {
     let interim = "";
@@ -107,23 +134,27 @@ async function generate(){
     const res = await fetch("/.netlify/functions/generate-report", {
       method:"POST",
       headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ text })
+      body: JSON.stringify({ text, model: $("modelSelect")?.value || DEFAULT_MODEL, benchmark_mode: Boolean($("benchmarkMode")?.checked) })
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    if (!res.ok) { const e = new Error(data.error || `HTTP ${res.status}`); e.metrics = data.metrics || {}; throw e; }
     $("output").textContent = data.report_text || data.report || JSON.stringify(data, null, 2);
     lastGenerated = {
       dataset_id: data.dataset_id || "",
       extracted: data.extracted || {},
       report_text: data.report_text || data.report || "",
+      metrics: data.metrics || {},
     };
     updateAuditPanel(lastGenerated.dataset_id);
     if (Array.isArray(data.caveats) && data.caveats.length){
       $("caveatsBox").style.display = "block";
       $("caveatsList").innerHTML = data.caveats.map(c => `<li>${c}</li>`).join("");
     }
+    renderMetricsLine(data.metrics || {});
     setStatus("Done.");
   }catch(err){
+    const m = err?.metrics || {};
+    renderMetricsLine(m, true, `Error: ${err.message || err}`);
     setStatus(`Error: ${err.message || err}`, true);
   }
 }
@@ -188,6 +219,7 @@ async function saveAuditOnly(){
     consultant_name,
     report_text: lastGenerated.report_text || $("output").textContent || "",
     extracted: lastGenerated.extracted || {},
+    generation_metrics: lastGenerated.metrics || {},
   };
 
   const res = await fetch("/.netlify/functions/audit-save", {
@@ -221,6 +253,7 @@ $("btnGenerate").addEventListener("click", generate);
 $("btnClear").addEventListener("click", () => { stopDictation(); finalText=""; $("inputText").value=""; $("output").textContent=""; $("caveatsBox").style.display="none"; setStatus(""); lastGenerated = { dataset_id: "", extracted: {}, report_text: "" }; updateAuditPanel(""); if ($("auditSpecimenNumber")) $("auditSpecimenNumber").value=""; if ($("auditConsultantName")) $("auditConsultantName").value=""; });
 $("btnCopy").addEventListener("click", copyOut);
 if ($("btnCopySaveAudit")) $("btnCopySaveAudit").addEventListener("click", copyAndSaveAudit);
+initModelSelector();
 setMicPill();
 
 const yearEl = $("currentYear");
