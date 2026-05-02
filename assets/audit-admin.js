@@ -1,26 +1,23 @@
-const tbody = document.querySelector('#tbl tbody');
-let rows = [];
+const columns = ['created_at','consultant_name','dataset_id','tumour_site','tumour_type','differentiation','pt_stage','pn_stage','pm_stage','nodes_examined','nodes_positive','crm_involved','crm_distance_mm','margin_longitudinal_involved','margin_distal_involved','lvi_present','pni_present','emvi_present','neoadjuvant_given','tumour_block'];
+const editable = columns.filter((c)=>c!=='created_at');
+let rows=[];let filtered=[];let sort={key:'created_at',dir:'desc'};let current=null;
+const thead=document.querySelector('#tbl thead');const tbody=document.querySelector('#tbl tbody');
 
-async function search(){
-  const p = new URLSearchParams();
-  ['dataset','consultant','from','to'].forEach((k)=>{ const v=document.getElementById(k).value.trim(); if(v)p.set({dataset:'dataset_id',consultant:'consultant_name',from:'from_date',to:'to_date'}[k],v);});
-  const res = await fetch(`/.netlify/functions/audit-admin-search?${p.toString()}`);
-  const data = await res.json();
-  rows = data.rows || [];
-  tbody.innerHTML = rows.map((r,i)=>`<tr><td>${new Date(r.created_at).toLocaleString()}</td><td>${r.consultant_name||''}</td><td>${r.dataset_id||''}</td><td>${r.tumour_site||''}</td><td>${r.pt_stage||''}</td><td>${r.nodes_positive??''}/${r.nodes_examined??''}</td><td>${r.crm_involved===null?'':(r.crm_involved?'Yes':'No')}</td><td><button data-i='${i}'>Edit</button></td></tr>`).join('');
-}
+function val(r,k){return r[k]??''}
+function sortRows(){filtered.sort((a,b)=>{const av=String(val(a,sort.key));const bv=String(val(b,sort.key));return sort.dir==='asc'?av.localeCompare(bv):bv.localeCompare(av);});}
+function renderTable(){thead.innerHTML='<tr>'+columns.map(c=>`<th data-k="${c}">${c}${sort.key===c?(sort.dir==='asc'?' ▲':' ▼'):''}</th>`).join('')+'<th>action</th></tr>';sortRows();tbody.innerHTML=filtered.map((r,i)=>`<tr>${columns.map(c=>`<td>${val(r,c)}</td>`).join('')}<td><button data-i='${i}'>Edit</button></td></tr>`).join('');document.getElementById('count').textContent=`${filtered.length} rows`;}
+function applyClientFilters(){const q=document.getElementById('q').value.trim().toLowerCase();filtered=rows.filter((r)=>!q||columns.some((c)=>String(val(r,c)).toLowerCase().includes(q)));renderTable();}
 
-tbody.addEventListener('click', async (e)=>{
-  const btn = e.target.closest('button[data-i]'); if(!btn) return;
-  const r = rows[Number(btn.dataset.i)];
-  const tumour_site = prompt('tumour_site', r.tumour_site || ''); if (tumour_site === null) return;
-  const consultant_name = prompt('consultant_name', r.consultant_name || ''); if (consultant_name === null) return;
-  const edited_by = prompt('Edited by'); if (!edited_by) return alert('edited_by required');
-  const res = await fetch('/.netlify/functions/audit-admin-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:r.id,edited_by,edit_reason:'Admin UI edit',patch:{tumour_site,consultant_name}})});
-  const data = await res.json();
-  if(!res.ok||!data.ok) return alert(data.error||'Update failed');
-  alert('Updated');
-  search();
-});
-document.getElementById('search').addEventListener('click', search);
-search();
+async function search(){const p=new URLSearchParams();['dataset','consultant','from','to'].forEach((k)=>{const v=document.getElementById(k).value.trim();if(v)p.set({dataset:'dataset_id',consultant:'consultant_name',from:'from_date',to:'to_date'}[k],v)});
+const res=await fetch(`/.netlify/functions/audit-admin-search?${p.toString()}`);const data=await res.json();if(!res.ok||!data.ok){alert(data.error||'load failed');return;}rows=data.rows||[];applyClientFilters();}
+
+function openEditor(row){current=row;document.getElementById('editor').style.display='block';const wrap=document.getElementById('editFields');wrap.innerHTML=editable.map((k)=>`<label style='display:flex;flex-direction:column;min-width:220px;flex:1'><span style='font-size:11px;color:#a8b3cf'>${k}</span><input data-k='${k}' value='${(row[k]??'').toString().replace(/'/g,"&#39;")}'></label>`).join('');}
+
+async function saveEdit(){if(!current) return;const edited_by=document.getElementById('editedBy').value.trim();if(!edited_by){alert('edited_by required');return;}const patch={};document.querySelectorAll('#editFields input').forEach((el)=>{const k=el.dataset.k;patch[k]=el.value===''?null:el.value;});
+const res=await fetch('/.netlify/functions/audit-admin-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:current.id,edited_by,edit_reason:document.getElementById('editReason').value.trim(),patch})});
+const data=await res.json();if(!res.ok||!data.ok){alert(data.error||'save failed');return;}document.getElementById('editor').style.display='none';search();}
+
+thead.addEventListener('click',(e)=>{const th=e.target.closest('th[data-k]');if(!th)return;const k=th.dataset.k;sort=k===sort.key?{key:k,dir:sort.dir==='asc'?'desc':'asc'}:{key:k,dir:'asc'};renderTable();});
+tbody.addEventListener('click',(e)=>{const btn=e.target.closest('button[data-i]');if(!btn)return;openEditor(filtered[Number(btn.dataset.i)]);});
+document.getElementById('search').addEventListener('click',search);document.getElementById('q').addEventListener('input',applyClientFilters);document.getElementById('reset').addEventListener('click',()=>{['q','dataset','consultant','from','to'].forEach((id)=>document.getElementById(id).value='');search();});
+document.getElementById('saveEdit').addEventListener('click',saveEdit);document.getElementById('cancelEdit').addEventListener('click',()=>document.getElementById('editor').style.display='none');search();

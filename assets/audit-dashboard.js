@@ -1,14 +1,6 @@
-async function load(){
-  const p = new URLSearchParams();
-  ['dataset','consultant','from','to'].forEach((k)=>{ const v=document.getElementById(k).value.trim(); if(v)p.set({dataset:'dataset_id',consultant:'consultant_name',from:'from_date',to:'to_date'}[k],v);});
-  const res = await fetch(`/.netlify/functions/audit-dashboard?${p.toString()}`);
-  const data = await res.json();
-  if(!res.ok||!data.ok){ document.getElementById('totals').textContent=data.error||'Error'; return; }
-  const total = data.totals?.total_cases || 0;
-  const crmPos = data.totals?.crm_positive || 0;
-  document.getElementById('totals').textContent = `Total cases: ${total}\nCRM positive: ${crmPos}\nCRM positivity rate: ${total?((crmPos/total)*100).toFixed(1):0}%`;
-  document.getElementById('byDataset').textContent = JSON.stringify(data.by_dataset,null,2);
-  document.getElementById('byConsultant').textContent = JSON.stringify(data.by_consultant,null,2);
-}
-document.getElementById('load').addEventListener('click', load);
-load();
+function qs(){const p=new URLSearchParams();['dataset','consultant','from','to'].forEach((k)=>{const v=document.getElementById(k).value.trim();if(v)p.set({dataset:'dataset_id',consultant:'consultant_name',from:'from_date',to:'to_date'}[k],v)});return p.toString();}
+function rowHtml(r){const rate=r.total?((r.crm_positive/r.total)*100).toFixed(1):'0.0';return `<tr><td>${r.dataset_id||r.consultant_name}</td><td>${r.total}</td><td>${r.crm_positive}</td><td>${rate}%</td><td>${r.avg_nodes_examined??''}</td><td>${r.avg_nodes_positive??''}</td></tr>`;}
+function renderTable(id,rows,label){const t=document.querySelector(`#${id} thead`);const b=document.querySelector(`#${id} tbody`);t.innerHTML=`<tr><th>${label}</th><th>Cases</th><th>CRM+</th><th>CRM rate</th><th>Avg nodes</th><th>Avg positive nodes</th></tr>`;b.innerHTML=(rows||[]).map(rowHtml).join('')||'<tr><td colspan="6">No data</td></tr>';}
+async function load(){const res=await fetch(`/.netlify/functions/audit-dashboard?${qs()}`);const data=await res.json();if(!res.ok||!data.ok){alert(data.error||'Load failed');return;}const total=data.totals?.total_cases||0;const crm=data.totals?.crm_positive||0;const crmRate=total?((crm/total)*100).toFixed(1):'0.0';document.getElementById('metrics').innerHTML=`<div class='metric'><div class='small'>Total cases</div><div style='font-size:28px'>${total}</div></div><div class='metric'><div class='small'>CRM positive</div><div style='font-size:28px'>${crm}</div></div><div class='metric'><div class='small'>CRM positivity</div><div style='font-size:28px'>${crmRate}%</div></div>`;
+renderTable('byDataset',data.by_dataset,'Dataset');renderTable('byConsultant',data.by_consultant,'Consultant');}
+document.getElementById('load').addEventListener('click',load);load();

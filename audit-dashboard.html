@@ -1,9 +1,9 @@
-<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Audit Dashboard</title></head>
-<body>
-<h1>Audit Dashboard</h1><p><a href='index.html'>Back</a> | <a href='audit-admin.html'>Admin</a></p>
-<div><input id='dataset' placeholder='dataset_id'><input id='consultant' placeholder='consultant'><input id='from' type='date'><input id='to' type='date'><button id='load'>Load</button></div>
-<pre id='totals'></pre>
-<h3>By dataset</h3><pre id='byDataset'></pre>
-<h3>By consultant</h3><pre id='byConsultant'></pre>
-<script defer src='assets/audit-dashboard.js'></script>
-</body></html>
+<!doctype html><html lang='en'><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width,initial-scale=1'/><title>Audit Dashboard</title><link rel='icon' href='data:,'>
+<style>:root{--bg:#0b1220;--card:#101b33;--text:#eaf0ff;--muted:#a8b3cf;--border:rgba(255,255,255,.12)}*{box-sizing:border-box}body{margin:0;min-height:100vh;color:var(--text);background:radial-gradient(1100px 600px at 15% 0%, rgba(122,162,255,.22), transparent 60%),radial-gradient(900px 520px at 90% 10%, rgba(52,211,153,.18), transparent 55%), var(--bg);font-family:ui-sans-serif,system-ui}main{max-width:1200px;margin:0 auto;padding:18px}.card{background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:12px}input,button{background:rgba(0,0,0,.22);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:8px 10px}.row{display:flex;gap:8px;flex-wrap:wrap}.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.metric{padding:12px;border:1px solid var(--border);border-radius:12px}.small{font-size:12px;color:var(--muted)}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left}</style></head>
+<body><main>
+<div class='card'><h1 style='margin:0'>Audit Dashboard</h1><div class='small'><a href='index.html' style='color:#dbe6ff'>Back</a> · <a href='audit-admin.html' style='color:#dbe6ff'>Admin</a></div></div>
+<div class='card'><div class='row'><input id='dataset' placeholder='dataset_id'><input id='consultant' placeholder='consultant'><input id='from' type='date'><input id='to' type='date'><button id='load'>Load</button></div></div>
+<div class='card metrics' id='metrics'></div>
+<div class='card'><h3>By dataset</h3><table id='byDataset'><thead></thead><tbody></tbody></table></div>
+<div class='card'><h3>By consultant</h3><table id='byConsultant'><thead></thead><tbody></tbody></table></div>
+</main><script defer src='assets/audit-dashboard.js'></script></body></html>
