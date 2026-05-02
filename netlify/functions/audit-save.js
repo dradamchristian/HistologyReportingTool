@@ -20,7 +20,7 @@ function toBool(value) {
   const s = cleanString(value).toLowerCase();
   if (!s) return null;
   if (['yes', 'y', 'true', 'present', 'positive', 'involved'].includes(s)) return true;
-  if (['no', 'n', 'false', 'not identified', 'negative', 'none', 'not involved'].includes(s)) return false;
+  if (['no', 'n', 'false', 'not identified', 'negative', 'none', 'not involved', 'clear', 'uninvolved', 'free'].includes(s)) return false;
   return null;
 }
 
@@ -68,6 +68,7 @@ function mapAuditFields(datasetId, extracted = {}) {
     ?? extracted.tumour_cells_present_at_excision_margin
     ?? extracted.tumour_cells_present_at_resection_margin;
   out.crm_involved = toBool(crmRaw);
+  if (out.crm_involved === null && out.crm_distance_mm !== null) out.crm_involved = false;
 
   out.margin_longitudinal_involved = toBool(out.margin_longitudinal_involved);
   out.margin_distal_involved = toBool(out.margin_distal_involved);

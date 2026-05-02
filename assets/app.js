@@ -25,6 +25,18 @@ function setAuditHint(msg, isError=false){
   el.textContent = msg || "";
   el.style.color = isError ? "var(--bad)" : "var(--muted)";
 }
+
+async function loadConsultantOptions(){
+  const sel = $('auditConsultantName');
+  if (!sel) return;
+  try {
+    const res = await fetch('/.netlify/functions/audit-filter-options');
+    const data = await res.json();
+    if (!res.ok || !data.ok) return;
+    sel.innerHTML = "<option value=''>Consultant name (required)</option>" + (data.consultants || []).map((c)=>`<option value="${c}">${c}</option>`).join('');
+  } catch (_) {}
+}
+
 function updateAuditPanel(datasetId){
   const panel = $("auditPanel");
   if (!panel) return;
