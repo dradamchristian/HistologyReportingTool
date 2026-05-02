@@ -30,3 +30,5 @@ Benchmarking models for report generation
   1) Update `ALLOWED_MODELS` and optional `MODEL_PRICING_PER_MILLION` server-side.
   2) Update `MODEL_ALLOWLIST` and `<select id="modelSelect">` options frontend-side.
   3) (Optional) update audit dashboard model filter options.
+
+- Admin-only model discovery endpoint: `/.netlify/functions/list-models` (requires `x-admin-token` header matching `ADMIN_API_TOKEN` env var).

@@ -4,8 +4,8 @@ let rec = null;
 let finalText = "";
 let dictating = false;
 let lastGenerated = { dataset_id: "", extracted: {}, report_text: "", metrics: {} };
-const MODEL_ALLOWLIST = ["gpt-5.4-nano","gpt-5.4-mini","gpt-5.4","gpt-4.1-mini"];
-const DEFAULT_MODEL = "gpt-5.4-mini";
+const MODEL_ALLOWLIST = ["gpt-4o-mini","gpt-5.4-nano","gpt-5.4-mini","gpt-5.4","gpt-4.1-mini"];
+const DEFAULT_MODEL = "gpt-4o-mini";
 
 const AUDIT_DATASETS = new Set([
   "oesophagus_resection_rcpath_v3_microscopy",
@@ -100,12 +100,9 @@ function startDictation(){
   rec.continuous = true;
   rec.interimResults = true;
 
-  rec.onstart = () => { dictating = true; initModelSelector();
-setMicPill(); setStatus("Listening…"); };
-  rec.onend = () => { dictating = false; initModelSelector();
-setMicPill(); setStatus("Dictation stopped."); };
-  rec.onerror = (e) => { dictating = false; initModelSelector();
-setMicPill(); setStatus(`Dictation error: ${e.error || "unknown"}`, true); };
+  rec.onstart = () => { dictating = true; setMicPill(); setStatus("Listening…"); };
+  rec.onend = () => { dictating = false; setMicPill(); setStatus("Dictation stopped."); };
+  rec.onerror = (e) => { dictating = false; setMicPill(); setStatus(`Dictation error: ${e.error || "unknown"}`, true); };
 
   rec.onresult = (e) => {
     let interim = "";

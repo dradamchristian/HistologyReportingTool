@@ -3,19 +3,20 @@ const fs = require("fs");
 const path = require("path");
 
 const DEFAULT_MODEL = (process.env.OPENAI_MODEL || "gpt-5.4-mini").trim();
-const ALLOWED_MODELS = new Set(["gpt-5.4-nano","gpt-5.4-mini","gpt-5.4","gpt-4.1-mini"]);
+const ALLOWED_MODELS = new Set(["gpt-4o-mini","gpt-5.4-nano","gpt-5.4-mini","gpt-5.4","gpt-4.1-mini"]);
 const MODEL_PRICING_PER_MILLION = {
   "gpt-5.4-nano": { input: 0.05, output: 0.4 },
   "gpt-5.4-mini": { input: 0.3, output: 2.5 },
   "gpt-5.4": { input: 2.0, output: 10.0 },
   "gpt-4.1-mini": { input: 0.4, output: 1.6 },
+  "gpt-4o-mini": { input: 0.15, output: 0.6 },
 };
 
 function resolveModel(requested) {
   const m = String(requested || "").trim();
   if (m && ALLOWED_MODELS.has(m)) return m;
   if (ALLOWED_MODELS.has(DEFAULT_MODEL)) return DEFAULT_MODEL;
-  return "gpt-5.4-mini";
+  return Array.from(ALLOWED_MODELS)[0] || "gpt-4o-mini";
 }
 
 function estimateCostUsd(model, inputTokens, outputTokens) {
