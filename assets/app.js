@@ -26,15 +26,30 @@ function setAuditHint(msg, isError=false){
   el.style.color = isError ? "var(--bad)" : "var(--muted)";
 }
 
-async function loadConsultantOptions(){
+async function loadConsultantOptions(force=false){
   const sel = $('auditConsultantName');
   if (!sel) return;
+  if (!force && sel.options.length > 1) return;
+
+  const setOptions = (names=[]) => {
+    const unique = Array.from(new Set((names || []).map((x) => String(x || '').trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
+    sel.innerHTML = "<option value=''>Consultant name (required)</option>" + unique.map((c)=>`<option value="${c}">${c}</option>`).join('');
+  };
+
   try {
     const res = await fetch('/.netlify/functions/audit-filter-options');
     const data = await res.json();
-    if (!res.ok || !data.ok) return;
-    sel.innerHTML = "<option value=''>Consultant name (required)</option>" + (data.consultants || []).map((c)=>`<option value="${c}">${c}</option>`).join('');
-  } catch (_) {}
+    if (res.ok && data.ok && Array.isArray(data.consultants)) {
+      setOptions(data.consultants);
+      if (data.consultants.length) return;
+    }
+
+    const res2 = await fetch('/.netlify/functions/audit-consultant-directory');
+    const data2 = await res2.json();
+    if (res2.ok && data2.ok) setOptions((data2.consultants || []).map((c) => c.name));
+  } catch (_) {
+    setAuditHint('Could not load consultant list. Try reloading page.', true);
+  }
 }
 
 function updateAuditPanel(datasetId){
@@ -43,6 +58,7 @@ function updateAuditPanel(datasetId){
   if (AUDIT_DATASETS.has(datasetId || "")) {
     panel.style.display = "block";
     setAuditHint("Audit-enabled dataset detected.");
+    loadConsultantOptions(true);
   } else {
     panel.style.display = "none";
     setAuditHint("");
