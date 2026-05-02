@@ -12,7 +12,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:6px;borde
 <div class='card'><h1 style='margin:0'>Audit Admin</h1><div class='small'><a href='index.html' style='color:#dbe6ff'>Back</a> · <a href='audit-dashboard.html' style='color:#dbe6ff'>Dashboard</a></div></div>
 <div class='card'><div class='row'>
 <input id='q' placeholder='search consultant/dataset/site/stage' style='min-width:280px;flex:2'>
-<input id='dataset' placeholder='dataset_id'><input id='consultant' placeholder='consultant'>
+<select id='dataset'><option value=''>All specimen types</option></select><select id='consultant'><option value=''>All consultants</option></select>
 <input id='from' type='date'><input id='to' type='date'><button id='search'>Search</button><button id='reset'>Reset</button><span class='pill' id='count'></span>
 </div><div class='small'>Click column headers to sort. Click Edit to open full record editor.</div></div>
 <div class='card scroll'><table id='tbl'><thead></thead><tbody></tbody></table></div>

@@ -20,4 +20,7 @@ const data=await res.json();if(!res.ok||!data.ok){alert(data.error||'save failed
 thead.addEventListener('click',(e)=>{const th=e.target.closest('th[data-k]');if(!th)return;const k=th.dataset.k;sort=k===sort.key?{key:k,dir:sort.dir==='asc'?'desc':'asc'}:{key:k,dir:'asc'};renderTable();});
 tbody.addEventListener('click',(e)=>{const btn=e.target.closest('button[data-i]');if(!btn)return;openEditor(filtered[Number(btn.dataset.i)]);});
 document.getElementById('search').addEventListener('click',search);document.getElementById('q').addEventListener('input',applyClientFilters);document.getElementById('reset').addEventListener('click',()=>{['q','dataset','consultant','from','to'].forEach((id)=>document.getElementById(id).value='');search();});
-document.getElementById('saveEdit').addEventListener('click',saveEdit);document.getElementById('cancelEdit').addEventListener('click',()=>document.getElementById('editor').style.display='none');search();
+async function loadOptions(){const r=await fetch('/.netlify/functions/audit-filter-options');const d=await r.json();if(!r.ok||!d.ok)return;const ds=document.getElementById('dataset');const cs=document.getElementById('consultant');ds.innerHTML="<option value=''>All specimen types</option>"+(d.specimen_types||[]).map(o=>`<option value='${o.dataset_id}'>${o.label}</option>`).join('');cs.innerHTML="<option value=''>All consultants</option>"+(d.consultants||[]).map(c=>`<option value='${c}'>${c}</option>`).join('');}
+
+document.getElementById('saveEdit').addEventListener('click',saveEdit);document.getElementById('cancelEdit').addEventListener('click',()=>document.getElementById('editor').style.display='none');
+loadOptions().then(search);
