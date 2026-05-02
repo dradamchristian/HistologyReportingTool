@@ -1,0 +1,9 @@
+{
+  "name": "histology-reporting-tool",
+  "private": true,
+  "version": "1.0.0",
+  "description": "RCPath report generator with Netlify functions",
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}
