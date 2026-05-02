@@ -90,6 +90,7 @@ input[type="text"]{
 <header>
   <h1>RCPath Report Generator</h1>
   <div class="sub">Prototype: free text → structured extraction → RCPath-style report. Always review before use. Currently live for Oesophageal, Gastric and Colorectal cancer resections, Colorectal liver metastasis (CRLM) proformas, Hepatocellular carcinoma (HCC) proformas, GIST resections, Gallbladder reporting, Duodenal biopsies and Colonic biopsies</div>
+<div class="sub" style="margin-top:6px;"><a href='audit-admin.html' style='color:#dbe6ff;'>Audit Admin</a> · <a href='audit-dashboard.html' style='color:#dbe6ff;'>Audit Dashboard</a></div>
 </header>
 
 <main>
@@ -147,7 +148,7 @@ input[type="text"]{
       <div class="small" style="margin:6px 0 8px;">Specimen number is used only to generate a server-side hash and is not stored as plain text.</div>
       <div class="row" style="margin-top:0;">
         <input id="auditSpecimenNumber" type="text" placeholder="Specimen number (required for audit save)" style="flex:1; min-width:240px;" />
-        <input id="auditConsultantName" type="text" placeholder="Consultant name (required for audit save)" style="flex:1; min-width:220px;" />
+        <select id="auditConsultantName" style="flex:1; min-width:220px;"><option value=''>Consultant name (required)</option></select>
       </div>
       <div class="small" id="auditHint" style="margin-top:8px;"></div>
     </div>

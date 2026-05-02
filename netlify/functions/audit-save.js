@@ -1,5 +1,4 @@
 const crypto = require('crypto');
-const { Pool } = require('pg');
 
 const ALLOWED_DATASETS = new Set([
   'oesophagus_resection_rcpath_v3_microscopy',
@@ -10,22 +9,7 @@ const ALLOWED_DATASETS = new Set([
   'colorectal_liver_metastasis_proforma_v1',
 ]);
 
-let pool;
-
-function getPool() {
-  if (!pool) {
-    const connectionString = process.env.DATABASE_URL;
-    if (!connectionString) throw new Error('DATABASE_URL not set');
-    pool = new Pool({
-      connectionString,
-      ssl: { rejectUnauthorized: false },
-      max: 2,
-      idleTimeoutMillis: 5000,
-      connectionTimeoutMillis: 5000,
-    });
-  }
-  return pool;
-}
+const { getPool, json } = require('./_audit-db');
 
 function cleanString(value) {
   if (value === null || value === undefined) return '';
@@ -36,7 +20,7 @@ function toBool(value) {
   const s = cleanString(value).toLowerCase();
   if (!s) return null;
   if (['yes', 'y', 'true', 'present', 'positive', 'involved'].includes(s)) return true;
-  if (['no', 'n', 'false', 'not identified', 'negative', 'none', 'not involved'].includes(s)) return false;
+  if (['no', 'n', 'false', 'not identified', 'negative', 'none', 'not involved', 'clear', 'uninvolved', 'free'].includes(s)) return false;
   return null;
 }
 
@@ -77,13 +61,14 @@ function mapAuditFields(datasetId, extracted = {}) {
     tumour_block: extracted.tumour_block || null,
   };
 
-  if (datasetId === 'gist_resection_rcpath_v1') out.tumour_site = extracted.site_of_tumour || null;
+  out.tumour_site = extracted.site_of_tumour || extracted.tumour_site || extracted.site || extracted.anatomical_site || null;
 
   const crmRaw = extracted.circumferential_margin_status
     ?? extracted.circumferential_margin_involved
     ?? extracted.tumour_cells_present_at_excision_margin
     ?? extracted.tumour_cells_present_at_resection_margin;
   out.crm_involved = toBool(crmRaw);
+  if (out.crm_involved === null && out.crm_distance_mm !== null) out.crm_involved = false;
 
   out.margin_longitudinal_involved = toBool(out.margin_longitudinal_involved);
   out.margin_distal_involved = toBool(out.margin_distal_involved);
@@ -102,7 +87,7 @@ function mapAuditFields(datasetId, extracted = {}) {
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'Method not allowed' }) };
+    return json(405, { ok: false, error: 'Method not allowed' });
   }
 
   try {
@@ -114,13 +99,13 @@ exports.handler = async (event) => {
     const extracted = body.extracted && typeof body.extracted === 'object' ? body.extracted : {};
 
     if (!ALLOWED_DATASETS.has(datasetId)) {
-      return { statusCode: 400, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'Dataset not eligible for audit save' }) };
+      return json(400, { ok: false, error: 'Dataset not eligible for audit save' });
     }
     if (!consultantName) {
-      return { statusCode: 400, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'consultant_name is required' }) };
+      return json(400, { ok: false, error: 'consultant_name is required' });
     }
     if (!specimenNumber) {
-      return { statusCode: 400, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'specimen_number is required' }) };
+      return json(400, { ok: false, error: 'specimen_number is required' });
     }
 
     const specimenHash = hashSpecimen(specimenNumber);
@@ -179,16 +164,8 @@ exports.handler = async (event) => {
     const result = await db.query(sql, params);
     const row = result.rows[0] || {};
 
-    return {
-      statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ok: true, id: row.id || null, created_at: row.created_at || null }),
-    };
+    return json(200, { ok: true, id: row.id || null, created_at: row.created_at || null });
   } catch (err) {
-    return {
-      statusCode: 500,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ok: false, error: err.message || String(err) }),
-    };
+    return json(500, { ok: false, error: err.message || String(err) });
   }
 };
