@@ -16,6 +16,13 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:6px;borde
 <input id='from' type='date'><input id='to' type='date'><button id='search'>Search</button><button id='reset'>Reset</button><span class='pill' id='count'></span>
 </div><div class='small'>Click column headers to sort. Click Edit to open full record editor.</div></div>
 <div class='card'><h3 style='margin:0 0 8px;'>Consultant list</h3><div class='row'><input id='newConsultant' placeholder='Add consultant name'><button id='addConsultant'>Add</button></div><div id='consultantList' class='small' style='margin-top:8px;'></div></div>
+<div class='card' id='createCard'>
+<h3 style='margin-top:0'>Manually add case</h3>
+<div class='small'>Use this for cases reported directly in LIMS that still need audit capture.</div>
+<div class='row' style='margin-top:8px'><input id='createBy' placeholder='Added by (required)'><input id='createReason' placeholder='Reason (optional)' style='min-width:280px;flex:1'></div>
+<div id='createFields' class='row' style='margin-top:8px'></div>
+<div class='row' style='margin-top:10px'><button id='createCase'>Add case</button></div>
+</div>
 <div class='card scroll'><table id='tbl'><thead></thead><tbody></tbody></table></div>
 <div class='card' id='editor'>
 <h3 style='margin-top:0'>Edit audit row</h3><div class='row'><input id='editedBy' placeholder='Edited by (required)'><input id='editReason' placeholder='Reason'></div>
