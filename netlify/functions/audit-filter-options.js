@@ -12,11 +12,12 @@ const SPECIMEN_TYPES = {
 exports.handler = async () => {
   try {
     const db = getPool();
-    const consultants = await db.query("select distinct consultant_name from audit.case_audit where consultant_name is not null and trim(consultant_name) <> '' order by consultant_name");
+    await db.query(`create table if not exists audit.consultant_directory (name text primary key, created_at timestamptz not null default now())`);
+    const consultants = await db.query("select name from audit.consultant_directory order by name");
     const datasets = await db.query("select distinct dataset_id from audit.case_audit where dataset_id is not null and trim(dataset_id) <> '' order by dataset_id");
     return json(200, {
       ok: true,
-      consultants: consultants.rows.map((r) => r.consultant_name),
+      consultants: consultants.rows.map((r) => r.name),
       specimen_types: datasets.rows.map((r) => ({ dataset_id: r.dataset_id, label: SPECIMEN_TYPES[r.dataset_id] || r.dataset_id })),
     });
   } catch (err) {
