@@ -99,6 +99,7 @@ exports.handler = async (event) => {
     const reportText = cleanString(body.report_text);
     const specimenNumber = normalizeSpecimen(body.specimen_number);
     const extracted = body.extracted && typeof body.extracted === 'object' ? body.extracted : {};
+    const generationMetrics = body.generation_metrics && typeof body.generation_metrics === "object" ? body.generation_metrics : {};
 
     if (!ALLOWED_DATASETS.has(datasetId)) {
       return json(400, { ok: false, error: 'Dataset not eligible for audit save' });
@@ -165,6 +166,25 @@ exports.handler = async (event) => {
 
     const result = await db.query(sql, params);
     const row = result.rows[0] || {};
+
+    await db.query(`
+      insert into audit.report_generation_audit (
+        dataset_id, template_key, model, duration_ms, input_tokens, output_tokens, total_tokens, estimated_cost_usd, success, error_message, metadata
+      ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+    `, [
+      datasetId,
+      datasetId,
+      generationMetrics.model || null,
+      Number.isFinite(Number(generationMetrics.duration_ms)) ? Number(generationMetrics.duration_ms) : null,
+      Number.isFinite(Number(generationMetrics.input_tokens)) ? Number(generationMetrics.input_tokens) : null,
+      Number.isFinite(Number(generationMetrics.output_tokens)) ? Number(generationMetrics.output_tokens) : null,
+      Number.isFinite(Number(generationMetrics.total_tokens)) ? Number(generationMetrics.total_tokens) : null,
+      Number.isFinite(Number(generationMetrics.estimated_cost_usd)) ? Number(generationMetrics.estimated_cost_usd) : null,
+      true,
+      null,
+      JSON.stringify({ benchmark_mode: Boolean(generationMetrics.benchmark_mode) })
+    ]);
+
 
     return json(200, { ok: true, id: row.id || null, created_at: row.created_at || null });
   } catch (err) {
