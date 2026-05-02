@@ -12,6 +12,13 @@ exports.handler = async (event) => {
     if (q.from_date) add('created_at::date >= ?', q.from_date);
     if (q.to_date) add('created_at::date <= ?', q.to_date);
     if (q.site_query) add('coalesce(tumour_site,\'\') ILIKE ?', `%${q.site_query.trim()}%`);
+    const benchVals = [];
+    const benchW = [];
+    const addBench = (sql, value) => { benchVals.push(value); benchW.push(sql.replace('?', `$${benchVals.length}`)); };
+    if (q.model) addBench('model = ?', q.model.trim());
+    if (q.template_key) addBench('template_key = ?', q.template_key.trim());
+    if (q.from_date) addBench('created_at::date >= ?', q.from_date);
+    if (q.to_date) addBench('created_at::date <= ?', q.to_date);
     const where = w.length ? `where ${w.join(' and ')}` : '';
 
     const db = getPool();
@@ -20,8 +27,10 @@ exports.handler = async (event) => {
     const bySite = await db.query(`select coalesce(tumour_site,'Unknown') as site, count(*)::int as cases from audit.case_audit ${where} group by coalesce(tumour_site,'Unknown') order by cases desc`, vals);
     const monthly = await db.query(`select to_char(date_trunc('month', created_at), 'Mon') as month_label, date_trunc('month', created_at) as month_date, round(avg(nodes_examined)::numeric,1) as mean_nodes, percentile_cont(0.5) within group (order by nodes_examined) as median_nodes from audit.case_audit ${where} group by month_date order by month_date`, vals);
     const cases = await db.query(`select id, created_at::date as case_date, consultant_name, tumour_site, pt_stage, pn_stage, nodes_examined, nodes_positive, crm_distance_mm, crm_involved, margin_distal_involved, margin_longitudinal_involved, lvi_present, pni_present, emvi_present from audit.case_audit ${where} order by created_at desc limit 200`, vals);
+    const benchWhere = benchW.length ? `where ${benchW.join(" and ")}` : "";
+    const benchmark = await db.query(`select model, count(*)::int as total_generations, round(avg(duration_ms)::numeric,1) as avg_duration_ms, round(avg(estimated_cost_usd)::numeric,6) as avg_estimated_cost_usd, count(*) filter (where success=true)::int as success_count, count(*) filter (where success=false)::int as error_count, round(avg(input_tokens)::numeric,1) as avg_input_tokens, round(avg(output_tokens)::numeric,1) as avg_output_tokens from audit.report_generation_audit ${benchWhere} group by model order by avg_duration_ms nulls last`, benchVals);
 
-    return json(200, { ok: true, totals: totals.rows[0] || {}, by_consultant: byConsultant.rows, by_site: bySite.rows, monthly: monthly.rows, cases: cases.rows });
+    return json(200, { ok: true, totals: totals.rows[0] || {}, by_consultant: byConsultant.rows, by_site: bySite.rows, monthly: monthly.rows, cases: cases.rows, benchmark: benchmark.rows });
   } catch (err) {
     return json(500, { ok: false, error: err.message || String(err) });
   }
