@@ -15,6 +15,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:6px;borde
 <select id='dataset'><option value=''>All specimen types</option></select><select id='consultant'><option value=''>All consultants</option></select>
 <input id='from' type='date'><input id='to' type='date'><button id='search'>Search</button><button id='reset'>Reset</button><span class='pill' id='count'></span>
 </div><div class='small'>Click column headers to sort. Click Edit to open full record editor.</div></div>
+<div class='card'><h3 style='margin:0 0 8px;'>Consultant naming consistency</h3><div class='row'><select id='consultantFrom'><option value=''>Select existing name</option></select><input id='consultantTo' placeholder='Canonical consultant name'><input id='consultantEditedBy' placeholder='Edited by'><button id='normalizeConsultant'>Normalize name</button></div><div class='small'>Use this to merge variant consultant spellings into one canonical value.</div></div>
 <div class='card scroll'><table id='tbl'><thead></thead><tbody></tbody></table></div>
 <div class='card' id='editor'>
 <h3 style='margin-top:0'>Edit audit row</h3><div class='row'><input id='editedBy' placeholder='Edited by (required)'><input id='editReason' placeholder='Reason'></div>
