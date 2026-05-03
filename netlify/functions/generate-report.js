@@ -1,9 +1,10 @@
 const ENGINE_VERSION = "benchmark-model-metrics-v1";
 const fs = require("fs");
 const path = require("path");
+const { getPool } = require("./_audit-db");
 
-const DEFAULT_MODEL = (process.env.OPENAI_MODEL || "gpt-5.4-mini").trim();
-const ALLOWED_MODELS = new Set(["gpt-4o-mini","gpt-5.4-nano","gpt-5.4-mini","gpt-5.4","gpt-4.1-mini"]);
+const DEFAULT_MODEL = "gpt-4.1-mini";
+const ALLOWED_MODELS = new Set(["gpt-4.1-mini","gpt-4.1"]);
 const BLOCKED_MODEL_TERMS = ["embed", "image", "audio", "moderation", "deprecated", "vision"];
 
 function modelIsUsableForGeneration(id) {
@@ -21,15 +22,24 @@ const MODEL_PRICING_PER_MILLION = {
   "gpt-4o-mini": { input: 0.15, output: 0.6 },
 };
 
-function resolveModel(requested) {
-  const m = String(requested || "").trim();
-  if (m && ALLOWED_MODELS.has(m) && modelIsUsableForGeneration(m)) return m;
-  if (m && modelIsUsableForGeneration(m)) return m;
-
-  if (DEFAULT_MODEL && modelIsUsableForGeneration(DEFAULT_MODEL)) return DEFAULT_MODEL;
-
-  const firstAllowed = Array.from(ALLOWED_MODELS).find(modelIsUsableForGeneration);
-  return firstAllowed || "gpt-4o-mini";
+function isComplexDataset(datasetId) {
+  const id = String(datasetId || "").toLowerCase();
+  return id.includes("resection") || id.includes("oesophagectomy") || id.includes("gastrectomy") || id.includes("colorectal_resection");
+}
+function resolveModel(requestedMode, rawText, datasetId) {
+  const mode = String(requestedMode || "auto_recommended").trim();
+  if (mode === "cheap_standard") return "gpt-4.1-mini";
+  if (mode === "fast_higher_accuracy") return "gpt-4.1";
+  const textLen = String(rawText || "").length;
+  if (textLen > 1200 || isComplexDataset(datasetId)) return "gpt-4.1";
+  return DEFAULT_MODEL;
+}
+async function logUsage(row) {
+  try {
+    const db = getPool();
+    await db.query(`insert into audit.generation_usage (dataset, requested_mode, actual_model, duration_ms, input_tokens, output_tokens, total_tokens, estimated_cost_usd, success, error_message, deploy_context) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      [row.dataset, row.requested_mode, row.actual_model, row.duration_ms, row.input_tokens, row.output_tokens, row.total_tokens, row.estimated_cost_usd, row.success, row.error_message, row.deploy_context]);
+  } catch (_) {}
 }
 
 function estimateCostUsd(model, inputTokens, outputTokens) {
@@ -1306,7 +1316,7 @@ exports.handler = async (event) => {
   try {
     if (event.httpMethod !== "POST") return jsonResp(200, { error: "Missing text" });
 
-    const { text, model: requestedModel, benchmark_mode } = JSON.parse(event.body || "{}");
+    const { text, requested_mode, benchmark_mode } = JSON.parse(event.body || "{}");
     if (!text) return jsonResp(400, { error: "Missing text" });
 
     const rawText = String(text);
@@ -1341,7 +1351,7 @@ exports.handler = async (event) => {
     } else if (manifest.pipeline?.mode === "schema_extract_then_rules") {
       const apiKey = process.env.OPENAI_API_KEY;
       if (!apiKey) return jsonResp(500, { error: "OPENAI_API_KEY not set." });
-      const model = resolveModel(requestedModel);
+      const model = resolveModel(requested_mode, rawText, datasetId);
 
       const props = (schema && schema.properties) ? schema.properties : {};
       const schemaSummary = {};
@@ -1372,18 +1382,30 @@ exports.handler = async (event) => {
         max_tokens: 900
       };
 
-      const ac = new AbortController();
-      const tmr = setTimeout(() => ac.abort(), 9000);
-
       const startedAt = Date.now();
-      const resp = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        signal: ac.signal
-      });
-
-      clearTimeout(tmr);
+      async function doCall(modelToUse) {
+        const ac = new AbortController();
+        const tmr = setTimeout(() => ac.abort(), 9000);
+        try {
+          const localPayload = { ...payload, model: modelToUse };
+          return await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify(localPayload),
+            signal: ac.signal
+          });
+        } finally { clearTimeout(tmr); }
+      }
+      let actualModel = model;
+      let resp;
+      try {
+        resp = await doCall(model);
+      } catch (e) {
+        if (String(e && e.name) === "AbortError" && model === "gpt-4.1-mini") {
+          actualModel = "gpt-4.1";
+          resp = await doCall(actualModel);
+        } else throw e;
+      }
       const durationMs = Date.now() - startedAt;
 
       const raw = await resp.json().catch(() => ({}));
@@ -1391,9 +1413,9 @@ exports.handler = async (event) => {
       const inputTokens = Number(usage.prompt_tokens ?? usage.input_tokens);
       const outputTokens = Number(usage.completion_tokens ?? usage.output_tokens);
       const totalTokens = Number(usage.total_tokens);
-      const estimatedCostUsd = estimateCostUsd(model, inputTokens, outputTokens);
+      const estimatedCostUsd = estimateCostUsd(actualModel, inputTokens, outputTokens);
       const metricsBase = {
-        model,
+        model: actualModel,
         duration_ms: durationMs,
         input_tokens: Number.isFinite(inputTokens) ? inputTokens : null,
         output_tokens: Number.isFinite(outputTokens) ? outputTokens : null,
@@ -1409,13 +1431,17 @@ exports.handler = async (event) => {
         const message = raw?.error?.message || "OpenAI request failed";
         const code = raw?.error?.code || raw?.error?.type || "";
         const accessError = code === "model_not_found" || /model_not_found|access|permission|not have access/i.test(message);
-        const friendly = accessError ? `This API key/account does not appear to have access to ${model}.` : message;
+        const friendly = accessError ? `This API key/account does not appear to have access to ${actualModel}.` : message;
+        await logUsage({ dataset: datasetId, requested_mode: requested_mode || "auto_recommended", actual_model: actualModel, duration_ms: durationMs, input_tokens: metricsBase.input_tokens, output_tokens: metricsBase.output_tokens, total_tokens: metricsBase.total_tokens, estimated_cost_usd: metricsBase.estimated_cost_usd, success: false, error_message: friendly, deploy_context: process.env.CONTEXT || process.env.DEPLOY_CONTEXT || "unknown" });
         return jsonResp(resp.status, { error: friendly, raw, metrics: metricsBase });
       }
 
       const content = raw?.choices?.[0]?.message?.content || "";
       const extracted0 = safeJsonParse(content);
-      if (!extracted0) return jsonResp(500, { error: "Model did not return valid JSON.", model_output: content });
+      if (!extracted0) {
+        await logUsage({ dataset: datasetId, requested_mode: requested_mode || "auto_recommended", actual_model: actualModel, duration_ms: durationMs, input_tokens: metricsBase.input_tokens, output_tokens: metricsBase.output_tokens, total_tokens: metricsBase.total_tokens, estimated_cost_usd: metricsBase.estimated_cost_usd, success: false, error_message: "Model did not return valid JSON.", deploy_context: process.env.CONTEXT || process.env.DEPLOY_CONTEXT || "unknown" });
+        return jsonResp(500, { error: "Model did not return valid JSON.", model_output: content });
+      }
 
       extracted = applyDefaults(schema, extracted0);
       normalizeTumourType(extracted, schema);
@@ -1829,6 +1855,7 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
       .filter(line => !forbidden.some(f => line.toLowerCase().includes(f)))
       .join("\n");
 
+    await logUsage({ dataset: datasetId, requested_mode: requested_mode || "auto_recommended", actual_model: requestMetrics.model, duration_ms: requestMetrics.duration_ms, input_tokens: requestMetrics.input_tokens, output_tokens: requestMetrics.output_tokens, total_tokens: requestMetrics.total_tokens, estimated_cost_usd: requestMetrics.estimated_cost_usd, success: true, error_message: null, deploy_context: process.env.CONTEXT || process.env.DEPLOY_CONTEXT || "unknown" });
     return jsonResp(200, {
       report_text,
       caveats: buildCaveats(extracted, datasetId),
