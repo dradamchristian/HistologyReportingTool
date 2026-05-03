@@ -1,6 +1,45 @@
-const ENGINE_VERSION = "accumulators-fixed5d-debug-LGI-v9";
+const ENGINE_VERSION = "benchmark-model-metrics-v1";
 const fs = require("fs");
 const path = require("path");
+
+const DEFAULT_MODEL = (process.env.OPENAI_MODEL || "gpt-5.4-mini").trim();
+const ALLOWED_MODELS = new Set(["gpt-4o-mini","gpt-5.4-nano","gpt-5.4-mini","gpt-5.4","gpt-4.1-mini"]);
+const BLOCKED_MODEL_TERMS = ["embed", "image", "audio", "moderation", "deprecated", "vision"];
+
+function modelIsUsableForGeneration(id) {
+  const m = String(id || "").trim().toLowerCase();
+  if (!(m.startsWith("gpt") || m.startsWith("o"))) return false;
+  if (BLOCKED_MODEL_TERMS.some((x) => m.includes(x))) return false;
+  return true;
+}
+
+const MODEL_PRICING_PER_MILLION = {
+  "gpt-5.4-nano": { input: 0.05, output: 0.4 },
+  "gpt-5.4-mini": { input: 0.3, output: 2.5 },
+  "gpt-5.4": { input: 2.0, output: 10.0 },
+  "gpt-4.1-mini": { input: 0.4, output: 1.6 },
+  "gpt-4o-mini": { input: 0.15, output: 0.6 },
+};
+
+function resolveModel(requested) {
+  const m = String(requested || "").trim();
+  if (m && ALLOWED_MODELS.has(m) && modelIsUsableForGeneration(m)) return m;
+  if (m && modelIsUsableForGeneration(m)) return m;
+
+  if (DEFAULT_MODEL && modelIsUsableForGeneration(DEFAULT_MODEL)) return DEFAULT_MODEL;
+
+  const firstAllowed = Array.from(ALLOWED_MODELS).find(modelIsUsableForGeneration);
+  return firstAllowed || "gpt-4o-mini";
+}
+
+function estimateCostUsd(model, inputTokens, outputTokens) {
+  const pricing = MODEL_PRICING_PER_MILLION[model];
+  if (!pricing) return null;
+  const inTok = Number(inputTokens || 0);
+  const outTok = Number(outputTokens || 0);
+  if (!Number.isFinite(inTok) || !Number.isFinite(outTok)) return null;
+  return (inTok / 1_000_000 * pricing.input) + (outTok / 1_000_000 * pricing.output);
+}
 
 
 function setFirstExisting(extracted, schema, keys, value) {
@@ -1267,7 +1306,7 @@ exports.handler = async (event) => {
   try {
     if (event.httpMethod !== "POST") return jsonResp(200, { error: "Missing text" });
 
-    const { text } = JSON.parse(event.body || "{}");
+    const { text, model: requestedModel, benchmark_mode } = JSON.parse(event.body || "{}");
     if (!text) return jsonResp(400, { error: "Missing text" });
 
     const rawText = String(text);
@@ -1287,6 +1326,7 @@ exports.handler = async (event) => {
     const { schema, rules, template } = readDatasetFiles(datasetId);
 
     let extracted = {};
+    let requestMetrics = { model: null, duration_ms: null, input_tokens: null, output_tokens: null, total_tokens: null, estimated_cost_usd: null, cost_is_estimate: true, benchmark_mode: Boolean(benchmark_mode) };
 
     if (manifest.pipeline?.mode === "lgi_shorthand_v1") {
       extracted = applyDefaults(schema, {});
@@ -1301,7 +1341,7 @@ exports.handler = async (event) => {
     } else if (manifest.pipeline?.mode === "schema_extract_then_rules") {
       const apiKey = process.env.OPENAI_API_KEY;
       if (!apiKey) return jsonResp(500, { error: "OPENAI_API_KEY not set." });
-      const model = (process.env.OPENAI_MODEL || "gpt-4").trim();
+      const model = resolveModel(requestedModel);
 
       const props = (schema && schema.properties) ? schema.properties : {};
       const schemaSummary = {};
@@ -1335,6 +1375,7 @@ exports.handler = async (event) => {
       const ac = new AbortController();
       const tmr = setTimeout(() => ac.abort(), 9000);
 
+      const startedAt = Date.now();
       const resp = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -1343,9 +1384,34 @@ exports.handler = async (event) => {
       });
 
       clearTimeout(tmr);
+      const durationMs = Date.now() - startedAt;
 
       const raw = await resp.json().catch(() => ({}));
-      if (!resp.ok) return jsonResp(resp.status, { error: raw?.error?.message || "OpenAI request failed", raw });
+      const usage = raw?.usage || {};
+      const inputTokens = Number(usage.prompt_tokens ?? usage.input_tokens);
+      const outputTokens = Number(usage.completion_tokens ?? usage.output_tokens);
+      const totalTokens = Number(usage.total_tokens);
+      const estimatedCostUsd = estimateCostUsd(model, inputTokens, outputTokens);
+      const metricsBase = {
+        model,
+        duration_ms: durationMs,
+        input_tokens: Number.isFinite(inputTokens) ? inputTokens : null,
+        output_tokens: Number.isFinite(outputTokens) ? outputTokens : null,
+        total_tokens: Number.isFinite(totalTokens) ? totalTokens : null,
+        estimated_cost_usd: Number.isFinite(estimatedCostUsd) ? Number(estimatedCostUsd.toFixed(6)) : null,
+        cost_is_estimate: true,
+        benchmark_mode: Boolean(benchmark_mode),
+      };
+
+      requestMetrics = metricsBase;
+
+      if (!resp.ok) {
+        const message = raw?.error?.message || "OpenAI request failed";
+        const code = raw?.error?.code || raw?.error?.type || "";
+        const accessError = code === "model_not_found" || /model_not_found|access|permission|not have access/i.test(message);
+        const friendly = accessError ? `This API key/account does not appear to have access to ${model}.` : message;
+        return jsonResp(resp.status, { error: friendly, raw, metrics: metricsBase });
+      }
 
       const content = raw?.choices?.[0]?.message?.content || "";
       const extracted0 = safeJsonParse(content);
@@ -1769,6 +1835,7 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
       dataset_id: datasetId,
       extracted,
       engine_version: ENGINE_VERSION,
+      metrics: requestMetrics,
       debug: {
         nodes_examined: extracted.nodes_examined,
         nodes_positive: extracted.nodes_positive,
