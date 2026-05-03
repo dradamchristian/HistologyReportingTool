@@ -12,11 +12,11 @@ const MODEL_PRICING_PER_MILLION = {
   "gpt-4o-mini": { input: 0.15, output: 0.6 },
 };
 
-function resolveModel(requested) {
+function selectModelOrError(requested) {
   const m = String(requested || "").trim();
-  if (m && ALLOWED_MODELS.has(m)) return m;
-  if (ALLOWED_MODELS.has(DEFAULT_MODEL)) return DEFAULT_MODEL;
-  return Array.from(ALLOWED_MODELS)[0] || "gpt-4o-mini";
+  if (!m) return { model: DEFAULT_MODEL, usedDefault: true };
+  if (ALLOWED_MODELS.has(m)) return { model: m, usedDefault: false };
+  return { error: `Model ${m} is not allowed` };
 }
 
 function estimateCostUsd(model, inputTokens, outputTokens) {
@@ -1296,6 +1296,13 @@ exports.handler = async (event) => {
     const { text, model: requestedModel, benchmark_mode } = JSON.parse(event.body || "{}");
     if (!text) return jsonResp(400, { error: "Missing text" });
 
+    const selection = selectModelOrError(requestedModel);
+    if (selection.error) return jsonResp(400, { error: selection.error });
+    const selectedModel = selection.model;
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[generate-report] requestedModel=", requestedModel || null, "modelUsed=", selectedModel, "usedDefault=", selection.usedDefault);
+    }
+
     const rawText = String(text);
     const manifests = listDatasetManifests();
     // Hard override: if the user explicitly starts with "LGI:", do NOT let keyword scoring pick colorectal cancer etc.
@@ -1328,7 +1335,7 @@ exports.handler = async (event) => {
     } else if (manifest.pipeline?.mode === "schema_extract_then_rules") {
       const apiKey = process.env.OPENAI_API_KEY;
       if (!apiKey) return jsonResp(500, { error: "OPENAI_API_KEY not set." });
-      const model = resolveModel(requestedModel);
+      const model = selectedModel;
 
       const props = (schema && schema.properties) ? schema.properties : {};
       const schemaSummary = {};
@@ -1397,7 +1404,8 @@ exports.handler = async (event) => {
         const code = raw?.error?.code || raw?.error?.type || "";
         const accessError = code === "model_not_found" || /model_not_found|access|permission|not have access/i.test(message);
         const friendly = accessError ? `This API key/account does not appear to have access to ${model}.` : message;
-        return jsonResp(resp.status, { error: friendly, raw, metrics: metricsBase });
+        if (process.env.NODE_ENV !== "production") console.log("[generate-report] OpenAI model error", { requestedModel: requestedModel || null, modelUsed: model, message: friendly });
+        return jsonResp(resp.status, { error: friendly, raw, metrics: metricsBase, model_used: model, duration_ms: durationMs, usage: { input_tokens: metricsBase.input_tokens, output_tokens: metricsBase.output_tokens, total_tokens: metricsBase.total_tokens } });
       }
 
       const content = raw?.choices?.[0]?.message?.content || "";
@@ -1823,6 +1831,9 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
       extracted,
       engine_version: ENGINE_VERSION,
       metrics: requestMetrics,
+      model_used: requestMetrics.model,
+      duration_ms: requestMetrics.duration_ms,
+      usage: { input_tokens: requestMetrics.input_tokens, output_tokens: requestMetrics.output_tokens, total_tokens: requestMetrics.total_tokens },
       debug: {
         nodes_examined: extracted.nodes_examined,
         nodes_positive: extracted.nodes_positive,

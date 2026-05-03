@@ -159,7 +159,7 @@ async function generate(){
       body: JSON.stringify({ text, model: $("modelSelect")?.value || DEFAULT_MODEL, benchmark_mode: Boolean($("benchmarkMode")?.checked) })
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) { const e = new Error(data.error || `HTTP ${res.status}`); e.metrics = data.metrics || {}; throw e; }
+    if (!res.ok) { const e = new Error(data.error || `HTTP ${res.status}`); e.metrics = data.metrics || {}; e.model_used = data.model_used || null; throw e; }
     $("output").textContent = data.report_text || data.report || JSON.stringify(data, null, 2);
     lastGenerated = {
       dataset_id: data.dataset_id || "",
@@ -173,11 +173,12 @@ async function generate(){
       $("caveatsList").innerHTML = data.caveats.map(c => `<li>${c}</li>`).join("");
     }
     renderMetricsLine(data.metrics || {});
-    setStatus("Done.");
+    setStatus(`Done. Model used: ${data.model_used || data.metrics?.model || "unknown"}.`);
   }catch(err){
     const m = err?.metrics || {};
     renderMetricsLine(m, true, `Error: ${err.message || err}`);
-    setStatus(`Error: ${err.message || err}`, true);
+    const used = err?.model_used ? ` (model: ${err.model_used})` : "";
+    setStatus(`Error: ${err.message || err}${used}`, true);
   }
 }
 
