@@ -46,7 +46,7 @@ function renderMetricsLine(metrics, isError=false, message="") {
   if (!metrics || !metrics.model) { el.textContent = ""; return; }
   const secs = metrics.duration_ms != null ? `${(metrics.duration_ms/1000).toFixed(1)}s` : "n/a";
   const cost = metrics.estimated_cost_usd != null ? `est. $${Number(metrics.estimated_cost_usd).toFixed(3)}` : "est. n/a";
-  const base = `${metrics.benchmark_mode ? "[Benchmark] " : ""}${metrics.model} in ${secs} · ${metrics.input_tokens ?? "?"} input tokens · ${metrics.output_tokens ?? "?"} output tokens · ${cost}`;
+  const base = `${metrics.model} in ${secs} · ${metrics.input_tokens ?? "?"} input tokens · ${metrics.output_tokens ?? "?"} output tokens · ${cost}`;
   el.textContent = isError ? `${base} · ${message}` : `Generated with ${base}`;
 }
 
@@ -138,7 +138,7 @@ async function generate(){
     const res = await fetch("/.netlify/functions/generate-report", {
       method:"POST",
       headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ text, requested_mode: $("modelSelect")?.value || DEFAULT_MODEL_MODE, benchmark_mode: Boolean($("benchmarkMode")?.checked) })
+      body: JSON.stringify({ text, requested_mode: $("modelSelect")?.value || DEFAULT_MODEL_MODE })
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { const e = new Error(data.error || `HTTP ${res.status}`); e.metrics = data.metrics || {}; throw e; }
