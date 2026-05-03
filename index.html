@@ -100,7 +100,7 @@ input[type="text"]{
     <div class="row">
       <button class="primary" id="btnDictate">🎙️ Dictate (PC)</button>
       <button class="primary" id="btnPhone">📱 Phone dictation (QR)</button>
-      <label class="small" for="modelSelect">Model</label><select id="modelSelect"><option value="gpt-4o-mini">Fast (4o mini)</option></select><label class="pill" style="gap:6px;"><input type="checkbox" id="benchmarkMode" /> Benchmark mode</label><button class="good" id="btnGenerate">⚡ Generate report</button>
+      <label class="small" for="modelSelect">Model mode</label><select id="modelSelect"><option value="auto_recommended">Auto recommended</option><option value="cheap_standard">Cheap / Standard</option><option value="fast_higher_accuracy">Fast / Higher accuracy</option></select><button class="good" id="btnGenerate">⚡ Generate report</button>
       <button class="bad" id="btnClear">🧹 Clear</button>
       <span class="pill" id="micState">Mic: idle</span>
     </div>

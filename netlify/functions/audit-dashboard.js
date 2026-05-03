@@ -29,8 +29,20 @@ exports.handler = async (event) => {
     const cases = await db.query(`select id, created_at::date as case_date, consultant_name, tumour_site, pt_stage, pn_stage, nodes_examined, nodes_positive, crm_distance_mm, crm_involved, margin_distal_involved, margin_longitudinal_involved, lvi_present, pni_present, emvi_present from audit.case_audit ${where} order by created_at desc limit 200`, vals);
     const benchWhere = benchW.length ? `where ${benchW.join(" and ")}` : "";
     const benchmark = await db.query(`select model, count(*)::int as total_generations, round(avg(duration_ms)::numeric,1) as avg_duration_ms, round(avg(estimated_cost_usd)::numeric,6) as avg_estimated_cost_usd, count(*) filter (where success=true)::int as success_count, count(*) filter (where success=false)::int as error_count, round(avg(input_tokens)::numeric,1) as avg_input_tokens, round(avg(output_tokens)::numeric,1) as avg_output_tokens from audit.report_generation_audit ${benchWhere} group by model order by avg_duration_ms nulls last`, benchVals);
+    const usageStats = await db.query(`
+      select
+        count(*) filter (where created_at::date = current_date)::int as reports_today,
+        coalesce(sum(estimated_cost_usd) filter (where created_at::date = current_date),0)::numeric(12,6) as estimated_cost_today,
+        coalesce(sum(estimated_cost_usd) filter (where date_trunc('month', created_at)=date_trunc('month', now())),0)::numeric(12,6) as estimated_cost_month,
+        round(avg(duration_ms)::numeric,1) as avg_generation_time_overall
+      from audit.generation_usage`);
+    const usageByModel = await db.query(`
+      select actual_model as model, count(*)::int as usage_count, round(avg(duration_ms)::numeric,1) as avg_duration_ms,
+      round(100.0 * avg(case when success then 0 else 1 end),2) as error_rate_pct
+      from audit.generation_usage group by actual_model order by usage_count desc`);
+    const usageRows = await db.query(`select created_at, dataset, requested_mode, actual_model, duration_ms, input_tokens, output_tokens, total_tokens, estimated_cost_usd, success, error_message, deploy_context from audit.generation_usage order by created_at desc limit 5000`);
 
-    return json(200, { ok: true, totals: totals.rows[0] || {}, by_consultant: byConsultant.rows, by_site: bySite.rows, monthly: monthly.rows, cases: cases.rows, benchmark: benchmark.rows });
+    return json(200, { ok: true, totals: totals.rows[0] || {}, by_consultant: byConsultant.rows, by_site: bySite.rows, monthly: monthly.rows, cases: cases.rows, benchmark: benchmark.rows, usage_stats: usageStats.rows[0] || {}, usage_by_model: usageByModel.rows, usage_rows: usageRows.rows });
   } catch (err) {
     return json(500, { ok: false, error: err.message || String(err) });
   }

@@ -4,8 +4,12 @@ let rec = null;
 let finalText = "";
 let dictating = false;
 let lastGenerated = { dataset_id: "", extracted: {}, report_text: "", metrics: {} };
-const MODEL_FALLBACK = [{ id: "gpt-4o-mini", label: "Fast (4o mini)" }];
-const DEFAULT_MODEL = "gpt-4o-mini";
+const MODEL_MODES = [
+  { id: "auto_recommended", label: "Auto recommended" },
+  { id: "cheap_standard", label: "Cheap / Standard" },
+  { id: "fast_higher_accuracy", label: "Fast / Higher accuracy" },
+];
+const DEFAULT_MODEL_MODE = "auto_recommended";
 
 const AUDIT_DATASETS = new Set([
   "oesophagus_resection_rcpath_v3_microscopy",
@@ -22,40 +26,18 @@ function setStatus(msg, isError=false){
 }
 function setMicPill(){ $("micState").textContent = dictating ? "Mic: listening" : "Mic: idle"; }
 
-async function initModelSelector() {
+function initModelSelector() {
   const sel = $("modelSelect");
   const hint = $("modelHint");
   if (!sel) return;
-
-  let models = MODEL_FALLBACK.slice();
-  try {
-    const res = await fetch("/.netlify/functions/list-models");
-    const data = await res.json().catch(() => ({}));
-    if (res.ok && data.ok && Array.isArray(data.models) && data.models.length) {
-      models = data.models.filter((m) => m && m.id).map((m) => ({ id: m.id, label: m.label || m.id }));
-    } else if (hint) {
-      hint.textContent = "Could not load live model list. Using default model.";
-    }
-  } catch (_) {
-    if (hint) hint.textContent = "Could not load live model list. Using default model.";
-  }
-
-  sel.innerHTML = models.map((m) => `<option value="${m.id}">${m.label}</option>`).join("");
-
-  const available = new Set(models.map((m) => m.id));
-  const stored = localStorage.getItem("reportModel");
-  let chosen = DEFAULT_MODEL;
-  if (stored && available.has(stored)) chosen = stored;
-  else if (stored && !available.has(stored) && hint) {
-    hint.textContent = `Previously selected model ${stored} is unavailable; using ${DEFAULT_MODEL}.`;
-  } else if (!available.has(DEFAULT_MODEL) && models[0]) {
-    chosen = models[0].id;
-  }
-
-  if (!available.has(chosen) && models[0]) chosen = models[0].id;
+  sel.innerHTML = MODEL_MODES.map((m) => `<option value="${m.id}">${m.label}</option>`).join("");
+  const available = new Set(MODEL_MODES.map((m) => m.id));
+  const stored = localStorage.getItem("reportModelMode");
+  const chosen = (stored && available.has(stored)) ? stored : DEFAULT_MODEL_MODE;
   sel.value = chosen;
-  localStorage.setItem("reportModel", chosen);
-  sel.addEventListener("change", () => localStorage.setItem("reportModel", sel.value));
+  localStorage.setItem("reportModelMode", chosen);
+  sel.addEventListener("change", () => localStorage.setItem("reportModelMode", sel.value));
+  if (hint) hint.textContent = "Auto recommended uses GPT-4.1 mini unless complexity rules route to GPT-4.1.";
 }
 
 function renderMetricsLine(metrics, isError=false, message="") {
@@ -64,7 +46,7 @@ function renderMetricsLine(metrics, isError=false, message="") {
   if (!metrics || !metrics.model) { el.textContent = ""; return; }
   const secs = metrics.duration_ms != null ? `${(metrics.duration_ms/1000).toFixed(1)}s` : "n/a";
   const cost = metrics.estimated_cost_usd != null ? `est. $${Number(metrics.estimated_cost_usd).toFixed(3)}` : "est. n/a";
-  const base = `${metrics.benchmark_mode ? "[Benchmark] " : ""}${metrics.model} in ${secs} · ${metrics.input_tokens ?? "?"} input tokens · ${metrics.output_tokens ?? "?"} output tokens · ${cost}`;
+  const base = `${metrics.model} in ${secs} · ${metrics.input_tokens ?? "?"} input tokens · ${metrics.output_tokens ?? "?"} output tokens · ${cost}`;
   el.textContent = isError ? `${base} · ${message}` : `Generated with ${base}`;
 }
 
@@ -156,7 +138,7 @@ async function generate(){
     const res = await fetch("/.netlify/functions/generate-report", {
       method:"POST",
       headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ text, model: $("modelSelect")?.value || DEFAULT_MODEL, benchmark_mode: Boolean($("benchmarkMode")?.checked) })
+      body: JSON.stringify({ text, requested_mode: $("modelSelect")?.value || DEFAULT_MODEL_MODE })
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { const e = new Error(data.error || `HTTP ${res.status}`); e.metrics = data.metrics || {}; throw e; }
