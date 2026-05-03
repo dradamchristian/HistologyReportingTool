@@ -34,12 +34,20 @@ function resolveModel(requestedMode, rawText, datasetId) {
   if (textLen > 1200 || isComplexDataset(datasetId)) return "gpt-4.1";
   return DEFAULT_MODEL;
 }
+const isMissingRelation = (err) => err?.code === '42P01' || String(err?.message || '').toLowerCase().includes('does not exist');
+
 async function logUsage(row) {
   try {
     const db = getPool();
     await db.query(`insert into audit.generation_usage (dataset, requested_mode, actual_model, duration_ms, input_tokens, output_tokens, total_tokens, estimated_cost_usd, success, error_message, deploy_context) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
       [row.dataset, row.requested_mode, row.actual_model, row.duration_ms, row.input_tokens, row.output_tokens, row.total_tokens, row.estimated_cost_usd, row.success, row.error_message, row.deploy_context]);
-  } catch (_) {}
+  } catch (err) {
+    if (isMissingRelation(err)) {
+      console.warn('[generate-report] Optional usage logging skipped:', err.message || String(err));
+      return;
+    }
+    console.warn('[generate-report] Usage logging failed:', err.message || String(err));
+  }
 }
 
 function estimateCostUsd(model, inputTokens, outputTokens) {
