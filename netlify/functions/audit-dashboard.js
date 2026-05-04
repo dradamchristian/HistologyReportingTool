@@ -32,7 +32,28 @@ exports.handler = async (event) => {
     const byConsultant = await db.query(`select consultant_name, count(*)::int as cases, round(avg(nodes_examined)::numeric,1) as mean_nodes from audit.case_audit ${where} group by consultant_name order by cases desc`, vals);
     const bySite = await db.query(`select coalesce(tumour_site,'Unknown') as site, count(*)::int as cases from audit.case_audit ${where} group by coalesce(tumour_site,'Unknown') order by cases desc`, vals);
     const monthly = await db.query(`select to_char(date_trunc('month', created_at), 'Mon') as month_label, date_trunc('month', created_at) as month_date, round(avg(nodes_examined)::numeric,1) as mean_nodes, percentile_cont(0.5) within group (order by nodes_examined) as median_nodes from audit.case_audit ${where} group by month_date order by month_date`, vals);
-    const cases = await db.query(`select id, created_at::date as case_date, consultant_name, tumour_site, pt_stage, pn_stage, pm_stage, nodes_examined, nodes_positive, crm_distance_mm, crm_involved, margin_distal_involved, margin_longitudinal_involved, lvi_present, pni_present, emvi_present from audit.case_audit ${where} order by created_at desc limit 200`, vals);
+    const cases = await db.query(`select id, created_at::date as case_date, consultant_name, tumour_site, pt_stage, pn_stage, pm_stage, nodes_examined, nodes_positive, crm_distance_mm, crm_involved, margin_distal_involved, margin_longitudinal_involved, lvi_present, pni_present, emvi_present, venous_invasion_level, lymphatic_invasion_level, perineural_invasion_level from audit.case_audit ${where} order by created_at desc limit 200`, vals);
+
+    const stageBreakdown = await db.query(`
+      with base as (
+        select
+          upper(regexp_replace(coalesce(pt_stage,''), '^p', '', 'i')) as t_stage,
+          upper(regexp_replace(coalesce(pn_stage,''), '^p', '', 'i')) as n_stage,
+          upper(regexp_replace(coalesce(pm_stage,''), '^p', '', 'i')) as m_stage
+        from audit.case_audit ${where}
+      )
+      select
+        count(*) filter (where t_stage='T1')::int as t1_cases,
+        count(*) filter (where t_stage='T2')::int as t2_cases,
+        count(*) filter (where t_stage='T3')::int as t3_cases,
+        count(*) filter (where t_stage='T4')::int as t4_cases,
+        count(*) filter (where n_stage='N0')::int as n0_cases,
+        count(*) filter (where n_stage='N1' or n_stage like 'N1%')::int as n1_cases,
+        count(*) filter (where n_stage='N2' or n_stage like 'N2%')::int as n2_cases,
+        count(*) filter (where m_stage='M0')::int as m0_cases,
+        count(*) filter (where m_stage='M1')::int as m1_cases
+      from base
+    `, vals);
     const benchWhere = benchW.length ? `where ${benchW.join(" and ")}` : "";
     let usageConfigured = true;
     let usageNotice = null;
@@ -66,7 +87,7 @@ exports.handler = async (event) => {
       console.warn('[audit-dashboard] Optional usage metrics query skipped:', err.message || String(err));
     }
 
-    return json(200, { ok: true, totals: totals.rows[0] || {}, by_consultant: byConsultant.rows, by_site: bySite.rows, monthly: monthly.rows, cases: cases.rows, benchmark: benchmarkRows, usage_stats: usageStatsRow, usage_by_model: usageByModelRows, usage_rows: usageRows, usage_metrics_configured: usageConfigured, usage_metrics_notice: usageNotice });
+    return json(200, { ok: true, totals: totals.rows[0] || {}, stage_breakdown: stageBreakdown.rows[0] || {}, by_consultant: byConsultant.rows, by_site: bySite.rows, monthly: monthly.rows, cases: cases.rows, benchmark: benchmarkRows, usage_stats: usageStatsRow, usage_by_model: usageByModelRows, usage_rows: usageRows, usage_metrics_configured: usageConfigured, usage_metrics_notice: usageNotice });
   } catch (err) {
     return json(500, { ok: false, error: err.message || String(err) });
   }
