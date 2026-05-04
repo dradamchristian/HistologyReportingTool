@@ -43,11 +43,11 @@ exports.handler = async (event) => {
         from audit.case_audit ${where}
       )
       select
-        count(*) filter (where t_stage='T1')::int as t1_cases,
-        count(*) filter (where t_stage='T2')::int as t2_cases,
-        count(*) filter (where t_stage='T3')::int as t3_cases,
-        count(*) filter (where t_stage='T4')::int as t4_cases,
-        count(*) filter (where n_stage='N0')::int as n0_cases,
+        count(*) filter (where t_stage like 'T1%')::int as t1_cases,
+        count(*) filter (where t_stage like 'T2%')::int as t2_cases,
+        count(*) filter (where t_stage like 'T3%')::int as t3_cases,
+        count(*) filter (where t_stage like 'T4%')::int as t4_cases,
+        count(*) filter (where n_stage like 'N0%')::int as n0_cases,
         count(*) filter (where n_stage='N1' or n_stage like 'N1%')::int as n1_cases,
         count(*) filter (where n_stage='N2' or n_stage like 'N2%')::int as n2_cases,
         count(*) filter (where m_stage='M0')::int as m0_cases,
