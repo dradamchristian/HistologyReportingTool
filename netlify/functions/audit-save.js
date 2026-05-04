@@ -21,9 +21,9 @@ function cleanString(value) {
 function toBool(value) {
   const s = cleanString(value).toLowerCase();
   if (!s) return null;
-  if (['yes', 'y', 'true', 'present', 'positive', 'involved'].includes(s)) return true;
+  if (['yes', 'y', 'true', 'present', 'positive', 'involved', 'extramural', 'intramural'].includes(s)) return true;
   if (['no', 'n', 'false', 'not identified', 'negative', 'none', 'not involved', 'clear', 'uninvolved', 'free'].includes(s)) return false;
-  if (/\b(involved|positive|present|carcinoma)\b/.test(s) && !/\b(not involved|negative|uninvolved|no carcinoma|clear|free)\b/.test(s)) return true;
+  if (/\b(involved|positive|present|carcinoma|extramural|intramural)\b/.test(s) && !/\b(not involved|negative|uninvolved|no carcinoma|clear|free|none)\b/.test(s)) return true;
   if (/\b(not involved|negative|uninvolved|no carcinoma|clear|free)\b/.test(s)) return false;
   return null;
 }
