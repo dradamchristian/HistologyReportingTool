@@ -21,9 +21,9 @@ function cleanString(value) {
 function toBool(value) {
   const s = cleanString(value).toLowerCase();
   if (!s) return null;
-  if (['yes', 'y', 'true', 'present', 'positive', 'involved'].includes(s)) return true;
+  if (['yes', 'y', 'true', 'present', 'positive', 'involved', 'extramural', 'intramural'].includes(s)) return true;
   if (['no', 'n', 'false', 'not identified', 'negative', 'none', 'not involved', 'clear', 'uninvolved', 'free'].includes(s)) return false;
-  if (/\b(involved|positive|present|carcinoma)\b/.test(s) && !/\b(not involved|negative|uninvolved|no carcinoma|clear|free)\b/.test(s)) return true;
+  if (/\b(involved|positive|present|carcinoma|extramural|intramural)\b/.test(s) && !/\b(not involved|negative|uninvolved|no carcinoma|clear|free|none)\b/.test(s)) return true;
   if (/\b(not involved|negative|uninvolved|no carcinoma|clear|free)\b/.test(s)) return false;
   return null;
 }
@@ -58,9 +58,12 @@ function mapAuditFields(datasetId, extracted = {}) {
     crm_distance_mm: extracted.distance_to_crm_mm ?? extracted.distance_to_resection_margin_mm ?? null,
     margin_longitudinal_involved: extracted.longitudinal_margin_involved ?? extracted.proximal_margin ?? extracted.proximal_margin_status,
     margin_distal_involved: extracted.distal_margin_involved ?? extracted.distal_margin ?? extracted.distal_margin_status,
-    lvi_present: extracted.lvi ?? extracted.lymphatic_invasion_level ?? extracted.microscopic_vascular_invasion_identified,
-    pni_present: extracted.pni ?? extracted.perineural_invasion_level,
+    lvi_present: extracted.lymphatic_invasion_level ?? extracted.lvsi ?? extracted.lvi ?? extracted.microscopic_vascular_invasion_identified,
+    pni_present: extracted.perineural_invasion_level ?? extracted.pni,
     emvi_present: extracted.venous_invasion_level ?? extracted.macroscopic_vascular_invasion_confirmed,
+    venous_invasion_level: extracted.venous_invasion_level || null,
+    lymphatic_invasion_level: extracted.lymphatic_invasion_level || null,
+    perineural_invasion_level: extracted.perineural_invasion_level || null,
     neoadjuvant_given: extracted.neoadjuvant_therapy_history ?? extracted.neoadjuvant_therapy_given,
     tumour_block: extracted.tumour_block || null,
   };
@@ -126,6 +129,7 @@ exports.handler = async (event) => {
         crm_involved, crm_distance_mm,
         margin_longitudinal_involved, margin_distal_involved,
         lvi_present, pni_present, emvi_present,
+        venous_invasion_level, lymphatic_invasion_level, perineural_invasion_level,
         neoadjuvant_given, tumour_block
       )
       values (
@@ -136,7 +140,8 @@ exports.handler = async (event) => {
         $14, $15,
         $16, $17,
         $18, $19, $20,
-        $21, $22
+        $21, $22, $23,
+        $24, $25
       )
       returning id, created_at
     `;
@@ -162,6 +167,9 @@ exports.handler = async (event) => {
       mapped.lvi_present,
       mapped.pni_present,
       mapped.emvi_present,
+      mapped.venous_invasion_level,
+      mapped.lymphatic_invasion_level,
+      mapped.perineural_invasion_level,
       mapped.neoadjuvant_given,
       mapped.tumour_block,
     ];
