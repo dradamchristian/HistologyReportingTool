@@ -58,7 +58,7 @@ function mapAuditFields(datasetId, extracted = {}) {
     crm_distance_mm: extracted.distance_to_crm_mm ?? extracted.distance_to_resection_margin_mm ?? null,
     margin_longitudinal_involved: extracted.longitudinal_margin_involved ?? extracted.proximal_margin ?? extracted.proximal_margin_status,
     margin_distal_involved: extracted.distal_margin_involved ?? extracted.distal_margin ?? extracted.distal_margin_status,
-    lvi_present: extracted.lymphatic_invasion_level ?? extracted.lvi ?? extracted.microscopic_vascular_invasion_identified,
+    lvi_present: extracted.lymphatic_invasion_level ?? extracted.lvsi ?? extracted.lvi ?? extracted.microscopic_vascular_invasion_identified,
     pni_present: extracted.perineural_invasion_level ?? extracted.pni,
     emvi_present: extracted.venous_invasion_level ?? extracted.macroscopic_vascular_invasion_confirmed,
     venous_invasion_level: extracted.venous_invasion_level || null,
