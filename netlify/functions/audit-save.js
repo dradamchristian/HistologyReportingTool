@@ -12,6 +12,7 @@ const ALLOWED_DATASETS = new Set([
 const { getPool, json } = require('./_audit-db');
 
 const isMissingRelation = (err) => err?.code === '42P01' || String(err?.message || '').toLowerCase().includes('does not exist');
+const isUniqueViolation = (err) => err?.code === '23505';
 
 function cleanString(value) {
   if (value === null || value === undefined) return '';
@@ -206,6 +207,9 @@ exports.handler = async (event) => {
 
     return json(200, { ok: true, id: row.id || null, created_at: row.created_at || null });
   } catch (err) {
+    if (isUniqueViolation(err)) {
+      return json(409, { ok: false, error: 'Specimen number already exists in the audit system.' });
+    }
     return json(500, { ok: false, error: err.message || String(err) });
   }
 };

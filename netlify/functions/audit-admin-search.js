@@ -1,4 +1,15 @@
 const { getPool, json } = require('./_audit-db');
+const crypto = require('crypto');
+
+function normalizeSpecimen(input) {
+  return String(input || '').trim().replace(/\s+/g, '').toUpperCase();
+}
+
+function hashSpecimen(specimenNumber) {
+  const secret = process.env.AUDIT_HASH_SECRET;
+  if (!secret) throw new Error('AUDIT_HASH_SECRET not set');
+  return crypto.createHmac('sha256', secret).update(specimenNumber).digest('hex');
+}
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'GET') return json(405, { ok: false, error: 'Method not allowed' });
@@ -12,6 +23,10 @@ exports.handler = async (event) => {
     if (q.consultant_name) add('consultant_name ILIKE ?', `%${q.consultant_name.trim()}%`);
     if (q.from_date) add('created_at::date >= ?', q.from_date);
     if (q.to_date) add('created_at::date <= ?', q.to_date);
+    if (q.specimen_number) {
+      const specimenNumber = normalizeSpecimen(q.specimen_number);
+      if (specimenNumber) add('specimen_hash = ?', hashSpecimen(specimenNumber));
+    }
 
     const sql = `
       select id, created_at, consultant_name, dataset_id, tumour_site, tumour_type, differentiation,
