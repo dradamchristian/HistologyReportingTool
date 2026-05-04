@@ -12,9 +12,10 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:6px;borde
 <div class='card'><h1 style='margin:0'>Audit Admin</h1><div class='small'><a href='index.html' style='color:#dbe6ff'>Back</a> · <a href='audit-dashboard.html' style='color:#dbe6ff'>Dashboard</a></div></div>
 <div class='card'><div class='row'>
 <input id='q' placeholder='search consultant/dataset/site/stage' style='min-width:280px;flex:2'>
+<input id='specimenNumber' placeholder='Specimen number (hashed lookup)' style='min-width:240px'>
 <select id='dataset'><option value=''>All specimen types</option></select><select id='consultant'><option value=''>All consultants</option></select>
 <input id='from' type='date'><input id='to' type='date'><button id='search'>Search</button><button id='reset'>Reset</button><span class='pill' id='count'></span>
-</div><div class='small'>Click column headers to sort. Click Edit to open full record editor.</div></div>
+</div><div class='small'>Top search can directly find a case by specimen number: enter the plain number and we hash it server-side for matching.</div><div class='small'>Click column headers to sort. Click Edit to open full record editor.</div></div>
 <div class='card'><h3 style='margin:0 0 8px;'>Consultant list</h3><div class='row'><input id='newConsultant' placeholder='Add consultant name'><button id='addConsultant'>Add</button></div><div id='consultantList' class='small' style='margin-top:8px;'></div></div>
 <div class='card' id='createCard'>
 <h3 style='margin-top:0'>Manually add case</h3>
