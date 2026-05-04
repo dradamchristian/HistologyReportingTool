@@ -7,6 +7,8 @@ svg.innerHTML=`<line x1='${p}' y1='${h-p}' x2='${w-p}' y2='${h-p}' stroke='#b8c5
 
 function pct(n,d){return d?Math.round((Number(n)||0)*100/d):0;}
 function invStatus(v){return v===true?'Present':(v===false?'Absent':'Unknown');}
+
+function benchmarkCard({label,numerator,denominator,target,comparator='gte'}){const pctValue=pct(numerator,denominator);const hit=comparator==='lte'?pctValue<=target:pctValue>=target;const status=hit?'On target':'Below target';const statusClass=hit?'ok':'warn';const targetText=`${comparator==='lte'?'≤':'≥'} ${target}%`;return `<div class='benchmark-card'><div class='benchmark-head'><div class='benchmark-label'>${label}</div><span class='benchmark-status ${statusClass}'>${status}</span></div><div class='benchmark-value'>${pctValue}%</div><div class='benchmark-meta'>${numerator}/${denominator||0} cases · Target ${targetText}</div></div>`;}
 function render(d){last=d;const t=d.totals||{};const u=d.usage_stats||{};const total=Number(t.case_count)||0,r1=Number(t.r1_cases)||0,lvi=Number(t.lvi_cases)||0,pni=Number(t.pni_cases)||0,emvi=Number(t.emvi_cases)||0,distal=Number(t.distal_margin_involved_cases)||0,prox=Number(t.proximal_margin_involved_cases)||0,pt3=Number(t.pt3_or_higher_cases)||0,ge12=Number(t.ge12_cases)||0;
  el('metrics').innerHTML=`
   <div class='card metric soft'><div class='muted'>Total cases</div><div class='v'>${total}</div></div>
@@ -15,6 +17,14 @@ function render(d){last=d;const t=d.totals||{};const u=d.usage_stats||{};const t
   <div class='card metric soft'><div class='muted'>pT3/pT4 rate</div><div class='v'>${pct(pt3,total)}%</div><div class='tiny'>${pt3}/${total||0}</div></div>
   <div class='card metric soft'><div class='muted'>Lymphatic invasion present</div><div class='v'>${pct(lvi,total)}%</div><div class='tiny'>${lvi}/${total||0}</div></div>
   <div class='card metric soft'><div class='muted'>Venous invasion present</div><div class='v'>${pct(emvi,total)}%</div><div class='tiny'>${emvi}/${total||0}</div></div>`;
+
+ const benchmarkCards=[
+  {label:'Nodes ≥12 retrieval rate',numerator:ge12,denominator:total,target:85,comparator:'gte'},
+  {label:'Venous invasion detection rate',numerator:emvi,denominator:total,target:30,comparator:'gte'},
+  {label:'CRM involved rate',numerator:r1,denominator:total,target:10,comparator:'lte'},
+  {label:'pT3/pT4 case-mix',numerator:pt3,denominator:total,target:50,comparator:'gte'}
+ ];
+ el('qualityBenchmarks').innerHTML=benchmarkCards.map(benchmarkCard).join('');
 
  bars('siteBars',d.by_site||[],'site','cases');bars('meanBars',d.by_consultant||[],'consultant_name','mean_nodes');bars('caseBars',d.by_consultant||[],'consultant_name','cases');drawLine(d.monthly||[]);
  const risk=[['R1 / involved margin',r1],['Lymphatic invasion present',lvi],['PNI present',pni],['Venous invasion present',emvi],['Proximal margin involved',prox],['Distal margin involved',distal]];
