@@ -121,6 +121,11 @@ exports.handler = async (event) => {
     const mapped = mapAuditFields(datasetId, extracted);
 
     const db = getPool();
+    const exists = await db.query('select 1 from audit.case_audit where specimen_hash = $1 limit 1', [specimenHash]);
+    if (exists.rowCount > 0) {
+      return json(409, { ok: false, error: 'Specimen number already exists in the audit system.' });
+    }
+
     const sql = `
       insert into audit.case_audit (
         specimen_hash, consultant_name, dataset_id, report_text, raw_extracted_json,

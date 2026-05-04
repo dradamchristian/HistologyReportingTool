@@ -10,6 +10,8 @@ const ALLOWED_DATASETS = new Set([
   'colorectal_liver_metastasis_proforma_v1',
 ]);
 
+const isUniqueViolation = (err) => err?.code === '23505';
+
 function clean(value) {
   if (value === null || value === undefined) return '';
   return String(value).trim();
@@ -58,6 +60,12 @@ exports.handler = async (event) => {
 
     const db = getPool();
     await db.query('begin');
+    const specimenHash = hashSpecimen(specimen);
+    const existing = await db.query('select 1 from audit.case_audit where specimen_hash = $1 limit 1', [specimenHash]);
+    if (existing.rowCount > 0) {
+      await db.query('rollback');
+      return json(409, { ok: false, error: 'Specimen number already exists in the audit system.' });
+    }
     const inserted = await db.query(
       `insert into audit.case_audit (
         specimen_hash, consultant_name, dataset_id, report_text, raw_extracted_json,
@@ -73,7 +81,7 @@ exports.handler = async (event) => {
         $21,$22
       ) returning *`,
       [
-        hashSpecimen(specimen), consultant, dataset, clean(b.report_text) || null, JSON.stringify({ manual_entry: true }),
+        specimenHash, consultant, dataset, clean(b.report_text) || null, JSON.stringify({ manual_entry: true }),
         record.tumour_site, record.tumour_type, record.differentiation, record.pt_stage, record.pn_stage, record.pm_stage,
         record.nodes_examined, record.nodes_positive, record.crm_involved, record.crm_distance_mm,
         record.margin_longitudinal_involved, record.margin_distal_involved, record.lvi_present, record.pni_present, record.emvi_present,
@@ -90,6 +98,9 @@ exports.handler = async (event) => {
     return json(200, { ok: true, row });
   } catch (err) {
     try { await getPool().query('rollback'); } catch (_) {}
+    if (isUniqueViolation(err)) {
+      return json(409, { ok: false, error: 'Specimen number already exists in the audit system.' });
+    }
     return json(500, { ok: false, error: err.message || String(err) });
   }
 };
