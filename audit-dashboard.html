@@ -13,6 +13,7 @@ body{margin:0;background:linear-gradient(180deg,#eef3f9 0,#e9f0f8 100%);color:#0
 </div>
 <div class='grid2'><div class='card'><h2>Tumour location</h2><div id='siteBars'></div></div><div class='card'><h2>Consultant overview</h2><div class='tiny' style='margin-bottom:6px'>Cases by consultant</div><div id='caseBars'></div><hr style='border:none;border-top:1px solid #e4ebf5;margin:14px 0'><div class='tiny' style='margin-bottom:6px'>Mean nodes examined by consultant</div><div id='meanBars'></div></div></div>
 <div class='card'><h2>Captured variables summary</h2><div class='pillgrid' id='capturedSummary'></div></div>
-<div class='card'><h2>Case list</h2><table id='cases'><thead><tr><th>Date</th><th>Consultant</th><th>Site</th><th>Stage</th><th>Nodes</th><th>Margin</th><th>LVI/EMVI</th></tr></thead><tbody></tbody></table></div>
+<div class='card'><h2>RCPath-style quality benchmark view</h2><div class='pillgrid' id='qualityBenchmarks'></div></div>
+<div class='card'><h2>Case list</h2><table id='cases'><thead><tr><th>Date</th><th>Consultant</th><th>Site</th><th>Stage</th><th>Nodes</th><th>Margin</th><th>Lymphatic/Perineural/Venous</th></tr></thead><tbody></tbody></table></div>
 <div class='card'><h3 style='margin:0 0 8px'>Model usage/cost telemetry (optional)</h3><div class='tiny' style='margin-bottom:8px'>This section is informational and does not affect cancer audit metrics.</div><table id='benchmarkTable'><thead><tr><th>Model</th><th>Total</th><th>Avg duration (ms)</th><th>Avg est. cost (USD)</th><th>Error rate</th><th>Avg input/output tokens</th></tr></thead><tbody></tbody></table></div>
 </main><script defer src='assets/audit-dashboard.js'></script></body></html>
