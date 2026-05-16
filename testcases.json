@@ -1,6 +1,6 @@
 {
   "meta": {
-    "notes": "Expanded resection + GIST suite. Substring checks; prefix '! ' means must not appear. Bundle collects failed cases (input+missing+output). Added LGI polyp/colitis/ischaemia/CMV/drug and range/site tests."
+    "notes": "Edge-focused regression suite. Substring checks; prefix '! ' means must not appear. Bundle collects failed cases (input+missing+output). Trimmed repetitive colorectal pT/node matrix cases and added tumour-deposit N1c and HCC size-based staging variations."
   },
   "cases": [
     {
@@ -14,71 +14,11 @@
       ]
     },
     {
-      "id": "CR_pT1_1of8",
-      "EXPECTED_DATASET": "colorectal",
-      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades submucosa.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 1 of 8 positive.\nNo distant metastasis.\n",
-      "EXPECTED_CHECKS": [
-        "Local invasion: pT1.",
-        "1 / 8 involved.",
-        "N1a"
-      ]
-    },
-    {
-      "id": "CR_pT1_3of12",
-      "EXPECTED_DATASET": "colorectal",
-      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades submucosa.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 3 of 12 positive.\nNo distant metastasis.\n",
-      "EXPECTED_CHECKS": [
-        "Local invasion: pT1.",
-        "3 / 12 involved.",
-        "N1b"
-      ]
-    },
-    {
-      "id": "CR_pT2_0of10",
-      "EXPECTED_DATASET": "colorectal",
-      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades muscularis propria.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 0 of 10 positive.\nNo distant metastasis.\n",
-      "EXPECTED_CHECKS": [
-        "Local invasion: pT2.",
-        "0 / 10 involved.",
-        "N0"
-      ]
-    },
-    {
       "id": "CR_pT2_1of8",
       "EXPECTED_DATASET": "colorectal",
       "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades muscularis propria.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 1 of 8 positive.\nNo distant metastasis.\n",
       "EXPECTED_CHECKS": [
         "Local invasion: pT2.",
-        "1 / 8 involved.",
-        "N1a"
-      ]
-    },
-    {
-      "id": "CR_pT2_3of12",
-      "EXPECTED_DATASET": "colorectal",
-      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades muscularis propria.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 3 of 12 positive.\nNo distant metastasis.\n",
-      "EXPECTED_CHECKS": [
-        "Local invasion: pT2.",
-        "3 / 12 involved.",
-        "N1b"
-      ]
-    },
-    {
-      "id": "CR_pT3_0of10",
-      "EXPECTED_DATASET": "colorectal",
-      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades beyond muscularis propria. Extramural depth beyond muscularis propria 7 mm.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 0 of 10 positive.\nNo distant metastasis.\n",
-      "EXPECTED_CHECKS": [
-        "Local invasion: pT3.",
-        "0 / 10 involved.",
-        "N0"
-      ]
-    },
-    {
-      "id": "CR_pT3_1of8",
-      "EXPECTED_DATASET": "colorectal",
-      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades beyond muscularis propria. Extramural depth beyond muscularis propria 7 mm.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 1 of 8 positive.\nNo distant metastasis.\n",
-      "EXPECTED_CHECKS": [
-        "Local invasion: pT3.",
         "1 / 8 involved.",
         "N1a"
       ]
@@ -104,46 +44,6 @@
       ]
     },
     {
-      "id": "CR_pT4a_1of8",
-      "EXPECTED_DATASET": "colorectal",
-      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour perforates visceral peritoneum.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 1 of 8 positive.\nNo distant metastasis.\n",
-      "EXPECTED_CHECKS": [
-        "Local invasion: pT4a.",
-        "1 / 8 involved.",
-        "N1a"
-      ]
-    },
-    {
-      "id": "CR_pT4a_3of12",
-      "EXPECTED_DATASET": "colorectal",
-      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour perforates visceral peritoneum.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 3 of 12 positive.\nNo distant metastasis.\n",
-      "EXPECTED_CHECKS": [
-        "Local invasion: pT4a.",
-        "3 / 12 involved.",
-        "N1b"
-      ]
-    },
-    {
-      "id": "CR_pT4b_0of10",
-      "EXPECTED_DATASET": "colorectal",
-      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades adjacent organ.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 0 of 10 positive.\nNo distant metastasis.\n",
-      "EXPECTED_CHECKS": [
-        "Local invasion: pT4b.",
-        "0 / 10 involved.",
-        "N0"
-      ]
-    },
-    {
-      "id": "CR_pT4b_1of8",
-      "EXPECTED_DATASET": "colorectal",
-      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades adjacent organ.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 1 of 8 positive.\nNo distant metastasis.\n",
-      "EXPECTED_CHECKS": [
-        "Local invasion: pT4b.",
-        "1 / 8 involved.",
-        "N1a"
-      ]
-    },
-    {
       "id": "CR_pT4b_3of12",
       "EXPECTED_DATASET": "colorectal",
       "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades adjacent organ.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 3 of 12 positive.\nNo distant metastasis.\n",
@@ -161,6 +61,40 @@
         "Local invasion: pT3.",
         "5 / 12 involved.",
         "pN2a"
+      ]
+    },
+    {
+      "id": "CR_tumour_deposits_N1c_0of14",
+      "EXPECTED_DATASET": "colorectal",
+      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades muscularis propria.\nCRM 6 mm. Proximal margin clear. Distal margin clear.\nNodes 0 of 14 positive. Tumour deposits: 2.\nNo distant metastasis.\n",
+      "EXPECTED_CHECKS": [
+        "Local invasion: pT2.",
+        "0 / 14 involved.",
+        "Tumour deposits: 2.",
+        "N1c"
+      ]
+    },
+    {
+      "id": "CR_tumour_deposit_present_N1c_0of9",
+      "EXPECTED_DATASET": "colorectal",
+      "INPUT": "Colorectal resection, rectosigmoid.\nAdenocarcinoma. Local invasion: tumour invades beyond muscularis propria. Extramural depth beyond muscularis propria 3 mm.\nCRM 4 mm. Nodes 0/9. Tumour deposit present. No distant metastasis.\n",
+      "EXPECTED_CHECKS": [
+        "Local invasion: pT3.",
+        "0 / 9 involved.",
+        "Tumour deposits: 1.",
+        "N1c"
+      ]
+    },
+    {
+      "id": "CR_tumour_deposits_do_not_override_positive_node_stage",
+      "EXPECTED_DATASET": "colorectal",
+      "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma. Local invasion: tumour invades submucosa.\nCRM 5 mm. Nodes 1 of 10 positive. Tumour deposits: 3. No distant metastasis.\n",
+      "EXPECTED_CHECKS": [
+        "Local invasion: pT1.",
+        "1 / 10 involved.",
+        "Tumour deposits: 3.",
+        "N1a",
+        "! N1c"
       ]
     },
     {
@@ -657,6 +591,29 @@
         "Cirrhosis.",
         "pT: T1b",
         "pN: N0"
+      ]
+    },
+    {
+      "id": "HCC_size_cm_single_42mm_T1b",
+      "EXPECTED_DATASET": "hepatocellular_carcinoma",
+      "INPUT": "Hepatocellular carcinoma resection. Single tumour 4.2 cm. Margin 8 mm. No macroscopic vascular invasion. Microscopic vascular invasion not identified. Background cirrhosis.",
+      "EXPECTED_CHECKS": [
+        "Tumour type: HCC NOS.",
+        "If no, distance to resection margin: 8 mm",
+        "Microscopic vascular invasion identified: Not identified.",
+        "Cirrhosis.",
+        "pT: T1b"
+      ]
+    },
+    {
+      "id": "HCC_multiple_cm_largest_65mm_T3",
+      "EXPECTED_DATASET": "hepatocellular_carcinoma",
+      "INPUT": "HCC resection with three tumours, largest tumour 6.5 cm. Resection margin 12 mm. No macroscopic vascular invasion. Microscopic vascular invasion not identified. Background liver bridging fibrosis.",
+      "EXPECTED_CHECKS": [
+        "Tumour type: HCC NOS.",
+        "If no, distance to resection margin: 12 mm",
+        "Bridging.",
+        "pT: T3"
       ]
     }
   ]
