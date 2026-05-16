@@ -299,6 +299,39 @@ function extractTumourBlock(rawText) {
 }
 
 
+function extractTumourDeposits(rawText) {
+  const text = String(rawText || "");
+  if (!text.trim() || !/tumou?r\s+deposit/i.test(text)) return null;
+
+  const negated = /\b(?:no|without|absent|not\s+identified|none)\s+(?:tumou?r\s+)?deposits?\b/i.test(text) ||
+                  /\btumou?r\s+deposits?\s*(?:[:=-]\s*)?(?:no|absent|not\s+identified|none)\b/i.test(text);
+  if (negated) return 0;
+
+  const patterns = [
+    /\btumou?r\s+deposits?\s*(?:[:=-]\s*)?(\d+)\b/ig,
+    /\b(\d+)\s+tumou?r\s+deposits?\b/ig,
+  ];
+
+  let total = 0;
+  let foundNumber = false;
+  for (const re of patterns) {
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      const n = Number(m[1]);
+      if (Number.isFinite(n)) {
+        total += n;
+        foundNumber = true;
+      }
+    }
+  }
+
+  if (foundNumber) return total;
+
+  const positive = /\btumou?r\s+deposits?\s*(?:[:=-]\s*)?(?:present|identified|yes)\b/i.test(text) ||
+                   /\b(?:present|identified)\s+tumou?r\s+deposits?\b/i.test(text);
+  return positive ? 1 : null;
+}
+
 function applyAccumulators(rawText, schema, extracted) {
   const props = schema?.properties || {};
 
@@ -311,6 +344,12 @@ function applyAccumulators(rawText, schema, extracted) {
     if (props.local_invasion_pT) extracted.local_invasion_pT = "p" + worst;
     if (props.stage_pT) extracted.stage_pT = worst;
     if (props.pT) extracted.pT = worst;
+  }
+
+  // ---- Tumour deposits (colorectal N1c staging depends on this) ----
+  const tumourDeposits = extractTumourDeposits(rawText);
+  if (tumourDeposits != null && props.tumour_deposits) {
+    extracted.tumour_deposits = tumourDeposits;
   }
 
   // ---- Nodes accumulator ----
@@ -780,6 +819,34 @@ function computePNFromRules(rules, nodesPositive) {
   return "NX";
 }
 
+
+function extractHccTumourSizesMm(rawText) {
+  const text = String(rawText || "");
+  const sizes = [];
+  const sizeRx = /(\d+(?:\.\d+)?)\s*(mm|cm)\b/ig;
+  let m;
+  while ((m = sizeRx.exec(text)) !== null) {
+    const value = Number(m[1]);
+    if (!Number.isFinite(value)) continue;
+
+    const immediateStart = Math.max(0, m.index - 25);
+    const immediateEnd = Math.min(text.length, sizeRx.lastIndex + 15);
+    const immediateContext = text.slice(immediateStart, immediateEnd).toLowerCase();
+    const beforeContext = text.slice(Math.max(0, m.index - 35), m.index).toLowerCase();
+    const tumourCueBefore = /\b(?:tumou?r|lesion|mass|hcc|nodule|largest|measur(?:e|es|ing)|diameter|size)\b[^.\n;\d]{0,25}$/.test(beforeContext);
+
+    // Margins/distances can be larger than the tumour in brief dictations; do not let
+    // them drive HCC pT size assignment unless the measurement is locally labelled as
+    // the tumour/lesion/mass size.
+    if (/\b(?:margin|clearance|distance|from|to\s+resection)\b/.test(immediateContext) && !tumourCueBefore) {
+      continue;
+    }
+
+    sizes.push(m[2].toLowerCase() === "cm" ? value * 10 : value);
+  }
+  return sizes;
+}
+
 function computeHccPTFromPrompt(rawText, extracted) {
   const t = String(rawText || "").toLowerCase();
 
@@ -800,8 +867,7 @@ function computeHccPTFromPrompt(rawText, extracted) {
     /\bperforates?\s+visceral\s+peritoneum\b/.test(t);
   if (majorBranchOrAdjacent) return "T4";
 
-  const sizeMatches = [...String(rawText || "").matchAll(/(\d+(?:\.\d+)?)\s*mm\b/ig)];
-  const sizes = sizeMatches.map(m => Number(m[1])).filter(Number.isFinite);
+  const sizes = extractHccTumourSizesMm(rawText);
   const maxSize = sizes.length ? Math.max(...sizes) : null;
 
   const multipleTumours =
@@ -878,6 +944,15 @@ function finalizeStaging(schema, extracted) {
     null;
 
   if (nPos == null) return;
+
+  const hasTumourDeposits = Number(extracted.tumour_deposits || 0) > 0;
+  const stageEnums = props.stage_pN?.enum || props.pN?.enum || [];
+  if (Number(nPos) === 0 && hasTumourDeposits && stageEnums.includes("N1c")) {
+    if (props.pN) extracted.pN = "N1c";
+    if (props.stage_pN) extracted.stage_pN = "N1c";
+    if (!props.pN) extracted.pN = "N1c";
+    return;
+  }
 
   const derived = derivePNFromSchema(schema, nPos);
   if (!derived) return;
