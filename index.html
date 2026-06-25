@@ -84,13 +84,53 @@ input[type="text"]{
   outline:none;
   font-size:13px;
 }
+
+
+/* --- Optional LCARS mode (Star Trek: TNG-inspired display styling) --- */
+.theme-toggle{margin-left:10px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);border-radius:12px;padding:6px 10px;font-size:12px;font-weight:650;cursor:pointer;}
+.theme-toggle:hover{background:rgba(255,255,255,.09);}
+body.lcars-mode{
+  --bg:#050509;--panel:#0b0b12;--field:#11111a;--text:#fff7df;--muted:#c7b7d8;--border:rgba(255,255,255,.16);--accent:#ff9f55;--accent-2:#cc99ff;--accent-3:#ffcc66;--good:#99ccff;--bad:#ff6666;--lcars-blue:#9999ff;--lcars-rose:#cc6699;
+  background:radial-gradient(900px 520px at 12% -10%, rgba(204,153,255,.28), transparent 58%),radial-gradient(820px 500px at 92% 6%, rgba(255,153,102,.20), transparent 55%),linear-gradient(135deg,#050509 0%,#080812 52%,#030306 100%);
+  font-family:Impact,Haettenschweiler,"Arial Narrow",Arial,sans-serif;letter-spacing:.035em;
+}
+body.lcars-mode::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.2;background:repeating-linear-gradient(90deg, transparent 0 78px, rgba(255,255,255,.08) 79px 80px),repeating-linear-gradient(0deg, transparent 0 58px, rgba(255,255,255,.045) 59px 60px);mix-blend-mode:screen;}
+body.lcars-mode header{max-width:1180px;padding:24px 18px 12px;position:relative;}
+body.lcars-mode header::before{content:"";display:block;height:54px;margin-bottom:14px;border-radius:34px 0 0 34px;background:linear-gradient(90deg,var(--accent-2) 0 18%,#000 18% 21%,var(--accent) 21% 54%,#000 54% 57%,var(--lcars-blue) 57% 78%,#000 78% 81%,var(--accent-3) 81%);box-shadow:0 0 24px rgba(255,159,85,.22);}
+body.lcars-mode h1{margin:0 0 8px;font-size:30px;line-height:.95;text-transform:uppercase;color:var(--accent-3);text-shadow:0 0 16px rgba(255,204,102,.28)}
+body.lcars-mode .sub{color:var(--muted);line-height:1.45;font-family:Arial,Helvetica,sans-serif;letter-spacing:0;}
+body.lcars-mode .sub a{color:#ffcc66!important;text-decoration:none;border-bottom:2px solid var(--lcars-rose);}
+body.lcars-mode main{max-width:1180px;padding:12px 18px 26px;gap:18px;}
+body.lcars-mode .page-note{max-width:1180px;color:var(--muted);opacity:.9;font-family:Arial,Helvetica,sans-serif;}
+body.lcars-mode .card{position:relative;background:linear-gradient(180deg, rgba(17,17,26,.98), rgba(7,7,12,.96));border:4px solid #000;border-top-width:18px;border-left-width:42px;border-radius:34px 0 28px 0;padding:18px 18px 18px 22px;box-shadow:inset 0 0 0 2px rgba(255,204,102,.12),0 18px 35px rgba(0,0,0,.45);}
+body.lcars-mode .card::before{content:"";position:absolute;left:-42px;top:-18px;width:42px;height:calc(100% + 18px);border-radius:30px 0 0 30px;background:linear-gradient(180deg,var(--accent) 0 22%,#000 22% 26%,var(--accent-2) 26% 52%,#000 52% 56%,var(--lcars-rose) 56% 74%,#000 74% 78%,var(--accent-3) 78%);}
+body.lcars-mode .card::after{content:"";position:absolute;left:0;right:0;top:-18px;height:18px;background:linear-gradient(90deg,var(--accent-3) 0 28%,#000 28% 32%,var(--lcars-blue) 32% 62%,#000 62% 66%,var(--accent) 66%);}
+body.lcars-mode .card h2{margin:0 0 14px;font-size:18px;text-transform:uppercase;color:#050509;background:var(--accent-3);display:inline-block;padding:7px 16px;border-radius:18px 0 18px 0;letter-spacing:.08em;}
+body.lcars-mode textarea,body.lcars-mode pre,body.lcars-mode input[type="text"],body.lcars-mode select{background:#050509;border:3px solid var(--accent-2);border-radius:22px 0 22px 0;padding:14px;color:var(--text);font-size:14px;line-height:1.4;font-family:"Arial Narrow",Arial,Helvetica,sans-serif;letter-spacing:.02em;box-shadow:inset 0 0 20px rgba(153,153,255,.12);}
+body.lcars-mode select{width:auto;max-width:100%;}
+body.lcars-mode textarea:focus,body.lcars-mode input[type="text"]:focus,body.lcars-mode select:focus{border-color:var(--accent-3);box-shadow:0 0 0 4px rgba(255,204,102,.18),inset 0 0 22px rgba(255,204,102,.12);}
+body.lcars-mode .row{gap:10px;margin-top:12px;}
+body.lcars-mode button,body.lcars-mode .pill{border:0;background:var(--accent);color:#07070c;border-radius:999px 0 999px 999px;padding:10px 16px;font-weight:900;text-transform:uppercase;cursor:pointer;transition:.15s transform,.15s filter;font-family:Impact,"Arial Narrow",Arial,sans-serif;letter-spacing:.05em;}
+body.lcars-mode button:hover{transform:translateY(-1px);filter:brightness(1.15);}
+body.lcars-mode .primary{background:var(--accent-2);} body.lcars-mode .good{background:var(--good);} body.lcars-mode .bad{background:var(--bad);}
+body.lcars-mode .pill{display:inline-flex;background:var(--lcars-blue);font-size:12px;cursor:default;}
+body.lcars-mode .status{color:var(--muted);font-family:Arial,Helvetica,sans-serif;letter-spacing:0;}
+body.lcars-mode pre{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace;letter-spacing:0;}
+body.lcars-mode .caveats{margin-top:12px;padding:12px 14px;border-radius:24px 0 24px 0;border:3px solid var(--lcars-rose);background:rgba(5,5,9,.78);font-family:Arial,Helvetica,sans-serif;letter-spacing:0;}
+body.lcars-mode .caveats ul{margin:8px 0 0 18px;}
+body.lcars-mode .small{color:var(--muted);font-family:Arial,Helvetica,sans-serif;letter-spacing:0;}
+body.lcars-mode .code-list .code,body.lcars-mode .kbd{font-weight:800;font-size:14px;color:var(--accent-3);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace;letter-spacing:0;}
+body.lcars-mode .modalOverlay{background:rgba(0,0,0,.72);}
+body.lcars-mode .modal{background:linear-gradient(180deg,rgba(17,17,26,.98),rgba(5,5,9,.96));border:4px solid var(--accent);border-radius:34px 0 34px 0;box-shadow:0 25px 60px rgba(0,0,0,.55);padding:16px;}
+body.lcars-mode .modalHeader h3{font-size:18px;color:var(--accent-3);text-transform:uppercase;}
+body.lcars-mode .qrbox{border:3px solid var(--accent-2);border-radius:24px 0 24px 0;background:#050509;}
 </style>
 </head>
 <body>
 <header>
   <h1>RCPath Report Generator</h1>
   <div class="sub">Prototype: free text → structured extraction → RCPath-style report. Always review before use. Currently live for Oesophageal, Gastric and Colorectal cancer resections, Colorectal liver metastasis (CRLM) proformas, Hepatocellular carcinoma (HCC) proformas, GIST resections, Gallbladder reporting, Duodenal biopsies and Colonic biopsies</div>
-<div class="sub" style="margin-top:6px;"><a href='audit-admin.html' style='color:#dbe6ff;'>Audit Admin</a> · <a href='audit-dashboard.html' style='color:#dbe6ff;'>Audit Dashboard</a></div>
+<div class="sub" style="margin-top:6px;"><a href='audit-admin.html' style='color:#dbe6ff;'>Audit Admin</a> · <a href='audit-dashboard.html' style='color:#dbe6ff;'>Audit Dashboard</a><button type="button" class="theme-toggle" id="btnThemeToggle" aria-pressed="false">LCARS mode: off</button></div>
 </header>
 
 <main>
