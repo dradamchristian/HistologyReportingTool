@@ -26,6 +26,24 @@ function setStatus(msg, isError=false){
 }
 function setMicPill(){ $("micState").textContent = dictating ? "Mic: listening" : "Mic: idle"; }
 
+
+function initThemeToggle(){
+  const btn = $("btnThemeToggle");
+  if (!btn) return;
+  const apply = (enabled) => {
+    document.body.classList.toggle("lcars-mode", enabled);
+    btn.setAttribute("aria-pressed", enabled ? "true" : "false");
+    btn.textContent = enabled ? "LCARS mode: on" : "LCARS mode: off";
+  };
+  const stored = localStorage.getItem("lcarsMode") === "true";
+  apply(stored);
+  btn.addEventListener("click", () => {
+    const next = !document.body.classList.contains("lcars-mode");
+    localStorage.setItem("lcarsMode", String(next));
+    apply(next);
+  });
+}
+
 function initModelSelector() {
   const sel = $("modelSelect");
   const hint = $("modelHint");
@@ -257,6 +275,7 @@ $("btnGenerate").addEventListener("click", generate);
 $("btnClear").addEventListener("click", () => { stopDictation(); finalText=""; $("inputText").value=""; $("output").textContent=""; $("caveatsBox").style.display="none"; setStatus(""); lastGenerated = { dataset_id: "", extracted: {}, report_text: "" }; updateAuditPanel(""); if ($("auditSpecimenNumber")) $("auditSpecimenNumber").value=""; if ($("auditConsultantName")) $("auditConsultantName").value=""; });
 $("btnCopy").addEventListener("click", copyOut);
 if ($("btnCopySaveAudit")) $("btnCopySaveAudit").addEventListener("click", copyAndSaveAudit);
+initThemeToggle();
 initModelSelector();
 setMicPill();
 
