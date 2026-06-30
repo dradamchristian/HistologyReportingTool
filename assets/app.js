@@ -20,6 +20,144 @@ const AUDIT_DATASETS = new Set([
   "colorectal_liver_metastasis_proforma_v1",
 ]);
 
+const INLINE_COMPLETIONS = [
+  { trigger: "oes", completion: "oesophageal" },
+  { trigger: "squ", completion: "squamous" },
+  { trigger: "ade", completion: "adenocarcinoma" },
+  { trigger: "through", completion: "through the wall" },
+  { trigger: "mand", completion: "Mandard regression grade " },
+  { trigger: "cole", completion: "colectomy" },
+  { trigger: "gas", completion: "gastrectomy" },
+];
+const LGI_SITES = ["terminal ileum", "caecum", "ascending", "transverse", "descending", "sigmoid", "rectum", "colon"];
+const SPECIMEN_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+let activeCompletion = null;
+
+function getInputTextArea(){ return $("inputText"); }
+function getWordBeforeCursor(el){
+  const pos = el.selectionStart;
+  const left = el.value.slice(0, pos);
+  const match = left.match(/([A-Za-z]+)$/);
+  if (!match) return null;
+  return { word: match[1], start: pos - match[1].length, end: pos };
+}
+function completionFor(el){
+  if (!el || el.selectionStart !== el.selectionEnd) return null;
+  const word = getWordBeforeCursor(el);
+  if (!word) return null;
+  const hit = INLINE_COMPLETIONS.find((x) => x.trigger === word.word.toLowerCase());
+  if (!hit || hit.completion.toLowerCase() === word.word.toLowerCase()) return null;
+  return { ...hit, ...word };
+}
+function replaceRange(el, start, end, text){
+  el.value = el.value.slice(0, start) + text + el.value.slice(end);
+  const caret = start + text.length;
+  el.setSelectionRange(caret, caret);
+}
+function acceptActiveCompletion(){
+  const el = getInputTextArea();
+  activeCompletion = completionFor(el);
+  if (!activeCompletion || !el) return false;
+  replaceRange(el, activeCompletion.start, activeCompletion.end, activeCompletion.completion);
+  updateInputAssists();
+  return true;
+}
+function isLgiMode(text){ return /^\s*lgi\s*:/i.test(text || ""); }
+function maybeSeedLgiFirstPart(el){
+  if (!/^\s*lgi\s*:\s*$/i.test(el.value)) return false;
+  el.value = el.value.replace(/:\s*$/i, ": A - ");
+  el.setSelectionRange(el.value.length, el.value.length);
+  return true;
+}
+function currentSpecimenLetter(line){
+  const m = String(line || "").match(/^\s*([A-Z])\s*-\s*/i);
+  return m ? m[1].toUpperCase() : null;
+}
+function nextLgiLetter(text){
+  const letters = Array.from(String(text || "").matchAll(/(?:^|[\n;])\s*([A-Z])\s*-/gi)).map((m) => m[1].toUpperCase());
+  const last = letters.length ? letters[letters.length - 1] : "A";
+  const idx = SPECIMEN_LETTERS.indexOf(last);
+  return SPECIMEN_LETTERS[Math.min(idx + 1, SPECIMEN_LETTERS.length - 1)] || "B";
+}
+function lgiUsesRangeShortcut(text){ return /^\s*lgi\s*:\s*[A-Z]\s*-\s*[A-Z](?![A-Za-z])/i.test(text || ""); }
+function maybeInsertNextLgiPart(event){
+  const el = getInputTextArea();
+  if (!el || event.key !== "Enter" || event.shiftKey || !isLgiMode(el.value) || lgiUsesRangeShortcut(el.value)) return false;
+  const pos = el.selectionStart;
+  const lineStart = el.value.lastIndexOf("\n", pos - 1) + 1;
+  const line = el.value.slice(lineStart, pos);
+  if (!currentSpecimenLetter(line) && !/^\s*lgi\s*:/i.test(line)) return false;
+  event.preventDefault();
+  const next = nextLgiLetter(el.value.slice(0, pos));
+  replaceRange(el, pos, el.selectionEnd, `\n${next} - `);
+  updateInputAssists();
+  return true;
+}
+function insertSite(site){
+  const el = getInputTextArea();
+  if (!el) return;
+  const pos = el.selectionStart;
+  const left = el.value.slice(0, pos);
+  const lineStart = left.lastIndexOf("\n") + 1;
+  const line = el.value.slice(lineStart, pos);
+  const afterLabel = line.match(/^(\s*(?:lgi\s*:\s*)?[A-Z]\s*-\s*)$/i);
+  const insert = afterLabel ? site + " " : site + " ";
+  replaceRange(el, pos, el.selectionEnd, insert);
+  el.focus();
+  updateInputAssists();
+}
+function updateInputAssists(){
+  const el = getInputTextArea();
+  const ghost = $("ghostCompletion");
+  const assist = $("inputAssist");
+  activeCompletion = completionFor(el);
+  if (ghost) {
+    ghost.style.display = activeCompletion ? "block" : "none";
+    ghost.innerHTML = activeCompletion ? `Tab/→: <strong>${activeCompletion.completion}</strong>` : "";
+  }
+  if (!assist || !el) return;
+  const lgi = isLgiMode(el.value);
+  assist.innerHTML = "";
+  if (activeCompletion) {
+    const span = document.createElement("span");
+    span.className = "small";
+    span.textContent = `Ghost completion ready: ${activeCompletion.trigger} → ${activeCompletion.completion}`;
+    assist.appendChild(span);
+  }
+  if (lgi && !lgiUsesRangeShortcut(el.value)) {
+    const label = document.createElement("span");
+    label.className = "small";
+    label.textContent = "LGI sites:";
+    assist.appendChild(label);
+    LGI_SITES.forEach((site) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "site-chip";
+      btn.textContent = site;
+      btn.addEventListener("click", () => insertSite(site));
+      assist.appendChild(btn);
+    });
+  } else if (lgiUsesRangeShortcut(el.value)) {
+    const span = document.createElement("span");
+    span.className = "small";
+    span.textContent = "Range shortcut detected; specimen auto-advance is paused so A-D remains intact.";
+    assist.appendChild(span);
+  }
+}
+function initInputAcceleration(){
+  const el = getInputTextArea();
+  if (!el) return;
+  el.addEventListener("input", () => { maybeSeedLgiFirstPart(el); updateInputAssists(); });
+  el.addEventListener("click", updateInputAssists);
+  el.addEventListener("keyup", updateInputAssists);
+  el.addEventListener("keydown", (event) => {
+    if ((event.key === "Tab" || event.key === "ArrowRight") && acceptActiveCompletion()) event.preventDefault();
+    else maybeInsertNextLgiPart(event);
+  });
+  updateInputAssists();
+}
+
+
 function setStatus(msg, isError=false){
   $("status").textContent = msg || "";
   $("status").style.color = isError ? "var(--bad)" : "var(--muted)";
@@ -277,6 +415,7 @@ $("btnCopy").addEventListener("click", copyOut);
 if ($("btnCopySaveAudit")) $("btnCopySaveAudit").addEventListener("click", copyAndSaveAudit);
 initThemeToggle();
 initModelSelector();
+initInputAcceleration();
 setMicPill();
 
 const yearEl = $("currentYear");

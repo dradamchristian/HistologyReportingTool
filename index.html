@@ -24,6 +24,12 @@ border:1px solid var(--border);border-radius:16px;padding:14px;box-shadow:0 10px
 .card h2{margin:0 0 10px;font-size:14px;color:#dbe6ff}
 textarea{width:100%;min-height:190px;resize:vertical;background:rgba(0,0,0,.22);border:1px solid var(--border);
 border-radius:12px;padding:12px;color:var(--text);outline:none;font-size:14px;line-height:1.35;}
+.input-wrap{position:relative;}
+.ghost-completion{position:absolute;right:12px;top:10px;max-width:min(420px,calc(100% - 24px));padding:6px 10px;border:1px solid rgba(122,162,255,.28);border-radius:999px;background:rgba(11,18,32,.88);color:rgba(219,230,255,.72);font-size:12px;line-height:1.25;pointer-events:none;box-shadow:0 8px 18px rgba(0,0,0,.22);}
+.ghost-completion strong{color:#dbe6ff;}
+.input-assist{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px;}
+.site-chip{padding:6px 9px;border-radius:999px;border:1px solid rgba(122,162,255,.28);background:rgba(122,162,255,.12);color:var(--text);font-size:12px;cursor:pointer;}
+.site-chip:hover{background:rgba(122,162,255,.22);}
 textarea:focus{border-color:rgba(122,162,255,.55);box-shadow:0 0 0 3px rgba(122,162,255,.18);}
 .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px;}
 button{border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);
@@ -107,6 +113,8 @@ body.lcars-mode .card::before{content:"";position:absolute;left:-42px;top:-18px;
 body.lcars-mode .card::after{content:"";position:absolute;left:0;right:0;top:-18px;height:18px;background:linear-gradient(90deg,var(--accent-3) 0 28%,#000 28% 32%,var(--lcars-blue) 32% 62%,#000 62% 66%,var(--accent) 66%);}
 body.lcars-mode .card h2{margin:0 0 14px;font-size:18px;text-transform:uppercase;color:#050509;background:var(--accent-3);display:inline-block;padding:7px 16px;border-radius:18px 0 18px 0;letter-spacing:.08em;}
 body.lcars-mode textarea,body.lcars-mode pre,body.lcars-mode input[type="text"],body.lcars-mode select{background:#050509;border:3px solid var(--accent-2);border-radius:22px 0 22px 0;padding:14px;color:var(--text);font-size:14px;line-height:1.4;font-family:"Arial Narrow",Arial,Helvetica,sans-serif;letter-spacing:.02em;box-shadow:inset 0 0 20px rgba(153,153,255,.12);}
+body.lcars-mode .ghost-completion{border-color:var(--accent-3);background:#050509;color:var(--muted);font-family:Arial,Helvetica,sans-serif;letter-spacing:0;}
+body.lcars-mode .site-chip{border:0;background:var(--accent-2);color:#050509;font-family:Arial,Helvetica,sans-serif;font-weight:800;}
 body.lcars-mode select{width:auto;max-width:100%;}
 body.lcars-mode textarea:focus,body.lcars-mode input[type="text"]:focus,body.lcars-mode select:focus{border-color:var(--accent-3);box-shadow:0 0 0 4px rgba(255,204,102,.18),inset 0 0 22px rgba(255,204,102,.12);}
 body.lcars-mode .row{gap:10px;margin-top:12px;}
@@ -136,7 +144,11 @@ body.lcars-mode .qrbox{border:3px solid var(--accent-2);border-radius:24px 0 24p
 <main>
   <section class="card">
     <h2>Input</h2>
-    <textarea id="inputText" placeholder="Type or dictate: e.g. “Oesophageal SCC, through the wall, 2 of 12 nodes involved, margins clear, Mandard 2”"></textarea>
+    <div class="input-wrap">
+      <textarea id="inputText" placeholder="Type or dictate: e.g. “Oesophageal SCC, through the wall, 2 of 12 nodes involved, margins clear, Mandard 2”"></textarea>
+      <div class="ghost-completion" id="ghostCompletion" style="display:none;"></div>
+    </div>
+    <div class="input-assist" id="inputAssist" aria-live="polite"></div>
     <div class="row">
       <button class="primary" id="btnDictate">🎙️ Dictate (PC)</button>
       <button class="primary" id="btnPhone">📱 Phone dictation (QR)</button>
