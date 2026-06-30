@@ -615,6 +615,18 @@
         "Bridging.",
         "pT: T3"
       ]
+    },
+    {
+      "id": "HCC_single_42mm_microvascular_invasion_T2",
+      "EXPECTED_DATASET": "hepatocellular_carcinoma",
+      "INPUT": "Hepatocellular carcinoma resection. Single tumour 4.2 cm. Margin 8 mm. No macroscopic vascular invasion. Microvascular invasion is present. Background cirrhosis.",
+      "EXPECTED_CHECKS": [
+        "Tumour type: HCC NOS.",
+        "If no, distance to resection margin: 8 mm",
+        "Microscopic vascular invasion identified: Present.",
+        "Cirrhosis.",
+        "pT: T2"
+      ]
     }
   ]
 }

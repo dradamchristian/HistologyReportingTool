@@ -847,6 +847,22 @@ function extractHccTumourSizesMm(rawText) {
   return sizes;
 }
 
+function hasAffirmativeHccVascularInvasion(rawText, extracted = {}) {
+  const t = String(rawText || "").toLowerCase();
+  const macro = String(extracted.macroscopic_vascular_invasion_confirmed || "").toLowerCase();
+  const micro = String(extracted.microscopic_vascular_invasion_identified || "").toLowerCase();
+
+  if (/^(yes|present|identified|true)$/.test(macro.trim())) return true;
+  if (/^(present|identified|yes|true)$/.test(micro.trim())) return true;
+
+  return (
+    /\b(?:macro|macroscopic)\s+vascular\s+invasion\s+(?:confirmed\s+)?(?:yes|present|identified)\b/.test(t) ||
+    /\b(?:micro|microscopic|microvascular)\s+(?:vascular\s+)?invasion\s+(?:identified\s+)?(?:present|yes|identified)\b/.test(t) ||
+    /\bvascular\s+invasion\s+(?:is\s+)?(?:present|identified|seen)\b/.test(t) ||
+    /\b(?:macro|micro)vascular\s+invasion\s+(?:is\s+)?(?:present|identified|seen)\b/.test(t)
+  );
+}
+
 function computeHccPTFromPrompt(rawText, extracted) {
   const t = String(rawText || "").toLowerCase();
 
@@ -854,10 +870,7 @@ function computeHccPTFromPrompt(rawText, extracted) {
   const explicit = t.match(/\bp\s*t\s*(0|1a|1b|2|3|4|x)\b/i) || t.match(/\bt\s*(0|1a|1b|2|3|4|x)\b/i);
   if (explicit && explicit[1]) return `T${String(explicit[1]).toUpperCase()}`;
 
-  const macroOrMicroVasc =
-    /\b(?:macro|macroscopic)\s+vascular\s+invasion\s+(?:confirmed\s+)?(?:yes|present)\b/.test(t) ||
-    /\bmicroscopic\s+vascular\s+invasion\s+(?:identified\s+)?(?:present|yes)\b/.test(t) ||
-    /\bvascular\s+invasion\s+(?:present|identified)\b/.test(t);
+  const macroOrMicroVasc = hasAffirmativeHccVascularInvasion(rawText, extracted);
 
   const majorBranchOrAdjacent =
     /\bmajor\s+branch\s+of\s+the\s+(?:portal|hepatic)\s+vein\b/.test(t) ||
@@ -1842,7 +1855,7 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
         if (/\b(?:macro|macroscopic)\s+vascular\s+invasion\s+no\b|\bno\s+macroscopic\s+vascular\s+invasion\b/.test(t)) {
           extracted.macroscopic_vascular_invasion_confirmed = "No";
         }
-        if (/\bmicroscopic\s+vascular\s+invasion\s+(?:identified\s+)?(?:present|yes)\b|\bmicro(?:scopic)?\s+vascular\s+invasion\s+present\b/.test(t)) {
+        if (/\b(?:microscopic\s+vascular|microvascular)\s+invasion\s+(?:identified\s+)?(?:present|yes|identified)\b|\bmicro(?:scopic)?\s+vascular\s+invasion\s+(?:is\s+)?(?:present|identified|seen)\b/.test(t)) {
           extracted.microscopic_vascular_invasion_identified = "Present";
         }
         if (/\bmicroscopic\s+vascular\s+invasion\s+(?:not\s+identified|no)\b|\bno\s+microscopic\s+vascular\s+invasion\b/.test(t)) {
