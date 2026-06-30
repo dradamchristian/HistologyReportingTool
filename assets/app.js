@@ -26,9 +26,8 @@ const INLINE_COMPLETIONS = [
   { trigger: "ade", completion: "adenocarcinoma" },
   { trigger: "through", completion: "through the wall" },
   { trigger: "mand", completion: "Mandard regression grade " },
-  { trigger: "crm", completion: "CRM clear by  mm" },
-  { trigger: "lvi", completion: "lymphovascular invasion not identified" },
-  { trigger: "pni", completion: "perineural invasion not identified" },
+  { trigger: "cole", completion: "colectomy" },
+  { trigger: "gas", completion: "gastrectomy" },
 ];
 const LGI_SITES = ["terminal ileum", "caecum", "ascending", "transverse", "descending", "sigmoid", "rectum", "colon"];
 const SPECIMEN_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
