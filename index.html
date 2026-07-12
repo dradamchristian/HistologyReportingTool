@@ -99,62 +99,85 @@ input[type="text"]{
 }
 
 
-/* --- Optional LCARS mode (Star Trek: TNG-inspired display styling) --- */
-.theme-toggle{margin-left:10px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);border-radius:12px;padding:6px 10px;font-size:12px;font-weight:650;cursor:pointer;}
+/* --- Optional LCARS mode (late-24th-century integrated control panel) --- */
+.theme-toggle{margin-left:10px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);border-radius:12px;padding:6px 10px;font-size:12px;font-weight:650;cursor:pointer;min-height:44px;}
 .theme-toggle:hover{background:rgba(255,255,255,.09);}
+.lcars-only{display:none;}
+.lcars-sound-toggle{align-items:center;gap:8px;margin-left:10px;min-height:44px;}
+.lcars-progress{display:none;}
+.lcars-heading{display:none;}
 body.lcars-mode{
-  --bg:#050509;--panel:#0b0b12;--field:#11111a;--text:#fff7df;--muted:#c7b7d8;--border:rgba(255,255,255,.16);--accent:#ff9f55;--accent-2:#cc99ff;--accent-3:#ffcc66;--good:#99ccff;--bad:#ff6666;--lcars-blue:#9999ff;--lcars-rose:#cc6699;
-  background:radial-gradient(900px 520px at 12% -10%, rgba(204,153,255,.28), transparent 58%),radial-gradient(820px 500px at 92% 6%, rgba(255,153,102,.20), transparent 55%),linear-gradient(135deg,#050509 0%,#080812 52%,#030306 100%);
-  font-family:Impact,Haettenschweiler,"Arial Narrow",Arial,sans-serif;letter-spacing:.035em;
+  --bg:#000;--panel:#000;--field:#000;--text:#fff7df;--muted:#d8c9e8;--border:#ffcc66;
+  --accent:#ff9f55;--accent-2:#cc99ff;--accent-3:#ffcc66;--good:#99ccff;--bad:#ff6f61;
+  --lcars-orange:#ff9f55;--lcars-salmon:#ff6f61;--lcars-peach:#ffb68c;--lcars-lavender:#cc99ff;--lcars-blue:#99ccff;--lcars-yellow:#ffcc66;
+  background:#000;
+  font-family:"Arial Narrow","Aptos Narrow","Roboto Condensed",Arial,sans-serif;
+  letter-spacing:.055em;
+  text-transform:uppercase;
 }
-body.lcars-mode::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.2;background:repeating-linear-gradient(90deg, transparent 0 78px, rgba(255,255,255,.08) 79px 80px),repeating-linear-gradient(0deg, transparent 0 58px, rgba(255,255,255,.045) 59px 60px);mix-blend-mode:screen;}
-body.lcars-mode header{max-width:1180px;padding:24px 18px 12px;position:relative;}
-body.lcars-mode header::before{content:"";display:block;height:54px;margin-bottom:14px;border-radius:34px 0 0 34px;background:linear-gradient(90deg,var(--accent-2) 0 18%,#000 18% 21%,var(--accent) 21% 54%,#000 54% 57%,var(--lcars-blue) 57% 78%,#000 78% 81%,var(--accent-3) 81%);box-shadow:0 0 24px rgba(255,159,85,.22);}
-body.lcars-mode h1{margin:0 0 8px;font-size:30px;line-height:.95;text-transform:uppercase;color:var(--accent-3);text-shadow:0 0 16px rgba(255,204,102,.28)}
-body.lcars-mode .sub{color:var(--muted);line-height:1.45;font-family:Arial,Helvetica,sans-serif;letter-spacing:0;}
-body.lcars-mode .sub a{color:#ffcc66!important;text-decoration:none;border-bottom:2px solid var(--lcars-rose);}
-body.lcars-mode main{max-width:1180px;padding:12px 18px 26px;gap:18px;}
-body.lcars-mode .page-note{max-width:1180px;color:var(--muted);opacity:.9;font-family:Arial,Helvetica,sans-serif;}
-body.lcars-mode .card{position:relative;background:linear-gradient(180deg, rgba(17,17,26,.98), rgba(7,7,12,.96));border:4px solid #000;border-top-width:18px;border-left-width:42px;border-radius:34px 0 28px 0;padding:18px 18px 18px 22px;box-shadow:inset 0 0 0 2px rgba(255,204,102,.12),0 18px 35px rgba(0,0,0,.45);}
-body.lcars-mode .card::before{content:"";position:absolute;left:-42px;top:-18px;width:42px;height:calc(100% + 18px);border-radius:30px 0 0 30px;background:linear-gradient(180deg,var(--accent) 0 22%,#000 22% 26%,var(--accent-2) 26% 52%,#000 52% 56%,var(--lcars-rose) 56% 74%,#000 74% 78%,var(--accent-3) 78%);}
-body.lcars-mode .card::after{content:"";position:absolute;left:0;right:0;top:-18px;height:18px;background:linear-gradient(90deg,var(--accent-3) 0 28%,#000 28% 32%,var(--lcars-blue) 32% 62%,#000 62% 66%,var(--accent) 66%);}
-body.lcars-mode .card h2{margin:0 0 14px;font-size:18px;text-transform:uppercase;color:#050509;background:var(--accent-3);display:inline-block;padding:7px 16px;border-radius:18px 0 18px 0;letter-spacing:.08em;}
-body.lcars-mode textarea,body.lcars-mode pre,body.lcars-mode input[type="text"],body.lcars-mode select{background:#050509;border:3px solid var(--accent-2);border-radius:22px 0 22px 0;padding:14px;color:var(--text);font-size:14px;line-height:1.4;font-family:"Arial Narrow",Arial,Helvetica,sans-serif;letter-spacing:.02em;box-shadow:inset 0 0 20px rgba(153,153,255,.12);}
-body.lcars-mode .ghost-completion{border-color:var(--accent-3);background:#050509;color:var(--muted);font-family:Arial,Helvetica,sans-serif;letter-spacing:0;}
-body.lcars-mode .site-chip{border:0;background:var(--accent-2);color:#050509;font-family:Arial,Helvetica,sans-serif;font-weight:800;}
-body.lcars-mode select{width:auto;max-width:100%;}
-body.lcars-mode textarea:focus,body.lcars-mode input[type="text"]:focus,body.lcars-mode select:focus{border-color:var(--accent-3);box-shadow:0 0 0 4px rgba(255,204,102,.18),inset 0 0 22px rgba(255,204,102,.12);}
-body.lcars-mode .row{gap:10px;margin-top:12px;}
-body.lcars-mode button,body.lcars-mode .pill{border:0;background:var(--accent);color:#07070c;border-radius:999px 0 999px 999px;padding:10px 16px;font-weight:900;text-transform:uppercase;cursor:pointer;transition:.15s transform,.15s filter;font-family:Impact,"Arial Narrow",Arial,sans-serif;letter-spacing:.05em;}
-body.lcars-mode button:hover{transform:translateY(-1px);filter:brightness(1.15);}
-body.lcars-mode .primary{background:var(--accent-2);} body.lcars-mode .good{background:var(--good);} body.lcars-mode .bad{background:var(--bad);}
-body.lcars-mode .pill{display:inline-flex;background:var(--lcars-blue);font-size:12px;cursor:default;}
-body.lcars-mode .status{color:var(--muted);font-family:Arial,Helvetica,sans-serif;letter-spacing:0;}
-body.lcars-mode pre{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace;letter-spacing:0;}
-body.lcars-mode .caveats{margin-top:12px;padding:12px 14px;border-radius:24px 0 24px 0;border:3px solid var(--lcars-rose);background:rgba(5,5,9,.78);font-family:Arial,Helvetica,sans-serif;letter-spacing:0;}
-body.lcars-mode .staging-check{border:3px solid var(--accent-3);border-radius:24px 0 24px 0;background:rgba(5,5,9,.78);font-family:Arial,Helvetica,sans-serif;letter-spacing:0;}
-body.lcars-mode .staging-check-title{color:var(--accent-3);}
-body.lcars-mode .staging-row{border-top-color:rgba(255,204,102,.22);}
-body.lcars-mode .staging-row span,body.lcars-mode .staging-notes{color:var(--muted);}
-body.lcars-mode .caveats ul{margin:8px 0 0 18px;}
-body.lcars-mode .small{color:var(--muted);font-family:Arial,Helvetica,sans-serif;letter-spacing:0;}
-body.lcars-mode .code-list .code,body.lcars-mode .kbd{font-weight:800;font-size:14px;color:var(--accent-3);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace;letter-spacing:0;}
-body.lcars-mode .modalOverlay{background:rgba(0,0,0,.72);}
-body.lcars-mode .modal{background:linear-gradient(180deg,rgba(17,17,26,.98),rgba(5,5,9,.96));border:4px solid var(--accent);border-radius:34px 0 34px 0;box-shadow:0 25px 60px rgba(0,0,0,.55);padding:16px;}
-body.lcars-mode .modalHeader h3{font-size:18px;color:var(--accent-3);text-transform:uppercase;}
-body.lcars-mode .qrbox{border:3px solid var(--accent-2);border-radius:24px 0 24px 0;background:#050509;}
+body.lcars-mode .lcars-only{display:inline-flex;}
+body.lcars-mode .normal-title{display:none;}
+body.lcars-mode .lcars-heading{display:inline;}
+body.lcars-mode header{max-width:1280px;margin:0 auto;padding:20px 24px 0;position:relative;display:grid;grid-template-columns:176px minmax(0,1fr);gap:0 22px;}
+body.lcars-mode header::before{content:"";grid-row:1/3;width:176px;min-height:154px;border-radius:76px 0 0 0;background:linear-gradient(180deg,var(--lcars-orange) 0 34%,#000 34% 40%,var(--lcars-salmon) 40% 62%,#000 62% 68%,var(--lcars-lavender) 68% 100%);}
+body.lcars-mode header::after{content:"SYS 47-A";position:absolute;left:42px;top:78px;color:#000;font-weight:900;font-size:18px;letter-spacing:.12em;}
+body.lcars-mode h1{margin:0;color:var(--lcars-yellow);font-size:clamp(30px,5vw,64px);line-height:.86;font-weight:900;letter-spacing:.035em;}
+body.lcars-mode .sub{color:var(--muted);line-height:1.45;font-family:Arial,Helvetica,sans-serif;letter-spacing:.045em;text-transform:none;}
+body.lcars-mode .sub a{color:var(--lcars-yellow)!important;text-decoration:none;border-bottom:4px solid var(--lcars-salmon);text-transform:uppercase;font-weight:800;}
+body.lcars-mode .theme-toggle,body.lcars-mode .lcars-sound-toggle{border:0;background:var(--lcars-peach);color:#000;border-radius:0 22px 22px 0;padding:12px 18px;font-weight:900;font-family:inherit;letter-spacing:.075em;text-transform:uppercase;box-shadow:none;}
+body.lcars-mode .lcars-sound-toggle{background:var(--lcars-blue);font-size:12px;cursor:pointer;}
+body.lcars-mode .theme-toggle:hover,body.lcars-mode .lcars-sound-toggle:hover{filter:brightness(1.08);transform:none;}
+body.lcars-mode main{max-width:1280px;padding:28px 24px 44px;display:grid;grid-template-columns:176px minmax(0,1fr);gap:28px 22px;align-items:start;}
+body.lcars-mode .lcars-nav{display:flex;grid-row:1/4;flex-direction:column;gap:10px;position:sticky;top:12px;}
+body.lcars-mode .lcars-nav-item{min-height:66px;display:flex;align-items:center;justify-content:flex-end;padding:12px 16px 12px 20px;border-radius:36px 0 0 36px;color:#000;font-size:18px;font-weight:900;letter-spacing:.11em;text-decoration:none;}
+body.lcars-mode .lcars-nav-item:nth-child(1){background:var(--lcars-orange);}body.lcars-mode .lcars-nav-item:nth-child(2){background:var(--lcars-lavender);}body.lcars-mode .lcars-nav-item:nth-child(3){background:var(--lcars-blue);}body.lcars-mode .lcars-nav-item:nth-child(4){background:var(--lcars-yellow);}
+body.lcars-mode .card{grid-column:2;position:relative;background:#000;border:0;border-radius:0;padding:0 0 42px 34px;box-shadow:none;min-width:0;}
+body.lcars-mode .card::before{content:"";position:absolute;left:0;top:0;width:22px;height:100%;background:var(--section-color,var(--lcars-orange));border-radius:22px 0 0 22px;}
+body.lcars-mode .card::after{content:attr(data-lcars-id);position:absolute;left:34px;right:0;top:0;height:44px;background:linear-gradient(90deg,var(--section-color,var(--lcars-orange)) 0 28%,#000 28% 31%,var(--section-accent,var(--lcars-peach)) 31% 54%,#000 54% 58%,var(--lcars-yellow) 58% 72%,#000 72%);border-radius:0 24px 24px 0;color:#000;padding:11px 18px;font-weight:900;letter-spacing:.14em;transform-origin:left center;}
+body.lcars-mode .card.is-active::after{animation:lcars-activate .42s ease-out;}
+body.lcars-mode .card:nth-of-type(1){--section-color:var(--lcars-orange);--section-accent:var(--lcars-peach);}body.lcars-mode .card:nth-of-type(2){--section-color:var(--lcars-blue);--section-accent:var(--lcars-lavender);}body.lcars-mode .card:nth-of-type(3){--section-color:var(--lcars-yellow);--section-accent:var(--lcars-salmon);}
+body.lcars-mode .card h2{margin:0 0 26px;padding:60px 0 0;color:var(--section-color,var(--lcars-orange));font-size:22px;font-weight:900;letter-spacing:.12em;}
+body.lcars-mode textarea,body.lcars-mode pre,body.lcars-mode input[type="text"],body.lcars-mode select{background:#000;border:4px solid var(--lcars-lavender);border-radius:0;padding:16px;color:var(--text);font-size:15px;line-height:1.55;font-family:Arial,Helvetica,sans-serif;letter-spacing:.01em;text-transform:none;box-shadow:none;outline:none;}
+body.lcars-mode textarea{min-height:310px;border-color:var(--lcars-peach);}
+body.lcars-mode pre{border-color:var(--lcars-blue);min-height:310px;}
+body.lcars-mode textarea:focus,body.lcars-mode pre:focus,body.lcars-mode input[type="text"]:focus,body.lcars-mode select:focus,body.lcars-mode button:focus-visible,body.lcars-mode .site-chip:focus-visible,body.lcars-mode a:focus-visible{outline:4px solid var(--lcars-yellow);outline-offset:4px;box-shadow:none;}
+body.lcars-mode .row{gap:8px 10px;margin-top:16px;}
+body.lcars-mode button,body.lcars-mode .pill,body.lcars-mode .site-chip{min-height:44px;border:0;border-radius:0 24px 24px 0;background:var(--lcars-orange);color:#000;padding:12px 18px;font-weight:900;text-transform:uppercase;cursor:pointer;transition:filter .15s,background-size .25s;background-size:100% 100%;font-family:inherit;letter-spacing:.075em;box-shadow:none;}
+body.lcars-mode button:hover,body.lcars-mode .site-chip:hover{filter:brightness(1.08);transform:none;}
+body.lcars-mode .primary{background:var(--lcars-lavender);}body.lcars-mode .good{background:var(--lcars-blue);}body.lcars-mode .bad{background:var(--lcars-salmon);}body.lcars-mode .pill{background:var(--lcars-yellow);cursor:default;font-size:12px;}
+body.lcars-mode .status,body.lcars-mode .small,body.lcars-mode .code-list{color:var(--muted);font-family:Arial,Helvetica,sans-serif;letter-spacing:.025em;text-transform:none;}
+body.lcars-mode .caveats,body.lcars-mode .staging-check{margin-top:24px;padding:16px 18px;border:0;border-left:18px solid var(--lcars-salmon);border-radius:0;background:#000;font-family:Arial,Helvetica,sans-serif;letter-spacing:.015em;text-transform:none;}
+body.lcars-mode .staging-check{border-left-color:var(--lcars-yellow);}
+body.lcars-mode .staging-check-title,body.lcars-mode .code-list .code,body.lcars-mode .kbd{color:var(--lcars-yellow);font-weight:900;}
+body.lcars-mode .ghost-completion{border:3px solid var(--lcars-yellow);border-radius:0 18px 18px 0;background:#000;color:var(--muted);box-shadow:none;text-transform:none;}
+body.lcars-mode .lcars-progress{display:none;gap:6px;margin-top:12px;align-items:center;min-height:18px;}
+body.lcars-mode.is-generating .lcars-progress{display:flex;}
+body.lcars-mode .lcars-progress span{height:18px;width:42px;background:var(--lcars-orange);border-radius:0 12px 12px 0;animation:lcars-scan 1.15s infinite ease-in-out;}
+body.lcars-mode .lcars-progress span:nth-child(2){background:var(--lcars-salmon);animation-delay:.12s}body.lcars-mode .lcars-progress span:nth-child(3){background:var(--lcars-peach);animation-delay:.24s}body.lcars-mode .lcars-progress span:nth-child(4){background:var(--lcars-lavender);animation-delay:.36s}body.lcars-mode .lcars-progress span:nth-child(5){background:var(--lcars-blue);animation-delay:.48s}
+body.lcars-mode .modalOverlay{background:#000;}body.lcars-mode .modal{background:#000;border:0;border-left:38px solid var(--lcars-orange);border-radius:38px 0 0 0;box-shadow:none;padding:18px;}body.lcars-mode .modalHeader h3{font-size:20px;color:var(--lcars-yellow);text-transform:uppercase;}body.lcars-mode .qrbox{border:4px solid var(--lcars-lavender);border-radius:0;background:#000;}
+body.lcars-mode .page-note{max-width:1280px;color:var(--muted);text-align:left;text-transform:uppercase;}
+@keyframes lcars-scan{0%,100%{transform:scaleX(.55);opacity:.65}45%{transform:scaleX(1);opacity:1}}
+@keyframes lcars-activate{0%{transform:scaleX(.72)}100%{transform:scaleX(1)}}
+@media (prefers-reduced-motion: reduce){body.lcars-mode *,body.lcars-mode *::before,body.lcars-mode *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important;}body.lcars-mode .lcars-progress span{opacity:1;transform:none;}}
+@media(max-width:599px){body.lcars-mode header{grid-template-columns:64px minmax(0,1fr);padding:14px 10px 0;gap:0 10px;}body.lcars-mode header::before{width:64px;min-height:112px;border-radius:32px 0 0 0;}body.lcars-mode header::after{content:"47-A";left:18px;top:58px;font-size:12px;}body.lcars-mode main{grid-template-columns:minmax(0,1fr);padding:18px 10px 34px;gap:18px;}body.lcars-mode .lcars-nav{position:static;grid-row:auto;grid-column:1;flex-direction:row;overflow:hidden;gap:5px;width:100%;}body.lcars-mode .lcars-nav-item{flex:1;min-width:0;min-height:44px;border-radius:0 18px 18px 0;padding:8px;font-size:12px;justify-content:center;}body.lcars-mode .card{grid-column:1;padding-left:22px;}body.lcars-mode .card::before{width:14px;}body.lcars-mode .card::after{left:22px;height:36px;padding:9px 10px;background:linear-gradient(90deg,var(--section-color) 0 38%,#000 38% 43%,var(--section-accent) 43% 68%,#000 68%);}body.lcars-mode .card h2{padding-top:50px;font-size:18px;}body.lcars-mode textarea,body.lcars-mode pre{min-height:260px;width:100%;}body.lcars-mode button,body.lcars-mode .pill,body.lcars-mode .site-chip{padding:10px 12px;}body.lcars-mode .lcars-progress span{width:28px;} }
 </style>
 </head>
 <body>
 <header>
   <h1>RCPath Report Generator</h1>
   <div class="sub">Prototype: free text → structured extraction → RCPath-style report. Always review before use. Currently live for Oesophageal, Gastric and Colorectal cancer resections, Colorectal liver metastasis (CRLM) proformas, Hepatocellular carcinoma (HCC) proformas, GIST resections, Gallbladder reporting, Duodenal biopsies and Colonic biopsies</div>
-<div class="sub" style="margin-top:6px;"><a href='audit-admin.html' style='color:#dbe6ff;'>Audit Admin</a> · <a href='audit-dashboard.html' style='color:#dbe6ff;'>Audit Dashboard</a><button type="button" class="theme-toggle" id="btnThemeToggle" aria-pressed="false">LCARS mode: off</button></div>
+<div class="sub" style="margin-top:6px;"><a href='audit-admin.html' style='color:#dbe6ff;'>Audit Admin</a> · <a href='audit-dashboard.html' style='color:#dbe6ff;'>Audit Dashboard</a><button type="button" class="theme-toggle" id="btnThemeToggle" aria-pressed="false">LCARS mode: off</button><label class="pill lcars-only lcars-sound-toggle"><input type="checkbox" id="lcarsSoundToggle" /> Sound off</label></div>
 </header>
 
 <main>
-  <section class="card">
-    <h2>Input</h2>
+  <nav class="lcars-nav lcars-only" aria-label="LCARS sections">
+    <a class="lcars-nav-item" href="#section-input">01</a>
+    <a class="lcars-nav-item" href="#section-review">02</a>
+    <a class="lcars-nav-item" href="#section-report">03</a>
+    <a class="lcars-nav-item" href="#section-audit">04</a>
+  </nav>
+  <section class="card" id="section-input" data-lcars-id="SYS 47-A">
+    <h2><span class="normal-title">Input</span><span class="lcars-heading">01 Input</span></h2>
     <div class="input-wrap">
       <textarea id="inputText" placeholder="Type or dictate: e.g. “Oesophageal SCC, through the wall, 2 of 12 nodes involved, margins clear, Mandard 2”"></textarea>
       <div class="ghost-completion" id="ghostCompletion" style="display:none;"></div>
@@ -167,7 +190,7 @@ body.lcars-mode .qrbox{border:3px solid var(--accent-2);border-radius:24px 0 24p
       <button class="bad" id="btnClear">🧹 Clear</button>
       <span class="pill" id="micState">Mic: idle</span>
     </div>
-    <div class="status" id="status"></div><div class="small" id="metricsLine"></div>
+    <div class="status" id="status"></div><div class="lcars-progress" id="lcarsProgress" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div><div class="small" id="metricsLine"></div>
     <div class="small" id="modelHint"></div><div class="small">Chrome + mic permission required for dictation.</div>
     <div class="caveats">
       <div style="font-weight:700;">Cancer resection examples</div>
@@ -199,15 +222,15 @@ body.lcars-mode .qrbox{border:3px solid var(--accent-2);border-radius:24px 0 24p
     </div>
   </section>
 
-  <section class="card">
-    <h2>Output</h2>
+  <section class="card" id="section-report" data-lcars-id="TNM 09">
+    <h2><span class="normal-title">Output</span><span class="lcars-heading">03 Report</span></h2>
     <div class="row" style="margin-top:0;margin-bottom:10px;">
       <button class="primary" id="btnCopy">📋 Copy</button>
       <button class="good" id="btnCopySaveAudit">📋💾 Copy + add to database</button>
       <span class="pill">Plain text</span>
     </div>
     <div id="auditPanel" class="caveats" style="display:none; margin-bottom:10px;">
-      <div style="font-weight:700;">Audit capture (cancer resections)</div>
+      <div style="font-weight:700;" id="section-audit"><span class="normal-title">Audit capture (cancer resections)</span><span class="lcars-heading">04 Audit · Audit capture (cancer resections)</span></div>
       <div class="small" style="margin:6px 0 8px;">Specimen number is used only to generate a server-side hash and is not stored as plain text.</div>
       <div class="row" style="margin-top:0;">
         <input id="auditSpecimenNumber" type="text" placeholder="Specimen number (required for audit save)" style="flex:1; min-width:240px;" />
@@ -227,8 +250,8 @@ body.lcars-mode .qrbox{border:3px solid var(--accent-2);border-radius:24px 0 24p
     </div>
   </section>
 
-  <section class="card span2">
-    <h2>Quick shorthand guide (Lower GI biopsies)</h2>
+  <section class="card span2" id="section-review" data-lcars-id="VOICE 07">
+    <h2><span class="normal-title">Quick shorthand guide (Lower GI biopsies)</span><span class="lcars-heading">02 Review · Quick shorthand guide (Lower GI biopsies)</span></h2>
     <div class="small" style="margin-bottom:10px;">Use this when reporting multi-part colon/small bowel biopsies. Start the dictation with <span class="kbd">LGI:</span> to trigger shorthand mode.</div>
     <div class="caveats" style="margin-top:0;">
       <div style="font-weight:700;">Basic format</div>
