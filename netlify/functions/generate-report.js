@@ -977,6 +977,54 @@ function finalizeStaging(schema, extracted) {
   if (!props.pN) extracted.pN = derived;
 }
 
+function buildStagingCheck(datasetId, extracted) {
+  const e = extracted || {};
+  const rows = [];
+  const notes = [];
+  const add = (label, value) => {
+    if (value !== undefined && value !== null && String(value).trim() !== "") rows.push({ label, value: String(value) });
+  };
+
+  if (datasetId === "gist_resection_rcpath_v1") {
+    return {
+      title: "GIST TNM / AFIP risk check",
+      rows: [
+        { label: "pT by size", value: "T1 ≤2 cm; T2 >2–5 cm; T3 >5–10 cm; T4 >10 cm" },
+        { label: "pN", value: "N0 no regional nodal metastasis; N1 regional nodal metastasis" },
+        { label: "AFIP inputs", value: "Site + maximum size + mitotic count per 5 mm²" },
+        { label: "Generated values", value: `pT ${e.tnm_pT || "?"}; pN ${e.tnm_pN || "?"}; pM ${e.tnm_pM_display || e.tnm_pM || "Not applicable"}; AFIP risk ${e.afip_risk_category || "?"}` },
+      ],
+      notes: ["Use this box as a quick check against the generated report, not as an independent clinical source."],
+    };
+  }
+
+  if (datasetId === "colorectal_resection_rcpath_v1") {
+    add("pT", "Tis in situ; T1 submucosa; T2 muscularis propria; T3 through muscularis propria into pericolorectal tissue; T4a visceral peritoneum; T4b adjacent organ/structure");
+    add("pN", "N0 no nodes; N1a 1 node; N1b 2–3 nodes; N1c tumour deposits without positive nodes; N2a 4–6 nodes; N2b ≥7 nodes");
+    add("Generated values", `pT ${e.stage_pT || e.pT || "?"}; pN ${e.stage_pN || e.pN || "?"}; pM ${e.stage_pM || e.pM || "Not applicable"}; R ${e.r_status || "?"}`);
+    notes.push("Colorectal pN check is node-count based; N1c requires tumour deposits with no positive nodes.");
+  } else if (datasetId === "oesophagus_resection_rcpath_v3_microscopy") {
+    add("pT", "Tis high-grade dysplasia/in situ; T1a lamina propria/muscularis mucosae; T1b submucosa; T2 muscularis propria; T3 adventitia; T4a pleura/pericardium/diaphragm; T4b aorta/vertebra/trachea");
+    add("pN", "N0 no nodes; N1 1–2 nodes; N2 3–6 nodes; N3 ≥7 nodes");
+    add("Generated values", `pT ${e.pT || e.stage_pT || "?"}; pN ${e.pN || e.stage_pN || "?"}; pM ${e.pM_display || e.pM || "Not applicable"}; R ${e.r_status || "?"}`);
+  } else if (datasetId === "gastrectomy_resection_rcpath_v1_microscopy") {
+    add("pT", "Tis in situ; T1a lamina propria/muscularis mucosae; T1b submucosa; T2 muscularis propria; T3 subserosa/non-peritonealised tissue; T4a serosa; T4b adjacent structures");
+    add("pN", "N0 no nodes; N1 1–2 nodes; N2 3–6 nodes; N3a 7–15 nodes; N3b ≥16 nodes");
+    add("Generated values", `pT ${e.pT || e.stage_pT || "?"}; pN ${e.pN || e.stage_pN || "?"}; pM ${e.pM_display || e.pM || "Not applicable"}; R ${e.r_status || "?"}`);
+  } else if (datasetId === "hepatocellular_carcinoma_proforma_v1") {
+    add("pT", "T1a solitary ≤2 cm; T1b solitary >2 cm without vascular invasion; T2 solitary with vascular invasion or multiple tumours none >5 cm; T3 multiple tumours at least one >5 cm; T4 major portal/hepatic vein branch or adjacent organs/visceral peritoneum");
+    add("pN", "N0 no regional nodal metastasis; N1 regional nodal metastasis");
+    add("Generated values", `pT ${e.pT || "?"}; pN ${e.pN || "?"}`);
+  }
+
+  if (!rows.length) return null;
+  return {
+    title: "TNM staging check",
+    rows,
+    notes: notes.length ? notes : ["Use this box as a quick check against the generated report, not as an independent clinical source."],
+  };
+}
+
 function normalizeTumourType(extracted, schema) {
   const tumourType = String(extracted?.tumour_type || "").trim();
   if (!tumourType) return;
@@ -1955,6 +2003,7 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
     await logUsage({ dataset: datasetId, requested_mode: requested_mode || "auto_recommended", actual_model: requestMetrics.model, duration_ms: requestMetrics.duration_ms, input_tokens: requestMetrics.input_tokens, output_tokens: requestMetrics.output_tokens, total_tokens: requestMetrics.total_tokens, estimated_cost_usd: requestMetrics.estimated_cost_usd, success: true, error_message: null, deploy_context: process.env.CONTEXT || process.env.DEPLOY_CONTEXT || "unknown" });
     return jsonResp(200, {
       report_text,
+      staging_check: buildStagingCheck(datasetId, extracted),
       caveats: buildCaveats(extracted, datasetId),
       dataset_id: datasetId,
       extracted,
