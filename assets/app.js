@@ -186,9 +186,64 @@ function renderStagingCheck(stagingCheck) {
 function setStatus(msg, isError=false){
   $("status").textContent = msg || "";
   $("status").style.color = isError ? "var(--bad)" : "var(--muted)";
+  document.body.classList.toggle("is-generating", /^Generating/i.test(msg || ""));
 }
 function setMicPill(){ $("micState").textContent = dictating ? "Mic: listening" : "Mic: idle"; }
 
+
+function playLcarsSound(){
+  const enabled = localStorage.getItem("lcarsSound") === "true";
+  if (!enabled || !document.body.classList.contains("lcars-mode")) return;
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(620, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(310, ctx.currentTime + 0.055);
+    gain.gain.setValueAtTime(0.025, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.08);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.085);
+    setTimeout(() => ctx.close(), 160);
+  } catch (_) {}
+}
+
+function initLcarsSoundToggle(){
+  const box = $("lcarsSoundToggle");
+  if (!box) return;
+  const apply = (enabled) => {
+    box.checked = enabled;
+    const label = box.closest("label");
+    if (label) {
+      const text = enabled ? " Sound on" : " Sound off";
+      Array.from(label.childNodes).forEach((node) => { if (node.nodeType === Node.TEXT_NODE) node.remove(); });
+      label.appendChild(document.createTextNode(text));
+    }
+  };
+  apply(localStorage.getItem("lcarsSound") === "true");
+  box.addEventListener("change", () => {
+    localStorage.setItem("lcarsSound", String(box.checked));
+    apply(box.checked);
+    playLcarsSound();
+  });
+}
+
+function initLcarsSectionActivation(){
+  const cards = Array.from(document.querySelectorAll("body .card[id^='section-']"));
+  if (!cards.length || !("IntersectionObserver" in window)) return;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        cards.forEach((card) => card.classList.toggle("is-active", card === entry.target));
+      }
+    });
+  }, { threshold: 0.35 });
+  cards.forEach((card) => observer.observe(card));
+}
 
 function initThemeToggle(){
   const btn = $("btnThemeToggle");
@@ -204,6 +259,7 @@ function initThemeToggle(){
     const next = !document.body.classList.contains("lcars-mode");
     localStorage.setItem("lcarsMode", String(next));
     apply(next);
+    playLcarsSound();
   });
 }
 
@@ -308,6 +364,7 @@ function startDictation(){
 function stopDictation(){ if (rec) rec.stop(); }
 
 async function generate(){
+  playLcarsSound();
   const text = $("inputText").value.trim();
   if (!text){ setStatus("Type or dictate something first.", true); return; }
   setStatus("Generating…");
@@ -442,6 +499,8 @@ $("btnClear").addEventListener("click", () => { stopDictation(); finalText=""; $
 $("btnCopy").addEventListener("click", copyOut);
 if ($("btnCopySaveAudit")) $("btnCopySaveAudit").addEventListener("click", copyAndSaveAudit);
 initThemeToggle();
+initLcarsSoundToggle();
+initLcarsSectionActivation();
 initModelSelector();
 initInputAcceleration();
 setMicPill();
