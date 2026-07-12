@@ -3,7 +3,7 @@ const $ = (id) => document.getElementById(id);
 let rec = null;
 let finalText = "";
 let dictating = false;
-let lastGenerated = { dataset_id: "", extracted: {}, report_text: "", metrics: {} };
+let lastGenerated = { dataset_id: "", extracted: {}, report_text: "", metrics: {}, staging_check: null };
 const MODEL_MODES = [
   { id: "auto_recommended", label: "Auto recommended" },
   { id: "cheap_standard", label: "Cheap / Standard" },
@@ -158,6 +158,31 @@ function initInputAcceleration(){
 }
 
 
+function renderStagingCheck(stagingCheck) {
+  const box = $("stagingCheckBox");
+  const title = $("stagingCheckTitle");
+  const rows = $("stagingCheckRows");
+  const notes = $("stagingCheckNotes");
+  if (!box || !title || !rows || !notes) return;
+
+  if (!stagingCheck || !Array.isArray(stagingCheck.rows) || !stagingCheck.rows.length) {
+    box.style.display = "none";
+    title.textContent = "";
+    rows.innerHTML = "";
+    notes.innerHTML = "";
+    return;
+  }
+
+  const esc = (s) => String(s).replace(/[&<>"]/g, ch => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"
+  }[ch]));
+
+  title.textContent = stagingCheck.title || "TNM staging check";
+  rows.innerHTML = stagingCheck.rows.map((row) => `<div class="staging-row"><strong>${esc(row.label || "")}</strong><span>${esc(row.value || "")}</span></div>`).join("");
+  notes.innerHTML = Array.isArray(stagingCheck.notes) ? stagingCheck.notes.map((note) => `<li>${esc(note)}</li>`).join("") : "";
+  box.style.display = "block";
+}
+
 function setStatus(msg, isError=false){
   $("status").textContent = msg || "";
   $("status").style.color = isError ? "var(--bad)" : "var(--muted)";
@@ -289,6 +314,7 @@ async function generate(){
   $("caveatsBox").style.display = "none";
   $("caveatsList").innerHTML = "";
   $("output").textContent = "";
+  renderStagingCheck(null);
 
   try{
     const res = await fetch("/.netlify/functions/generate-report", {
@@ -304,7 +330,9 @@ async function generate(){
       extracted: data.extracted || {},
       report_text: data.report_text || data.report || "",
       metrics: data.metrics || {},
+      staging_check: data.staging_check || null,
     };
+    renderStagingCheck(lastGenerated.staging_check);
     updateAuditPanel(lastGenerated.dataset_id);
     if (Array.isArray(data.caveats) && data.caveats.length){
       $("caveatsBox").style.display = "block";
@@ -410,7 +438,7 @@ async function copyAndSaveAudit(){
 }
 $("btnDictate").addEventListener("click", () => { dictating ? stopDictation() : startDictation(); });
 $("btnGenerate").addEventListener("click", generate);
-$("btnClear").addEventListener("click", () => { stopDictation(); finalText=""; $("inputText").value=""; $("output").textContent=""; $("caveatsBox").style.display="none"; setStatus(""); lastGenerated = { dataset_id: "", extracted: {}, report_text: "" }; updateAuditPanel(""); if ($("auditSpecimenNumber")) $("auditSpecimenNumber").value=""; if ($("auditConsultantName")) $("auditConsultantName").value=""; });
+$("btnClear").addEventListener("click", () => { stopDictation(); finalText=""; $("inputText").value=""; $("output").textContent=""; $("caveatsBox").style.display="none"; setStatus(""); lastGenerated = { dataset_id: "", extracted: {}, report_text: "", metrics: {}, staging_check: null }; renderStagingCheck(null); updateAuditPanel(""); if ($("auditSpecimenNumber")) $("auditSpecimenNumber").value=""; if ($("auditConsultantName")) $("auditConsultantName").value=""; });
 $("btnCopy").addEventListener("click", copyOut);
 if ($("btnCopySaveAudit")) $("btnCopySaveAudit").addEventListener("click", copyAndSaveAudit);
 initThemeToggle();

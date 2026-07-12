@@ -48,6 +48,13 @@ border-radius:12px;padding:12px;min-height:190px;font-size:13px;line-height:1.35
 .small{font-size:12px;color:var(--muted)}
 .code-list{font-size:13px;line-height:1.6;color:var(--muted)}
 .code-list .code{font-weight:800;font-size:14px;color:var(--text)}
+.staging-check{margin-top:10px;padding:12px;border-radius:12px;border:1px solid rgba(122,162,255,.35);background:rgba(122,162,255,.10);}
+.staging-check-title{font-weight:800;margin-bottom:8px;color:#dbe6ff;}
+.staging-row{display:grid;grid-template-columns:minmax(110px,170px) 1fr;gap:8px;padding:7px 0;border-top:1px solid rgba(255,255,255,.10);font-size:12px;line-height:1.35;}
+.staging-row:first-child{border-top:0;padding-top:0;}
+.staging-row strong{color:var(--text);}
+.staging-row span{color:var(--muted);}
+.staging-notes{margin:8px 0 0 18px;padding:0;color:var(--muted);font-size:12px;}
 
 /* --- Modal (Phone dictation QR) --- */
 .modalOverlay{
@@ -125,6 +132,10 @@ body.lcars-mode .pill{display:inline-flex;background:var(--lcars-blue);font-size
 body.lcars-mode .status{color:var(--muted);font-family:Arial,Helvetica,sans-serif;letter-spacing:0;}
 body.lcars-mode pre{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace;letter-spacing:0;}
 body.lcars-mode .caveats{margin-top:12px;padding:12px 14px;border-radius:24px 0 24px 0;border:3px solid var(--lcars-rose);background:rgba(5,5,9,.78);font-family:Arial,Helvetica,sans-serif;letter-spacing:0;}
+body.lcars-mode .staging-check{border:3px solid var(--accent-3);border-radius:24px 0 24px 0;background:rgba(5,5,9,.78);font-family:Arial,Helvetica,sans-serif;letter-spacing:0;}
+body.lcars-mode .staging-check-title{color:var(--accent-3);}
+body.lcars-mode .staging-row{border-top-color:rgba(255,204,102,.22);}
+body.lcars-mode .staging-row span,body.lcars-mode .staging-notes{color:var(--muted);}
 body.lcars-mode .caveats ul{margin:8px 0 0 18px;}
 body.lcars-mode .small{color:var(--muted);font-family:Arial,Helvetica,sans-serif;letter-spacing:0;}
 body.lcars-mode .code-list .code,body.lcars-mode .kbd{font-weight:800;font-size:14px;color:var(--accent-3);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace;letter-spacing:0;}
@@ -205,6 +216,11 @@ body.lcars-mode .qrbox{border:3px solid var(--accent-2);border-radius:24px 0 24p
       <div class="small" id="auditHint" style="margin-top:8px;"></div>
     </div>
     <pre id="output"></pre>
+    <div id="stagingCheckBox" class="staging-check" style="display:none;">
+      <div id="stagingCheckTitle" class="staging-check-title"></div>
+      <div id="stagingCheckRows"></div>
+      <ul id="stagingCheckNotes" class="staging-notes"></ul>
+    </div>
     <div id="caveatsBox" class="caveats" style="display:none;">
       <div style="font-weight:700;">Assumptions / defaults</div>
       <ul id="caveatsList"></ul>
