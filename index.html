@@ -33,8 +33,8 @@ border-radius:12px;padding:12px;color:var(--text);outline:none;font-size:14px;li
 .ghost-completion{position:absolute;right:12px;top:10px;max-width:min(420px,calc(100% - 24px));padding:6px 10px;border:1px solid rgba(122,162,255,.28);border-radius:999px;background:rgba(11,18,32,.88);color:rgba(219,230,255,.72);font-size:12px;line-height:1.25;pointer-events:none;box-shadow:0 8px 18px rgba(0,0,0,.22);}
 .ghost-completion strong{color:#dbe6ff;}
 .input-assist{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px;}
-.input-assist.lgi-active{padding:12px;border:1px solid rgba(122,162,255,.35);border-radius:12px;background:rgba(122,162,255,.10)}
-@media(min-width:960px){.input-assist.lgi-active{position:absolute;left:calc(100% + 16px);top:52px;width:230px;margin:0;z-index:5;box-shadow:0 14px 32px rgba(0,0,0,.35);backdrop-filter:blur(12px)}.input-card{position:relative}}
+.lgi-quick-panel{display:none;margin:10px 0 0;padding:14px;border:1px solid rgba(122,162,255,.4);border-radius:14px;background:rgba(11,18,32,.96);box-shadow:0 16px 38px rgba(0,0,0,.4);z-index:6}.lgi-quick-panel.is-active{display:block}.lgi-quick-panel h3{margin:0;font-size:13px;color:#dbe6ff}.lgi-quick-panel p{margin:4px 0 10px}.quick-group{margin-top:10px}.quick-group-title{margin-bottom:6px;color:var(--muted);font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.06em}.quick-chips{display:flex;flex-wrap:wrap;gap:6px}.quick-chip{padding:6px 8px;border-radius:8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px}.quick-chip span{color:var(--muted);font-family:ui-sans-serif,system-ui,sans-serif;font-weight:500}
+.input-card{position:relative}@media(min-width:1500px){.lgi-quick-panel.is-active{position:absolute;right:calc(100% + 16px);top:42px;width:300px;max-height:520px;overflow:auto;margin:0}}
 .site-chip{padding:6px 9px;border-radius:999px;border:1px solid rgba(122,162,255,.28);background:rgba(122,162,255,.12);color:var(--text);font-size:12px;cursor:pointer;}
 .site-chip:hover{background:rgba(122,162,255,.22);}
 textarea:focus{border-color:rgba(122,162,255,.55);box-shadow:0 0 0 3px rgba(122,162,255,.18);}
@@ -53,6 +53,7 @@ border:1px solid var(--border);color:var(--muted);font-size:12px;}
 .status{margin-top:10px;color:var(--muted);font-size:12px;min-height:1.2em;}
 pre{margin:0;white-space:pre-wrap;word-break:break-word;background:rgba(0,0,0,.28);border:1px solid rgba(122,162,255,.24);
 border-radius:12px;padding:18px;min-height:300px;font-size:14px;line-height:1.55;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace;}
+pre:empty::before{content:"Your generated report will appear here";color:var(--muted);font-family:ui-sans-serif,system-ui,sans-serif;font-size:14px;font-weight:500}.output-card{padding:0;overflow:hidden;border-color:rgba(122,162,255,.25)}.output-header{padding:16px 18px;background:linear-gradient(100deg,rgba(122,162,255,.18),rgba(52,211,153,.08));border-bottom:1px solid var(--border)}.output-header h2{margin:0 0 4px;font-size:16px}.output-body{padding:16px}.output-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}.output-toolbar button{padding:10px 14px}.review-label{display:inline-flex;align-items:center;gap:7px;color:var(--good);font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.06em}.review-label::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--good)}
 .caveats{margin-top:10px;padding:10px;border-radius:12px;border:1px dashed rgba(255,255,255,.18);background:rgba(0,0,0,.18);}
 .caveats ul{margin:6px 0 0 18px;padding:0;}
 .small{font-size:12px;color:var(--muted)}
@@ -169,12 +170,24 @@ body.lcars-mode .qrbox{border:3px solid var(--accent-2);border-radius:24px 0 24p
 
 <main>
   <section class="card input-card">
-    <h2>1. Describe the specimen</h2>
+    <h2>1. Reporting box</h2>
     <div class="input-wrap">
       <textarea id="inputText" placeholder="Type or dictate: e.g. “Oesophageal SCC, through the wall, 2 of 12 nodes involved, margins clear, Mandard 2”"></textarea>
       <div class="ghost-completion" id="ghostCompletion" style="display:none;"></div>
     </div>
     <div class="input-assist" id="inputAssist" aria-live="polite"></div>
+    <aside class="lgi-quick-panel" id="lgiQuickPanel" aria-live="polite" aria-label="Lower GI quick shorthand guide">
+      <h3>Lower GI quickhand</h3><p class="small">Click a shortcut to add it at the cursor. Press Enter for the next specimen letter.</p>
+      <div class="quick-group"><div class="quick-group-title">Sites</div><div class="quick-chips">
+        <button type="button" class="quick-chip" data-lgi-token="ti">ti <span>ileum</span></button><button type="button" class="quick-chip" data-lgi-token="cae">cae <span>caecum</span></button><button type="button" class="quick-chip" data-lgi-token="asc">asc <span>ascending</span></button><button type="button" class="quick-chip" data-lgi-token="tra">tra <span>transverse</span></button><button type="button" class="quick-chip" data-lgi-token="des">des <span>descending</span></button><button type="button" class="quick-chip" data-lgi-token="sig">sig <span>sigmoid</span></button><button type="button" class="quick-chip" data-lgi-token="rec">rec <span>rectum</span></button>
+      </div></div>
+      <div class="quick-group"><div class="quick-group-title">Inflammation / findings</div><div class="quick-chips">
+        <button type="button" class="quick-chip" data-lgi-token="n">n <span>normal</span></button><button type="button" class="quick-chip" data-lgi-token="ad">ad <span>distortion</span></button><button type="button" class="quick-chip" data-lgi-token="bp">bp <span>basal plasma</span></button><button type="button" class="quick-chip" data-lgi-token="cryp">cryp <span>cryptitis</span></button><button type="button" class="quick-chip" data-lgi-token="absc">absc <span>abscesses</span></button><button type="button" class="quick-chip" data-lgi-token="gran">gran <span>granulomas</span></button><button type="button" class="quick-chip" data-lgi-token="ulc">ulc <span>ulceration</span></button><button type="button" class="quick-chip" data-lgi-token="pat">pat <span>patchy</span></button><button type="button" class="quick-chip" data-lgi-token="cmv">cmv</button><button type="button" class="quick-chip" data-lgi-token="crc">crc <span>carcinoma</span></button>
+      </div></div>
+      <div class="quick-group"><div class="quick-group-title">Polyps / dysplasia</div><div class="quick-chips">
+        <button type="button" class="quick-chip" data-lgi-token="TA">TA</button><button type="button" class="quick-chip" data-lgi-token="TVA">TVA</button><button type="button" class="quick-chip" data-lgi-token="HP">HP</button><button type="button" class="quick-chip" data-lgi-token="SSL">SSL</button><button type="button" class="quick-chip" data-lgi-token="TSA">TSA</button><button type="button" class="quick-chip" data-lgi-token="HGD">HGD</button><button type="button" class="quick-chip" data-lgi-token="inv">inv</button><button type="button" class="quick-chip" data-lgi-token="e">e <span>excised</span></button><button type="button" class="quick-chip" data-lgi-token="ne">ne <span>not excised</span></button>
+      </div></div>
+    </aside>
     <div class="row">
       <button class="good generate" id="btnGenerate">⚡ Generate report</button>
       <button class="bad clear-main" id="btnClear">Clear</button>
@@ -217,9 +230,9 @@ body.lcars-mode .qrbox{border:3px solid var(--accent-2);border-radius:24px 0 24p
     <div class="model-row"><label class="small" for="modelSelect">Model mode</label><select id="modelSelect"><option value="auto_recommended">Auto recommended</option><option value="cheap_standard">Cheap / Standard</option><option value="fast_higher_accuracy">Fast / Higher accuracy</option></select><button type="button" class="theme-toggle" id="btnThemeToggle" aria-pressed="false">LCARS mode: off</button></div>
   </section>
 
-  <section class="card">
-    <h2>2. Review generated report</h2>
-    <div class="row" style="margin-top:0;margin-bottom:10px;">
+  <section class="card output-card">
+    <div class="output-header"><div class="review-label">Review workspace</div><h2>2. Generated report</h2><div class="small">Check the report, TNM staging and assumptions before copying.</div></div>
+    <div class="output-body"><div class="output-toolbar">
       <button class="primary" id="btnCopy">📋 Copy</button>
       <button class="good" id="btnCopySaveAudit">📋💾 Copy + add to database</button>
       <span class="pill">Plain text</span>
@@ -243,33 +256,6 @@ body.lcars-mode .qrbox{border:3px solid var(--accent-2);border-radius:24px 0 24p
       <div style="font-weight:700;">Assumptions / defaults</div>
       <ul id="caveatsList"></ul>
     </div>
-  </section>
-
-  <section class="card span2" id="lgiGuide">
-    <h2>Quick shorthand guide (Lower GI biopsies)</h2>
-    <div class="small" style="margin-bottom:10px;">Use this when reporting multi-part colon/small bowel biopsies. Start the dictation with <span class="kbd">LGI:</span> to trigger shorthand mode.</div>
-    <div class="caveats" style="margin-top:0;">
-      <div style="font-weight:700;">Basic format</div>
-      <ul>
-        <li><span class="kbd">LGI: A - &lt;site&gt; &lt;codes&gt;; B - &lt;site&gt; &lt;codes&gt;</span></li>
-        <li>Example: <span class="kbd">LGI: A - ti n; B - rectum uc ad cryp pat; C - sigmoid cmv</span></li>
-        <li>Range shortcut: <span class="kbd">LGI: A-D n</span> (expands to A, B, C, D all normal).</li>
-      </ul>
-    </div>
-
-    <div class="row" style="align-items:flex-start; margin-top:12px;">
-      <div class="caveats" style="flex:1; min-width:230px; margin-top:0;">
-        <div style="font-weight:700;">Sites</div>
-        <div class="code-list"><span class="code">ti</span> = terminal ileum, <span class="code">cae</span> = caecum, <span class="code">asc</span> = ascending, <span class="code">tra</span> = transverse, <span class="code">des</span> = descending, <span class="code">sig</span> = sigmoid, <span class="code">rec</span> = rectum.</div>
-      </div>
-      <div class="caveats" style="flex:1; min-width:230px; margin-top:0;">
-        <div style="font-weight:700;">Inflammatory / other findings</div>
-        <div class="code-list"><span class="code">n</span> = normal, <span class="code">ad</span> = architectural distortion, <span class="code">bp</span> = basal plasmacytosis, <span class="code">cryp</span> = cryptitis, <span class="code">absc</span> = crypt abscesses, <span class="code">gran</span> = granulomas (Crohn-favouring when non-cryptolytic), <span class="code">cgran</span> = cryptolytic/ruptured-crypt granulomas, <span class="code">ulc</span> = ulceration, <span class="code">pat</span> = patchy, <span class="code">dif</span> = diffuse, <span class="code">uc</span> = ulcerative colitis context, <span class="code">isch</span> = ischaemia, <span class="code">wither</span> = withered crypts, <span class="code">cmv</span> = CMV concern, <span class="code">drug</span> = drug-type injury, <span class="code">eos</span> = eosinophilia, <span class="code">crc</span> = well to moderately differentiated adenocarcinoma (MMR to follow), <span class="code">crc p</span> = poorly differentiated adenocarcinoma (MMR to follow).</div>
-      </div>
-      <div class="caveats" style="flex:1; min-width:230px; margin-top:0;">
-        <div style="font-weight:700;">Polyp / dysplasia codes</div>
-        <div class="code-list"><span class="code">TA</span> = tubular adenoma, <span class="code">TVA</span> = tubulovillous adenoma, <span class="code">V</span> = villous adenoma, <span class="code">HP</span> = hyperplastic polyp, <span class="code">SSL</span> = sessile serrated lesion, <span class="code">TSA</span> = traditional serrated adenoma, <span class="code">HGD</span> = high-grade dysplasia, <span class="code">inv</span> = invasive malignancy, <span class="code">e</span> = excised, <span class="code">ne</span> = not fully excised, plus size e.g. <span class="kbd">12mm</span>.</div>
-      </div>
     </div>
   </section>
 </main>

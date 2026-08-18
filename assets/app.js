@@ -29,7 +29,6 @@ const INLINE_COMPLETIONS = [
   { trigger: "cole", completion: "colectomy" },
   { trigger: "gas", completion: "gastrectomy" },
 ];
-const LGI_SITES = ["terminal ileum", "caecum", "ascending", "transverse", "descending", "sigmoid", "rectum", "colon"];
 const SPECIMEN_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 let activeCompletion = null;
 
@@ -93,19 +92,6 @@ function maybeInsertNextLgiPart(event){
   updateInputAssists();
   return true;
 }
-function insertSite(site){
-  const el = getInputTextArea();
-  if (!el) return;
-  const pos = el.selectionStart;
-  const left = el.value.slice(0, pos);
-  const lineStart = left.lastIndexOf("\n") + 1;
-  const line = el.value.slice(lineStart, pos);
-  const afterLabel = line.match(/^(\s*(?:lgi\s*:\s*)?[A-Z]\s*-\s*)$/i);
-  const insert = afterLabel ? site + " " : site + " ";
-  replaceRange(el, pos, el.selectionEnd, insert);
-  el.focus();
-  updateInputAssists();
-}
 function updateInputAssists(){
   const el = getInputTextArea();
   const ghost = $("ghostCompletion");
@@ -117,7 +103,8 @@ function updateInputAssists(){
   }
   if (!assist || !el) return;
   const lgi = isLgiMode(el.value);
-  assist.classList.toggle("lgi-active", lgi);
+  const quickPanel = $("lgiQuickPanel");
+  if (quickPanel) quickPanel.classList.toggle("is-active", lgi && !quickPanel.dataset.generated);
   assist.innerHTML = "";
   if (activeCompletion) {
     const span = document.createElement("span");
@@ -125,20 +112,7 @@ function updateInputAssists(){
     span.textContent = `Ghost completion ready: ${activeCompletion.trigger} → ${activeCompletion.completion}`;
     assist.appendChild(span);
   }
-  if (lgi && !lgiUsesRangeShortcut(el.value)) {
-    const label = document.createElement("span");
-    label.className = "small";
-    label.textContent = "LGI sites:";
-    assist.appendChild(label);
-    LGI_SITES.forEach((site) => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "site-chip";
-      btn.textContent = site;
-      btn.addEventListener("click", () => insertSite(site));
-      assist.appendChild(btn);
-    });
-  } else if (lgiUsesRangeShortcut(el.value)) {
+  if (lgiUsesRangeShortcut(el.value)) {
     const span = document.createElement("span");
     span.className = "small";
     span.textContent = "Range shortcut detected; specimen auto-advance is paused so A-D remains intact.";
@@ -148,12 +122,22 @@ function updateInputAssists(){
 function initInputAcceleration(){
   const el = getInputTextArea();
   if (!el) return;
-  el.addEventListener("input", () => { maybeSeedLgiFirstPart(el); updateInputAssists(); });
+  el.addEventListener("input", () => { const panel = $("lgiQuickPanel"); if (panel) delete panel.dataset.generated; maybeSeedLgiFirstPart(el); updateInputAssists(); });
   el.addEventListener("click", updateInputAssists);
   el.addEventListener("keyup", updateInputAssists);
   el.addEventListener("keydown", (event) => {
     if ((event.key === "Tab" || event.key === "ArrowRight") && acceptActiveCompletion()) event.preventDefault();
     else maybeInsertNextLgiPart(event);
+  });
+  $("lgiQuickPanel")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-lgi-token]");
+    if (!button) return;
+    const token = button.dataset.lgiToken;
+    const pos = el.selectionStart;
+    const needsSpace = pos > 0 && !/\s$/.test(el.value.slice(0, pos));
+    replaceRange(el, pos, el.selectionEnd, `${needsSpace ? " " : ""}${token} `);
+    el.focus();
+    updateInputAssists();
   });
   updateInputAssists();
 }
@@ -301,6 +285,7 @@ function startDictation(){
       else interim += txt;
     }
     $("inputText").value = (finalText + interim).trimStart();
+    updateInputAssists();
   };
 
   rec.start();
@@ -340,6 +325,8 @@ async function generate(){
       $("caveatsList").innerHTML = data.caveats.map(c => `<li>${c}</li>`).join("");
     }
     renderMetricsLine(data.metrics || {});
+    const quickPanel = $("lgiQuickPanel");
+    if (quickPanel) { quickPanel.dataset.generated = "true"; quickPanel.classList.remove("is-active"); }
     setStatus("Done.");
   }catch(err){
     const m = err?.metrics || {};
@@ -439,7 +426,7 @@ async function copyAndSaveAudit(){
 }
 $("btnDictate").addEventListener("click", () => { dictating ? stopDictation() : startDictation(); });
 $("btnGenerate").addEventListener("click", generate);
-$("btnClear").addEventListener("click", () => { stopDictation(); finalText=""; $("inputText").value=""; $("output").textContent=""; $("caveatsBox").style.display="none"; setStatus(""); lastGenerated = { dataset_id: "", extracted: {}, report_text: "", metrics: {}, staging_check: null }; renderStagingCheck(null); updateAuditPanel(""); if ($("auditSpecimenNumber")) $("auditSpecimenNumber").value=""; if ($("auditConsultantName")) $("auditConsultantName").value=""; });
+$("btnClear").addEventListener("click", () => { stopDictation(); finalText=""; $("inputText").value=""; $("output").textContent=""; $("caveatsBox").style.display="none"; const panel = $("lgiQuickPanel"); if (panel) delete panel.dataset.generated; updateInputAssists(); setStatus(""); lastGenerated = { dataset_id: "", extracted: {}, report_text: "", metrics: {}, staging_check: null }; renderStagingCheck(null); updateAuditPanel(""); if ($("auditSpecimenNumber")) $("auditSpecimenNumber").value=""; if ($("auditConsultantName")) $("auditConsultantName").value=""; });
 $("btnCopy").addEventListener("click", copyOut);
 if ($("btnCopySaveAudit")) $("btnCopySaveAudit").addEventListener("click", copyAndSaveAudit);
 initThemeToggle();
