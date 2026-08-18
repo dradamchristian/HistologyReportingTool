@@ -117,6 +117,7 @@ function updateInputAssists(){
   }
   if (!assist || !el) return;
   const lgi = isLgiMode(el.value);
+  assist.classList.toggle("lgi-active", lgi);
   assist.innerHTML = "";
   if (activeCompletion) {
     const span = document.createElement("span");

@@ -12,22 +12,29 @@ body{margin:0;min-height:100vh;color:var(--text);
 background:radial-gradient(1100px 600px at 15% 0%, rgba(122,162,255,.22), transparent 60%),
 radial-gradient(900px 520px at 90% 10%, rgba(52,211,153,.18), transparent 55%), var(--bg);
 font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;}
-header{max-width:1100px;margin:0 auto;padding:22px 18px 10px;}
+header{max-width:1240px;margin:0 auto;padding:28px 18px 12px;}
 h1{margin:0 0 6px;font-size:22px}
 .sub{color:var(--muted);font-size:13px}
-main{max-width:1100px;margin:0 auto;padding:10px 18px 26px;display:grid;gap:14px;grid-template-columns:1fr;}
-@media(min-width:960px){main{grid-template-columns:1fr 1fr;}}
+main{max-width:1240px;margin:0 auto;padding:10px 18px 26px;display:grid;gap:18px;grid-template-columns:1fr;}
+@media(min-width:960px){main{grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);align-items:start;}}
 .page-note{max-width:1100px;margin:0 auto;padding:0 18px 18px;color:var(--muted);font-size:11px;text-align:center;opacity:.85;}
 .span2{grid-column:1/-1;}
 .card{background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
 border:1px solid var(--border);border-radius:16px;padding:14px;box-shadow:0 10px 25px rgba(0,0,0,.25);}
 .card h2{margin:0 0 10px;font-size:14px;color:#dbe6ff}
-textarea{width:100%;min-height:190px;resize:vertical;background:rgba(0,0,0,.22);border:1px solid var(--border);
+.live-panel{margin-top:18px;padding:16px 18px;border:1px solid rgba(52,211,153,.35);border-radius:16px;background:linear-gradient(100deg,rgba(52,211,153,.13),rgba(122,162,255,.08));display:grid;gap:14px;}
+@media(min-width:760px){.live-panel{grid-template-columns:1fr auto;align-items:center;}}
+.live-title{display:flex;align-items:center;gap:9px;margin-bottom:7px;font-size:14px;font-weight:800;color:#ecfdf5}.live-dot{width:9px;height:9px;border-radius:50%;background:var(--good);box-shadow:0 0 0 5px rgba(52,211,153,.12)}
+.live-list{color:#dbe6ff;font-size:13px;line-height:1.55}.audit-link{display:inline-flex;align-items:center;gap:9px;text-decoration:none;color:#08111f;background:var(--good);border-radius:12px;padding:12px 16px;font-size:13px;font-weight:800;box-shadow:0 8px 22px rgba(52,211,153,.16)}
+.audit-link:hover{filter:brightness(1.08);transform:translateY(-1px)}
+textarea{width:100%;min-height:230px;resize:vertical;background:rgba(0,0,0,.22);border:1px solid var(--border);
 border-radius:12px;padding:12px;color:var(--text);outline:none;font-size:14px;line-height:1.35;}
 .input-wrap{position:relative;}
 .ghost-completion{position:absolute;right:12px;top:10px;max-width:min(420px,calc(100% - 24px));padding:6px 10px;border:1px solid rgba(122,162,255,.28);border-radius:999px;background:rgba(11,18,32,.88);color:rgba(219,230,255,.72);font-size:12px;line-height:1.25;pointer-events:none;box-shadow:0 8px 18px rgba(0,0,0,.22);}
 .ghost-completion strong{color:#dbe6ff;}
 .input-assist{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px;}
+.input-assist.lgi-active{padding:12px;border:1px solid rgba(122,162,255,.35);border-radius:12px;background:rgba(122,162,255,.10)}
+@media(min-width:960px){.input-assist.lgi-active{position:absolute;left:calc(100% + 16px);top:52px;width:230px;margin:0;z-index:5;box-shadow:0 14px 32px rgba(0,0,0,.35);backdrop-filter:blur(12px)}.input-card{position:relative}}
 .site-chip{padding:6px 9px;border-radius:999px;border:1px solid rgba(122,162,255,.28);background:rgba(122,162,255,.12);color:var(--text);font-size:12px;cursor:pointer;}
 .site-chip:hover{background:rgba(122,162,255,.22);}
 textarea:focus{border-color:rgba(122,162,255,.55);box-shadow:0 0 0 3px rgba(122,162,255,.18);}
@@ -36,25 +43,29 @@ button{border:1px solid var(--border);background:rgba(255,255,255,.06);color:var
 border-radius:12px;padding:10px 12px;font-weight:650;cursor:pointer;transition:.15s transform,.15s background;}
 button:hover{transform:translateY(-1px);background:rgba(255,255,255,.09);}
 .primary{background:rgba(122,162,255,.22);border-color:rgba(122,162,255,.35);}
+.generate{flex:1;min-width:190px;padding:14px 20px;font-size:15px;background:linear-gradient(135deg,rgba(52,211,153,.34),rgba(122,162,255,.30));border-color:rgba(52,211,153,.5)}
+.clear-main{padding:14px 18px;font-size:14px}.secondary-actions button{padding:7px 10px;font-size:12px;color:var(--muted)}
+.model-row{margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;justify-content:flex-end}
 .good{background:rgba(52,211,153,.16);border-color:rgba(52,211,153,.28);}
 .bad{background:rgba(251,113,133,.16);border-color:rgba(251,113,133,.28);}
 .pill{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.22);
 border:1px solid var(--border);color:var(--muted);font-size:12px;}
 .status{margin-top:10px;color:var(--muted);font-size:12px;min-height:1.2em;}
-pre{margin:0;white-space:pre-wrap;word-break:break-word;background:rgba(0,0,0,.22);border:1px solid var(--border);
-border-radius:12px;padding:12px;min-height:190px;font-size:13px;line-height:1.35;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace;}
+pre{margin:0;white-space:pre-wrap;word-break:break-word;background:rgba(0,0,0,.28);border:1px solid rgba(122,162,255,.24);
+border-radius:12px;padding:18px;min-height:300px;font-size:14px;line-height:1.55;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace;}
 .caveats{margin-top:10px;padding:10px;border-radius:12px;border:1px dashed rgba(255,255,255,.18);background:rgba(0,0,0,.18);}
 .caveats ul{margin:6px 0 0 18px;padding:0;}
 .small{font-size:12px;color:var(--muted)}
 .code-list{font-size:13px;line-height:1.6;color:var(--muted)}
 .code-list .code{font-weight:800;font-size:14px;color:var(--text)}
-.staging-check{margin-top:10px;padding:12px;border-radius:12px;border:1px solid rgba(122,162,255,.35);background:rgba(122,162,255,.10);}
+.staging-check{margin-top:14px;padding:16px;border-radius:12px;border:1px solid rgba(122,162,255,.45);background:rgba(122,162,255,.13);}
 .staging-check-title{font-weight:800;margin-bottom:8px;color:#dbe6ff;}
 .staging-row{display:grid;grid-template-columns:minmax(110px,170px) 1fr;gap:8px;padding:7px 0;border-top:1px solid rgba(255,255,255,.10);font-size:12px;line-height:1.35;}
 .staging-row:first-child{border-top:0;padding-top:0;}
 .staging-row strong{color:var(--text);}
 .staging-row span{color:var(--muted);}
 .staging-notes{margin:8px 0 0 18px;padding:0;color:var(--muted);font-size:12px;}
+.examples{margin-top:10px;border:1px solid var(--border);border-radius:12px;background:rgba(0,0,0,.14);overflow:hidden}.examples summary{cursor:pointer;padding:12px 14px;font-weight:750;color:#dbe6ff;list-style:none}.examples summary::-webkit-details-marker{display:none}.examples summary::after{content:"＋";float:right;color:var(--accent)}.examples[open] summary::after{content:"−"}.examples-body{padding:0 14px 13px;border-top:1px solid var(--border)}
 
 /* --- Modal (Phone dictation QR) --- */
 .modalOverlay{
@@ -148,29 +159,35 @@ body.lcars-mode .qrbox{border:3px solid var(--accent-2);border-radius:24px 0 24p
 <body>
 <header>
   <h1>RCPath Report Generator</h1>
-  <div class="sub">Prototype: free text → structured extraction → RCPath-style report. Always review before use. Currently live for Oesophageal, Gastric and Colorectal cancer resections, Colorectal liver metastasis (CRLM) proformas, Hepatocellular carcinoma (HCC) proformas, GIST resections, Gallbladder reporting, Duodenal biopsies and Colonic biopsies</div>
-<div class="sub" style="margin-top:6px;"><a href='audit-admin.html' style='color:#dbe6ff;'>Audit Admin</a> · <a href='audit-dashboard.html' style='color:#dbe6ff;'>Audit Dashboard</a><button type="button" class="theme-toggle" id="btnThemeToggle" aria-pressed="false">LCARS mode: off</button></div>
+  <div class="sub">Turn free text into a structured RCPath-style report. Always review the generated report before use.</div>
+  <div class="live-panel">
+    <div><div class="live-title"><span class="live-dot"></span>Currently live</div><div class="live-list">Oesophageal, gastric, colorectal, GIST, HCC and gallbladder resections · CRLM proformas · Duodenal and colonic biopsies</div></div>
+    <a class="audit-link" href="audit-dashboard.html">▥ View audit dashboard</a>
+  </div>
+  <div class="sub" style="margin-top:8px;text-align:right;"><a href='audit-admin.html' style='color:#a8b3cf;'>Audit admin</a></div>
 </header>
 
 <main>
-  <section class="card">
-    <h2>Input</h2>
+  <section class="card input-card">
+    <h2>1. Describe the specimen</h2>
     <div class="input-wrap">
       <textarea id="inputText" placeholder="Type or dictate: e.g. “Oesophageal SCC, through the wall, 2 of 12 nodes involved, margins clear, Mandard 2”"></textarea>
       <div class="ghost-completion" id="ghostCompletion" style="display:none;"></div>
     </div>
     <div class="input-assist" id="inputAssist" aria-live="polite"></div>
     <div class="row">
-      <button class="primary" id="btnDictate">🎙️ Dictate (PC)</button>
-      <button class="primary" id="btnPhone">📱 Phone dictation (QR)</button>
-      <label class="small" for="modelSelect">Model mode</label><select id="modelSelect"><option value="auto_recommended">Auto recommended</option><option value="cheap_standard">Cheap / Standard</option><option value="fast_higher_accuracy">Fast / Higher accuracy</option></select><button class="good" id="btnGenerate">⚡ Generate report</button>
-      <button class="bad" id="btnClear">🧹 Clear</button>
+      <button class="good generate" id="btnGenerate">⚡ Generate report</button>
+      <button class="bad clear-main" id="btnClear">Clear</button>
+    </div>
+    <div class="row secondary-actions">
+      <button id="btnDictate">🎙️ PC dictation</button>
+      <button id="btnPhone">📱 Phone dictation</button>
       <span class="pill" id="micState">Mic: idle</span>
     </div>
     <div class="status" id="status"></div><div class="small" id="metricsLine"></div>
-    <div class="small" id="modelHint"></div><div class="small">Chrome + mic permission required for dictation.</div>
-    <div class="caveats">
-      <div style="font-weight:700;">Cancer resection examples</div>
+    <div class="small" id="modelHint"></div>
+    <details class="examples">
+      <summary>Cancer resection examples</summary><div class="examples-body">
       <div class="small" style="margin-top:6px;">Try pasting one of these examples/shortcuts to see the generated structured output:</div>
       <ul>
         <li><span class="kbd">Oesophageal adenocarcinoma, through muscularis propria into adventitia (pT3), 2 of 18 lymph nodes positive, proximal and distal margins clear, circumferential margin clear by 3 mm, Mandard regression grade 2, tb - A1.</span></li>
@@ -180,27 +197,28 @@ body.lcars-mode .qrbox{border:3px solid var(--accent-2);border-radius:24px 0 24p
         <li><span class="kbd">Colorectal liver metastases: CRLM 5mm</span></li>
         <li><span class="kbd">HCC 30mm 3mm margin, no nodes, background cirrhosis.</span></li>
       </ul>
-    </div>
-    <div class="caveats">
-      <div style="font-weight:700;">Cancer resection accumulator example</div>
+      </div></details>
+    <details class="examples">
+      <summary>Cancer resection nodes accumulator</summary><div class="examples-body">
       <div class="small" style="margin-top:6px;">You can dictate nodes and pT stage in chunks (for example, slide by slide). The generator will total nodes and keep the worst pT stage.</div>
       <ul>
         <li><span class="kbd">"1/3 nodes, 4 nodes, 5/7 nodes, pT2 pT3"</span></li>
         <li><span class="small">Expected behaviour: nodes positive/examined = <span class="kbd">6/14</span> and pT = <span class="kbd">pT3</span>.</span></li>
       </ul>
-    </div>
-    <div class="caveats">
-      <div style="font-weight:700;">Gallbladder and duodenal biopsy examples (with modifiers)</div>
+      </div></details>
+    <details class="examples">
+      <summary>Biopsy reporting examples</summary><div class="examples-body">
       <div class="small" style="margin-top:6px;">These examples include modifier terms that change the generated wording.</div>
       <ul>
         <li><span class="kbd">Gallbladder: acute and chronic cholecystitis with patchy chronic inflammation, focal cholesterolosis, adenomyomatosis and denuded epithelium. No dysplasia or malignancy.</span></li>
         <li><span class="kbd">Duodenal biopsy: villous blunting with increased IELs and focal gastric metaplasia.</span></li>
       </ul>
-    </div>
+      </div></details>
+    <div class="model-row"><label class="small" for="modelSelect">Model mode</label><select id="modelSelect"><option value="auto_recommended">Auto recommended</option><option value="cheap_standard">Cheap / Standard</option><option value="fast_higher_accuracy">Fast / Higher accuracy</option></select><button type="button" class="theme-toggle" id="btnThemeToggle" aria-pressed="false">LCARS mode: off</button></div>
   </section>
 
   <section class="card">
-    <h2>Output</h2>
+    <h2>2. Review generated report</h2>
     <div class="row" style="margin-top:0;margin-bottom:10px;">
       <button class="primary" id="btnCopy">📋 Copy</button>
       <button class="good" id="btnCopySaveAudit">📋💾 Copy + add to database</button>
@@ -227,7 +245,7 @@ body.lcars-mode .qrbox{border:3px solid var(--accent-2);border-radius:24px 0 24p
     </div>
   </section>
 
-  <section class="card span2">
+  <section class="card span2" id="lgiGuide">
     <h2>Quick shorthand guide (Lower GI biopsies)</h2>
     <div class="small" style="margin-bottom:10px;">Use this when reporting multi-part colon/small bowel biopsies. Start the dictation with <span class="kbd">LGI:</span> to trigger shorthand mode.</div>
     <div class="caveats" style="margin-top:0;">
