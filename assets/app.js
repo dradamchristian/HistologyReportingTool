@@ -300,6 +300,8 @@ async function generate(){
   $("caveatsBox").style.display = "none";
   $("caveatsList").innerHTML = "";
   $("output").textContent = "";
+  $("reportState").textContent = "Generating…";
+  document.querySelector(".output-card")?.classList.remove("has-report");
   renderStagingCheck(null);
 
   try{
@@ -311,6 +313,8 @@ async function generate(){
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { const e = new Error(data.error || `HTTP ${res.status}`); e.metrics = data.metrics || {}; throw e; }
     $("output").textContent = data.report_text || data.report || JSON.stringify(data, null, 2);
+    $("reportState").textContent = "Report ready";
+    document.querySelector(".output-card")?.classList.add("has-report");
     lastGenerated = {
       dataset_id: data.dataset_id || "",
       extracted: data.extracted || {},
@@ -329,6 +333,7 @@ async function generate(){
     if (quickPanel) { quickPanel.dataset.generated = "true"; quickPanel.classList.remove("is-active"); }
     setStatus("Done.");
   }catch(err){
+    $("reportState").textContent = "Generation failed";
     const m = err?.metrics || {};
     renderMetricsLine(m, true, `Error: ${err.message || err}`);
     setStatus(`Error: ${err.message || err}`, true);
@@ -426,7 +431,7 @@ async function copyAndSaveAudit(){
 }
 $("btnDictate").addEventListener("click", () => { dictating ? stopDictation() : startDictation(); });
 $("btnGenerate").addEventListener("click", generate);
-$("btnClear").addEventListener("click", () => { stopDictation(); finalText=""; $("inputText").value=""; $("output").textContent=""; $("caveatsBox").style.display="none"; const panel = $("lgiQuickPanel"); if (panel) delete panel.dataset.generated; updateInputAssists(); setStatus(""); lastGenerated = { dataset_id: "", extracted: {}, report_text: "", metrics: {}, staging_check: null }; renderStagingCheck(null); updateAuditPanel(""); if ($("auditSpecimenNumber")) $("auditSpecimenNumber").value=""; if ($("auditConsultantName")) $("auditConsultantName").value=""; });
+$("btnClear").addEventListener("click", () => { stopDictation(); finalText=""; $("inputText").value=""; $("output").textContent=""; $("reportState").textContent="Awaiting report"; document.querySelector(".output-card")?.classList.remove("has-report"); $("caveatsBox").style.display="none"; const panel = $("lgiQuickPanel"); if (panel) delete panel.dataset.generated; updateInputAssists(); setStatus(""); lastGenerated = { dataset_id: "", extracted: {}, report_text: "", metrics: {}, staging_check: null }; renderStagingCheck(null); updateAuditPanel(""); if ($("auditSpecimenNumber")) $("auditSpecimenNumber").value=""; if ($("auditConsultantName")) $("auditConsultantName").value=""; });
 $("btnCopy").addEventListener("click", copyOut);
 if ($("btnCopySaveAudit")) $("btnCopySaveAudit").addEventListener("click", copyAndSaveAudit);
 initThemeToggle();
