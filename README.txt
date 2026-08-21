@@ -32,7 +32,8 @@ Benchmarking models for report generation
 Pathology reference search
 ==========================
 - Reference questions use `gpt-4.1-mini` by default; set `REFERENCE_MODEL` to override it.
-- Trusted mode asks web search to prioritise Pathology Outlines, then limits returned citations to Pathology Outlines, RCPath, WHO and IARC domains.
+- Trusted mode performs a dedicated Pathology Outlines page lookup before composing the answer, then limits returned citations to Pathology Outlines, RCPath, WHO and IARC domains.
+- The dedicated lookup makes the relevant Pathology Outlines page prominent and typically means two web-search calls instead of one.
 - Each response records token counts; the answer status displays its web-search call count and estimated cost when pricing is known.
 - The estimate uses the model token prices in `netlify/functions/ask-reference.js` and a default web-search tool price of $10 per 1,000 calls.
 - Set `REFERENCE_WEB_SEARCH_COST_PER_1000` if the current price on your OpenAI account differs. Pricing is deliberately configurable because provider prices can change.

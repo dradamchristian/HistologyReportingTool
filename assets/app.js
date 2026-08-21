@@ -354,7 +354,7 @@ function renderReferenceSources(sources){
     link.href = source.url;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
-    link.textContent = source.title || new URL(source.url).hostname;
+    link.textContent = `${source.preferred ? "Pathology Outlines — " : ""}${source.title || new URL(source.url).hostname}`;
     li.appendChild(link);
     list.appendChild(li);
   }

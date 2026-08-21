@@ -57,12 +57,13 @@ function trustedSearchInput(question) {
   return `${question}\n\nFirst search Pathology Outlines for the most relevant entity/topic page, then search the other approved sources as needed. Search only these domains: ${sites}`;
 }
 
-function referenceMetrics(raw, model) {
-  const usage = raw?.usage || {};
-  const inputTokens = Number(usage.input_tokens);
-  const outputTokens = Number(usage.output_tokens);
-  const totalTokens = Number(usage.total_tokens);
-  const webSearchCalls = (Array.isArray(raw?.output) ? raw.output : []).filter((item) => item?.type === "web_search_call").length;
+function referenceMetrics(responses, model) {
+  const raws = Array.isArray(responses) ? responses : [responses];
+  const sumUsage = (key) => raws.reduce((sum, raw) => sum + (Number(raw?.usage?.[key]) || 0), 0);
+  const inputTokens = sumUsage("input_tokens");
+  const outputTokens = sumUsage("output_tokens");
+  const totalTokens = sumUsage("total_tokens");
+  const webSearchCalls = raws.reduce((sum, raw) => sum + (Array.isArray(raw?.output) ? raw.output : []).filter((item) => item?.type === "web_search_call").length, 0);
   const pricing = MODEL_PRICING_PER_MILLION[model];
   const searchRate = Number(process.env.REFERENCE_WEB_SEARCH_COST_PER_1000 || DEFAULT_WEB_SEARCH_COST_PER_1000);
   const tokenCost = pricing && Number.isFinite(inputTokens) && Number.isFinite(outputTokens)
@@ -79,6 +80,21 @@ function referenceMetrics(raw, model) {
     estimated_cost_usd: estimatedCost == null ? null : Number(estimatedCost.toFixed(6)),
     cost_is_estimate: true,
   };
+}
+
+async function callResponses(apiKey, payload) {
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const raw = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(raw?.error?.message || "Reference search request failed");
+    error.statusCode = response.status;
+    throw error;
+  }
+  return raw;
 }
 
 function buildInstructions(scope) {
@@ -110,23 +126,37 @@ exports.handler = async (event) => {
   const input = scope === "trusted" ? trustedSearchInput(question) : question;
 
   try {
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model, instructions: buildInstructions(scope), input, tools: [webSearch], max_output_tokens: 500 }),
-    });
-    const raw = await response.json().catch(() => ({}));
-    if (!response.ok) return json(response.status, { error: raw?.error?.message || "Reference search request failed" });
+    const responses = [];
+    let pathologyOutlinesSources = [];
+    if (scope === "trusted") {
+      const pathologyOutlinesLookup = await callResponses(apiKey, {
+        model,
+        instructions: "Find the most relevant Pathology Outlines entity/topic page for this pathology question. Search only pathologyoutlines.com. Return a very short description with cited links. Do not substitute WHO, journals or other sites. If there is no relevant page, say so.",
+        input: `${question}\n\nSearch: site:pathologyoutlines.com`,
+        tools: [webSearch],
+        max_output_tokens: 180,
+      });
+      responses.push(pathologyOutlinesLookup);
+      pathologyOutlinesSources = extractSources(pathologyOutlinesLookup)
+        .filter((source) => source.url && new URL(source.url).hostname.toLowerCase().endsWith("pathologyoutlines.com"))
+        .map((source) => ({ ...source, preferred: true }));
+    }
+    const pathologyContext = pathologyOutlinesSources.length
+      ? `\n\nA dedicated Pathology Outlines lookup found these relevant pages. Use them when relevant and include them in the supporting discussion:\n${pathologyOutlinesSources.map((source) => `- ${source.title}: ${source.url}`).join("\n")}`
+      : "";
+    const raw = await callResponses(apiKey, { model, instructions: buildInstructions(scope), input: input + pathologyContext, tools: [webSearch], max_output_tokens: 500 });
+    responses.push(raw);
     const answer = extractAnswer(raw);
     const allSources = extractSources(raw);
-    const sources = scope === "trusted" ? allSources.filter((source) => hostnameIsTrusted(source.url)) : allSources;
+    const combinedSources = [...pathologyOutlinesSources, ...allSources].filter((source, index, items) => items.findIndex((candidate) => candidate.url === source.url) === index);
+    const sources = scope === "trusted" ? combinedSources.filter((source) => hostnameIsTrusted(source.url)) : combinedSources;
     if (!answer) return json(502, { error: "The reference service returned no answer" });
-    if (scope === "trusted" && (sources.length === 0 || sources.length !== allSources.length)) {
+    if (scope === "trusted" && (sources.length === 0 || sources.length !== combinedSources.length)) {
       return json(502, { error: "No answer could be verified exclusively against the trusted source list. Try rephrasing the question or use the broader evidence search." });
     }
-    return json(200, { answer, sources, scope, metrics: referenceMetrics(raw, model) });
+    return json(200, { answer, sources, scope, metrics: referenceMetrics(responses, model) });
   } catch (err) {
-    return json(500, { error: err.message || String(err) });
+    return json(err.statusCode || 500, { error: err.message || String(err) });
   }
 };
 
