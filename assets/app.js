@@ -340,6 +340,54 @@ async function generate(){
   }
 }
 
+function selectedReferenceScope(){
+  return document.querySelector('input[name="referenceScope"]:checked')?.value || "trusted";
+}
+
+function renderReferenceSources(sources){
+  const list = $("referenceSources");
+  list.innerHTML = "";
+  for (const source of (Array.isArray(sources) ? sources : [])) {
+    if (!source?.url || !/^https:\/\//i.test(source.url)) continue;
+    const li = document.createElement("li");
+    const link = document.createElement("a");
+    link.href = source.url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = `${source.preferred ? "Pathology Outlines — " : ""}${source.title || new URL(source.url).hostname}`;
+    li.appendChild(link);
+    list.appendChild(li);
+  }
+}
+
+async function askReference(){
+  const question = $("referenceQuestion").value.trim();
+  if (!question) { $("referenceStatus").textContent = "Enter a reference question first."; return; }
+  const button = $("btnAskReference");
+  button.disabled = true;
+  $("referenceStatus").textContent = "Searching approved references…";
+  $("referenceAnswer").hidden = true;
+  try {
+    const res = await fetch("/.netlify/functions/ask-reference", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, scope: selectedReferenceScope() }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    $("referenceAnswerText").textContent = data.answer || "No supported answer was found.";
+    renderReferenceSources([...(data.resources || []), ...(data.sources || [])]);
+    $("referenceAnswer").hidden = false;
+    const cost = data.metrics?.estimated_cost_usd == null ? "cost unavailable" : `estimated cost $${Number(data.metrics.estimated_cost_usd).toFixed(4)}`;
+    const searches = Number(data.metrics?.web_search_calls || 0);
+    $("referenceStatus").textContent = data.sources?.length ? `Answer grounded in ${data.sources.length} linked source${data.sources.length === 1 ? "" : "s"} · ${searches} web search${searches === 1 ? "" : "es"} · ${cost}.` : "No linked supporting source was returned; do not rely on this answer.";
+  } catch (err) {
+    $("referenceStatus").textContent = `Reference search failed: ${err.message || err}`;
+  } finally {
+    button.disabled = false;
+  }
+}
+
 async function copyOut(){
   const raw = $("output").textContent || "";
   if (!raw.trim()){ setStatus("Nothing to copy yet.", true); return; }
@@ -434,6 +482,8 @@ $("btnGenerate").addEventListener("click", generate);
 $("btnClear").addEventListener("click", () => { stopDictation(); finalText=""; $("inputText").value=""; $("output").textContent=""; $("reportState").textContent="Awaiting report"; document.querySelector(".output-card")?.classList.remove("has-report"); $("caveatsBox").style.display="none"; const panel = $("lgiQuickPanel"); if (panel) delete panel.dataset.generated; updateInputAssists(); setStatus(""); lastGenerated = { dataset_id: "", extracted: {}, report_text: "", metrics: {}, staging_check: null }; renderStagingCheck(null); updateAuditPanel(""); if ($("auditSpecimenNumber")) $("auditSpecimenNumber").value=""; if ($("auditConsultantName")) $("auditConsultantName").value=""; });
 $("btnCopy").addEventListener("click", copyOut);
 if ($("btnCopySaveAudit")) $("btnCopySaveAudit").addEventListener("click", copyAndSaveAudit);
+if ($("btnAskReference")) $("btnAskReference").addEventListener("click", askReference);
+if ($("btnClearReference")) $("btnClearReference").addEventListener("click", () => { $("referenceQuestion").value = ""; $("referenceAnswer").hidden = true; $("referenceAnswerText").textContent = ""; $("referenceSources").innerHTML = ""; $("referenceStatus").textContent = ""; });
 initThemeToggle();
 initModelSelector();
 initInputAcceleration();

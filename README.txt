@@ -28,3 +28,13 @@ Benchmarking models for report generation
   (input_tokens / 1_000_000 * input_price_per_million) + (output_tokens / 1_000_000 * output_price_per_million)
 - Model discovery/filtering is server-side in `netlify/functions/list-models.js` (OpenAI `/v1/models` + include/exclude rules + cache).
 - To adjust which models appear, edit `modelIsUsable()` and `FRIENDLY_LABELS` in `netlify/functions/list-models.js`.
+
+Pathology reference search
+==========================
+- Reference questions use `gpt-4.1-mini` by default; set `REFERENCE_MODEL` to override it.
+- Trusted mode performs a dedicated Pathology Outlines page lookup before composing the answer, then limits returned citations to Pathology Outlines, RCPath, WHO and IARC domains.
+- The dedicated lookup makes the relevant Pathology Outlines page prominent and typically means two web-search calls instead of one.
+- Pathology Outlines does not always expose a citable page to the web-search provider. When that happens, the result includes a clearly labelled Pathology Outlines-only site-search link for further morphology detail and images; it is navigation, not evidence claimed to support the generated answer.
+- Each response records token counts; the answer status displays its web-search call count and estimated cost when pricing is known.
+- The estimate uses the model token prices in `netlify/functions/ask-reference.js` and a default web-search tool price of $10 per 1,000 calls.
+- Set `REFERENCE_WEB_SEARCH_COST_PER_1000` if the current price on your OpenAI account differs. Pricing is deliberately configurable because provider prices can change.
