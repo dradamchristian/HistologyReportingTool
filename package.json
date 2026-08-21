@@ -3,6 +3,9 @@
   "private": true,
   "version": "1.0.0",
   "description": "RCPath report generator with Netlify functions",
+  "scripts": {
+    "test": "node reference-tests.js"
+  },
   "dependencies": {
     "pg": "^8.13.1"
   }
