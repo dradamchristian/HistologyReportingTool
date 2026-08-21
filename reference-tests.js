@@ -9,6 +9,12 @@ assert.equal(_test.hostnameIsTrusted("https://pathologyoutlines.com.evil.example
 assert.equal(_test.hostnameIsTrusted("not a URL"), false);
 assert.match(_test.trustedSearchInput("A question"), /site:pathologyoutlines\.com/);
 assert.match(_test.trustedSearchInput("A question"), /First search Pathology Outlines/i);
+assert.deepEqual(_test.pathologyOutlinesSearchResource("enchondroma morphology"), {
+  title: "Search Pathology Outlines for this topic (morphology and images)",
+  url: "https://www.google.com/search?q=site%3Apathologyoutlines.com%20enchondroma%20morphology",
+  preferred: true,
+  navigation_only: true,
+});
 const sample = { usage: { input_tokens: 5000, output_tokens: 250, total_tokens: 5250 }, output: [{ type: "web_search_call" }, { content: [{ text: "Supported answer", annotations: [{ type: "url_citation", url: "https://www.rcpath.org/example", title: "RCPath example" }, { type: "url_citation", url: "https://www.rcpath.org/example", title: "duplicate" }] }] }] };
 assert.equal(_test.extractAnswer(sample), "Supported answer");
 assert.deepEqual(_test.extractSources(sample), [{ title: "RCPath example", url: "https://www.rcpath.org/example" }]);

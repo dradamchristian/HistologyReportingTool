@@ -376,7 +376,7 @@ async function askReference(){
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     $("referenceAnswerText").textContent = data.answer || "No supported answer was found.";
-    renderReferenceSources(data.sources);
+    renderReferenceSources([...(data.resources || []), ...(data.sources || [])]);
     $("referenceAnswer").hidden = false;
     const cost = data.metrics?.estimated_cost_usd == null ? "cost unavailable" : `estimated cost $${Number(data.metrics.estimated_cost_usd).toFixed(4)}`;
     const searches = Number(data.metrics?.web_search_calls || 0);

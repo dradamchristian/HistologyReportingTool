@@ -57,6 +57,16 @@ function trustedSearchInput(question) {
   return `${question}\n\nFirst search Pathology Outlines for the most relevant entity/topic page, then search the other approved sources as needed. Search only these domains: ${sites}`;
 }
 
+function pathologyOutlinesSearchResource(question) {
+  const query = `site:pathologyoutlines.com ${String(question || "").trim()}`;
+  return {
+    title: "Search Pathology Outlines for this topic (morphology and images)",
+    url: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
+    preferred: true,
+    navigation_only: true,
+  };
+}
+
 function referenceMetrics(responses, model) {
   const raws = Array.isArray(responses) ? responses : [responses];
   const sumUsage = (key) => raws.reduce((sum, raw) => sum + (Number(raw?.usage?.[key]) || 0), 0);
@@ -154,10 +164,16 @@ exports.handler = async (event) => {
     if (scope === "trusted" && (sources.length === 0 || sources.length !== combinedSources.length)) {
       return json(502, { error: "No answer could be verified exclusively against the trusted source list. Try rephrasing the question or use the broader evidence search." });
     }
-    return json(200, { answer, sources, scope, metrics: referenceMetrics(responses, model) });
+    // Pathology Outlines currently does not always expose a citable page to the
+    // web-search tool. In that case provide an explicit site-search navigation
+    // link rather than pretending that an uncited page supported the answer.
+    const resources = scope === "trusted" && pathologyOutlinesSources.length === 0
+      ? [pathologyOutlinesSearchResource(question)]
+      : [];
+    return json(200, { answer, sources, resources, scope, metrics: referenceMetrics(responses, model) });
   } catch (err) {
     return json(err.statusCode || 500, { error: err.message || String(err) });
   }
 };
 
-exports._test = { TRUSTED_DOMAINS, extractAnswer, extractSources, hostnameIsTrusted, trustedSearchInput, referenceMetrics, buildInstructions };
+exports._test = { TRUSTED_DOMAINS, extractAnswer, extractSources, hostnameIsTrusted, trustedSearchInput, pathologyOutlinesSearchResource, referenceMetrics, buildInstructions };
