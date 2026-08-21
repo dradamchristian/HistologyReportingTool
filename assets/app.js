@@ -378,7 +378,9 @@ async function askReference(){
     $("referenceAnswerText").textContent = data.answer || "No supported answer was found.";
     renderReferenceSources(data.sources);
     $("referenceAnswer").hidden = false;
-    $("referenceStatus").textContent = data.sources?.length ? `Answer grounded in ${data.sources.length} linked source${data.sources.length === 1 ? "" : "s"}.` : "No linked supporting source was returned; do not rely on this answer.";
+    const cost = data.metrics?.estimated_cost_usd == null ? "cost unavailable" : `estimated cost $${Number(data.metrics.estimated_cost_usd).toFixed(4)}`;
+    const searches = Number(data.metrics?.web_search_calls || 0);
+    $("referenceStatus").textContent = data.sources?.length ? `Answer grounded in ${data.sources.length} linked source${data.sources.length === 1 ? "" : "s"} · ${searches} web search${searches === 1 ? "" : "es"} · ${cost}.` : "No linked supporting source was returned; do not rely on this answer.";
   } catch (err) {
     $("referenceStatus").textContent = `Reference search failed: ${err.message || err}`;
   } finally {

@@ -6,6 +6,10 @@ const TRUSTED_DOMAINS = [
 ];
 
 const MAX_QUESTION_LENGTH = 1200;
+const MODEL_PRICING_PER_MILLION = {
+  "gpt-4.1-mini": { input: 0.4, output: 1.6 },
+};
+const DEFAULT_WEB_SEARCH_COST_PER_1000 = 10;
 
 function json(statusCode, payload) {
   return { statusCode, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) };
@@ -50,12 +54,36 @@ function hostnameIsTrusted(url) {
 
 function trustedSearchInput(question) {
   const sites = TRUSTED_DOMAINS.map((domain) => `site:${domain}`).join(" OR ");
-  return `${question}\n\nSearch only these domains: ${sites}`;
+  return `${question}\n\nFirst search Pathology Outlines for the most relevant entity/topic page, then search the other approved sources as needed. Search only these domains: ${sites}`;
+}
+
+function referenceMetrics(raw, model) {
+  const usage = raw?.usage || {};
+  const inputTokens = Number(usage.input_tokens);
+  const outputTokens = Number(usage.output_tokens);
+  const totalTokens = Number(usage.total_tokens);
+  const webSearchCalls = (Array.isArray(raw?.output) ? raw.output : []).filter((item) => item?.type === "web_search_call").length;
+  const pricing = MODEL_PRICING_PER_MILLION[model];
+  const searchRate = Number(process.env.REFERENCE_WEB_SEARCH_COST_PER_1000 || DEFAULT_WEB_SEARCH_COST_PER_1000);
+  const tokenCost = pricing && Number.isFinite(inputTokens) && Number.isFinite(outputTokens)
+    ? (inputTokens / 1_000_000 * pricing.input) + (outputTokens / 1_000_000 * pricing.output)
+    : null;
+  const searchCost = Number.isFinite(searchRate) ? webSearchCalls / 1000 * searchRate : null;
+  const estimatedCost = tokenCost != null && searchCost != null ? tokenCost + searchCost : null;
+  return {
+    model,
+    input_tokens: Number.isFinite(inputTokens) ? inputTokens : null,
+    output_tokens: Number.isFinite(outputTokens) ? outputTokens : null,
+    total_tokens: Number.isFinite(totalTokens) ? totalTokens : null,
+    web_search_calls: webSearchCalls,
+    estimated_cost_usd: estimatedCost == null ? null : Number(estimatedCost.toFixed(6)),
+    cost_is_estimate: true,
+  };
 }
 
 function buildInstructions(scope) {
   const sourceRule = scope === "trusted"
-    ? "Use only results from the configured trusted pathology domains."
+    ? "Use only results from the configured trusted pathology domains. For simple morphology, differential diagnosis and tumour-entity questions, search Pathology Outlines first and cite the most relevant entity/topic page prominently when it contains relevant information, so the user can follow the link to its illustrations. Supplement it with RCPath or WHO/IARC when they add classification or reporting authority. Do not cite an irrelevant Pathology Outlines page merely to satisfy this preference."
     : "Prefer primary guidance, recognised professional bodies, peer-reviewed literature and major academic medical sources. Avoid forums, commercial marketing and unsourced summaries.";
   return `You are a pathology reference assistant for qualified clinicians. ${sourceRule}
 Answer only from web sources retrieved for this request; do not rely on unsupported memory. Give a concise answer (normally under 180 words), focused on morphology, differential diagnosis, terminology or reporting guidance. Distinguish mandatory guidance from review-level suggestions and mention important source disagreement or edition dependence. Never invent a citation. If the evidence is inadequate, say so plainly. Do not diagnose a patient or claim that a brief description is definitive. Do not repeat personal identifiers. Use plain text with brief bullets where helpful.`;
@@ -96,10 +124,10 @@ exports.handler = async (event) => {
     if (scope === "trusted" && (sources.length === 0 || sources.length !== allSources.length)) {
       return json(502, { error: "No answer could be verified exclusively against the trusted source list. Try rephrasing the question or use the broader evidence search." });
     }
-    return json(200, { answer, sources, scope });
+    return json(200, { answer, sources, scope, metrics: referenceMetrics(raw, model) });
   } catch (err) {
     return json(500, { error: err.message || String(err) });
   }
 };
 
-exports._test = { TRUSTED_DOMAINS, extractAnswer, extractSources, hostnameIsTrusted, trustedSearchInput, buildInstructions };
+exports._test = { TRUSTED_DOMAINS, extractAnswer, extractSources, hostnameIsTrusted, trustedSearchInput, referenceMetrics, buildInstructions };
