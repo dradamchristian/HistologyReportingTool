@@ -39,6 +39,20 @@ function extractSources(raw) {
   return sources.slice(0, 6);
 }
 
+function hostnameIsTrusted(url) {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase().replace(/\.$/, "");
+    return TRUSTED_DOMAINS.some((domain) => hostname === domain || hostname.endsWith(`.${domain}`));
+  } catch {
+    return false;
+  }
+}
+
+function trustedSearchInput(question) {
+  const sites = TRUSTED_DOMAINS.map((domain) => `site:${domain}`).join(" OR ");
+  return `${question}\n\nSearch only these domains: ${sites}`;
+}
+
 function buildInstructions(scope) {
   const sourceRule = scope === "trusted"
     ? "Use only results from the configured trusted pathology domains."
@@ -62,23 +76,30 @@ exports.handler = async (event) => {
   if (!apiKey) return json(500, { error: "OPENAI_API_KEY not set." });
   const model = process.env.REFERENCE_MODEL || "gpt-4.1-mini";
   const webSearch = { type: "web_search", search_context_size: "medium" };
-  if (scope === "trusted") webSearch.filters = { allowed_domains: TRUSTED_DOMAINS };
+  // gpt-4.1-mini web search does not support the tool's `filters` parameter.
+  // Constrain discovery in the query/prompt, then enforce the allowlist again on
+  // the returned citations before any trusted-mode answer reaches the client.
+  const input = scope === "trusted" ? trustedSearchInput(question) : question;
 
   try {
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model, instructions: buildInstructions(scope), input: question, tools: [webSearch], max_output_tokens: 500 }),
+      body: JSON.stringify({ model, instructions: buildInstructions(scope), input, tools: [webSearch], max_output_tokens: 500 }),
     });
     const raw = await response.json().catch(() => ({}));
     if (!response.ok) return json(response.status, { error: raw?.error?.message || "Reference search request failed" });
     const answer = extractAnswer(raw);
-    const sources = extractSources(raw);
+    const allSources = extractSources(raw);
+    const sources = scope === "trusted" ? allSources.filter((source) => hostnameIsTrusted(source.url)) : allSources;
     if (!answer) return json(502, { error: "The reference service returned no answer" });
+    if (scope === "trusted" && (sources.length === 0 || sources.length !== allSources.length)) {
+      return json(502, { error: "No answer could be verified exclusively against the trusted source list. Try rephrasing the question or use the broader evidence search." });
+    }
     return json(200, { answer, sources, scope });
   } catch (err) {
     return json(500, { error: err.message || String(err) });
   }
 };
 
-exports._test = { TRUSTED_DOMAINS, extractAnswer, extractSources, buildInstructions };
+exports._test = { TRUSTED_DOMAINS, extractAnswer, extractSources, hostnameIsTrusted, trustedSearchInput, buildInstructions };

@@ -4,6 +4,10 @@ const { _test } = require("./netlify/functions/ask-reference");
 assert.deepEqual(_test.TRUSTED_DOMAINS, ["pathologyoutlines.com", "rcpath.org", "who.int", "publications.iarc.fr"]);
 assert.match(_test.buildInstructions("trusted"), /only results from the configured trusted pathology domains/i);
 assert.match(_test.buildInstructions("broader"), /peer-reviewed literature/i);
+assert.equal(_test.hostnameIsTrusted("https://www.pathologyoutlines.com/topic/example.html"), true);
+assert.equal(_test.hostnameIsTrusted("https://pathologyoutlines.com.evil.example/topic"), false);
+assert.equal(_test.hostnameIsTrusted("not a URL"), false);
+assert.match(_test.trustedSearchInput("A question"), /site:pathologyoutlines\.com/);
 const sample = { output: [{ content: [{ text: "Supported answer", annotations: [{ type: "url_citation", url: "https://www.rcpath.org/example", title: "RCPath example" }, { type: "url_citation", url: "https://www.rcpath.org/example", title: "duplicate" }] }] }] };
 assert.equal(_test.extractAnswer(sample), "Supported answer");
 assert.deepEqual(_test.extractSources(sample), [{ title: "RCPath example", url: "https://www.rcpath.org/example" }]);
@@ -26,7 +30,8 @@ console.log("reference helper tests passed");
   try {
     const response = await handler({ httpMethod: "POST", body: JSON.stringify({ question: "A morphology question", scope: "trusted" }) });
     assert.equal(response.statusCode, 200);
-    assert.deepEqual(requestPayload.tools[0].filters.allowed_domains, _test.TRUSTED_DOMAINS);
+    assert.equal(requestPayload.tools[0].filters, undefined);
+    assert.match(requestPayload.input, /site:rcpath\.org/);
     assert.equal(JSON.parse(response.body).sources.length, 1);
   } finally {
     global.fetch = previousFetch;
