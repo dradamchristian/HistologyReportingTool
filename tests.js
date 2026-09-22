@@ -33,7 +33,7 @@
     }
   }
 
-  function evaluateChecks(text, checks) {
+  function evaluateChecks(text, checks, actualDatasetId, expectedDatasetId) {
     const t = (text || "").toLowerCase();
     const missing = [];
     for (const raw of (checks || [])) {
@@ -45,6 +45,9 @@
         const needle = s.toLowerCase();
         if (needle && !t.includes(needle)) missing.push(raw);
       }
+    }
+    if (expectedDatasetId && actualDatasetId !== expectedDatasetId) {
+      missing.push(`Dataset mismatch: expected ${expectedDatasetId}, received ${actualDatasetId || "(none)"}`);
     }
     return missing;
   }
@@ -59,7 +62,7 @@
     el.innerHTML = `
       <h3>
         <span>${c.id}</span>
-        <span class="pill">${c.EXPECTED_DATASET}</span>
+        <span class="pill">${c.EXPECTED_DATASET_ID || c.EXPECTED_DATASET}</span>
         <span class="status warn" id="status-${c.id}">PENDING</span>
       </h3>
       <div class="small">Checks: ${(c.EXPECTED_CHECKS || []).length}</div>
@@ -142,7 +145,12 @@
 
         $("out-"+sid).textContent = report;
 
-        const missing = evaluateChecks(report, c.EXPECTED_CHECKS || []);
+        const missing = evaluateChecks(
+          report,
+          c.EXPECTED_CHECKS || [],
+          resp?.json?.dataset_id || "",
+          c.EXPECTED_DATASET_ID || ""
+        );
         $("miss-"+sid).textContent = missing.length ? missing.join("\n") : "(none)";
 
         const ok = missing.length === 0;

@@ -12,6 +12,20 @@ assert.equal(
   _test.pickDataset("Colorectal adenocarcinoma.", manifests).id,
   "colorectal_resection_rcpath_v1"
 );
+for (const prompt of [
+  "Rectal local excision containing adenocarcinoma.",
+  "Colon polypectomy containing carcinoma.",
+  "Colorectal EMR containing adenocarcinoma.",
+  "Rectal ESD containing adenocarcinoma.",
+  "Rectal TEM containing adenocarcinoma.",
+  "Rectal TAMIS containing adenocarcinoma.",
+]) {
+  assert.equal(
+    _test.pickDataset(prompt, manifests).id,
+    "colorectal_local_resection_cancer_v1",
+    `Expected local resection dataset for: ${prompt}`
+  );
+}
 
 const datasetPath = path.join(__dirname, "datasets", "colorectal_local_resection_cancer_v1");
 const schema = JSON.parse(fs.readFileSync(path.join(datasetPath, "schema.json"), "utf8"));

@@ -4,6 +4,71 @@
   },
   "cases": [
     {
+      "id": "CR_LOCAL_minimum_defaults_and_blanks",
+      "EXPECTED_DATASET": "colorectal local resection",
+      "EXPECTED_DATASET_ID": "colorectal_local_resection_cancer_v1",
+      "INPUT": "Colorectal local resection. Adenocarcinoma.",
+      "EXPECTED_CHECKS": [
+        "Tumour Type: Adenocarcinoma",
+        "Differentiation by worst area: Well/moderate",
+        "Local Invasion: pT1 (submucosa)",
+        "Number of lymph nodes: None",
+        "Number of tumour deposits: None",
+        "Deepest level of venous invasion: None",
+        "Tumour budding: Bd1 (low risk)",
+        "Pathological Staging: pT1 NX",
+        "Peripheral margins: \n",
+        "Deep margin: \n",
+        "Tumour Block: \n",
+        "! LYMPH NODES:",
+        "! Circumferential margin (CRM)"
+      ]
+    },
+    {
+      "id": "CR_LOCAL_detailed_polypoid",
+      "EXPECTED_DATASET": "colorectal local resection",
+      "EXPECTED_DATASET_ID": "colorectal_local_resection_cancer_v1",
+      "INPUT": "Rectal polypectomy containing moderately differentiated adenocarcinoma. Invasive tumour thickness 3 mm from muscularis mucosae and width 6 mm. Polypoid tumour, Haggitt level 2. No venous, lymphatic or perineural invasion. Tumour budding Bd1. Background adenoma present. Peripheral and deep margins not involved. Carcinoma is 2 mm from the deep margin. Complete resection by more than 1 mm. Tumour block A3.",
+      "EXPECTED_CHECKS": [
+        "Maximum thickness of invasive tumour from muscularis mucosae: 3",
+        "Width of invasive tumour: 6",
+        "Haggitt level (polypoid tumours): 2",
+        "Peripheral margins: Not involved",
+        "Deep margin: Not involved",
+        "nearest deep excision margin: 2",
+        "Complete resection (by >1mm) of CARCINOMA at all margins: Yes",
+        "Tumour Block: A3"
+      ]
+    },
+    {
+      "id": "CR_LOCAL_detailed_sessile_high_risk",
+      "EXPECTED_DATASET": "colorectal local resection",
+      "EXPECTED_DATASET_ID": "colorectal_local_resection_cancer_v1",
+      "INPUT": "Colorectal ESD, sessile lesion with poorly differentiated adenocarcinoma. Invasive thickness 4 mm and width 9 mm. Kikuchi level sm3. Extramural venous invasion and intramural lymphatic invasion present. No perineural invasion. Tumour budding Bd3. Deep margin involved; peripheral margin clear. Not completely resected by more than 1 mm. Tumour block B2.",
+      "EXPECTED_CHECKS": [
+        "Differentiation by worst area: Poor",
+        "Kikuchi level (for sessile/flat tumours): sm3",
+        "Deepest level of venous invasion: Extramural",
+        "Deepest level of lymphatic (small vessel) invasion: Intramural",
+        "Tumour budding: Bd3 (high risk)",
+        "Deep margin: Involved",
+        "Tumour Block: B2"
+      ]
+    },
+    {
+      "id": "CR_FULL_plain_adenocarcinoma_not_local",
+      "EXPECTED_DATASET": "colorectal",
+      "EXPECTED_DATASET_ID": "colorectal_resection_rcpath_v1",
+      "INPUT": "Colorectal resection, sigmoid. Adenocarcinoma. Tumour invades muscularis propria. CRM 5 mm. Nodes 0 of 12 positive.",
+      "EXPECTED_CHECKS": [
+        "DIAGNOSIS:",
+        "Local invasion: pT2.",
+        "0 / 12 involved.",
+        "! Haggitt level",
+        "! Kikuchi level"
+      ]
+    },
+    {
       "id": "CR_pT1_0of10",
       "EXPECTED_DATASET": "colorectal",
       "INPUT": "Colorectal resection, sigmoid.\nAdenocarcinoma.\nLocal invasion: tumour invades submucosa.\nCRM 5 mm. Proximal margin clear. Distal margin clear.\nNodes 0 of 10 positive.\nNo distant metastasis.\n",
