@@ -33,18 +33,28 @@
     }
   }
 
-  function evaluateChecks(text, checks) {
+  function evaluateChecks(text, checks, actualDatasetId, expectedDatasetId) {
     const t = (text || "").toLowerCase();
+    const lines = String(text || "").split(/\r?\n/).map((line) => line.trimEnd().toLowerCase());
     const missing = [];
     for (const raw of (checks || [])) {
       const s = String(raw);
-      if (s.startsWith("! ")) {
+      if (s.startsWith("! LINE: ")) {
+        const expectedLine = s.slice(8).trimEnd().toLowerCase();
+        if (lines.includes(expectedLine)) missing.push(raw);
+      } else if (s.startsWith("LINE: ")) {
+        const expectedLine = s.slice(6).trimEnd().toLowerCase();
+        if (!lines.includes(expectedLine)) missing.push(raw);
+      } else if (s.startsWith("! ")) {
         const needle = s.slice(2).toLowerCase();
         if (needle && t.includes(needle)) missing.push(raw); // forbidden string present
       } else {
         const needle = s.toLowerCase();
         if (needle && !t.includes(needle)) missing.push(raw);
       }
+    }
+    if (expectedDatasetId && actualDatasetId !== expectedDatasetId) {
+      missing.push(`Dataset mismatch: expected ${expectedDatasetId}, received ${actualDatasetId || "(none)"}`);
     }
     return missing;
   }
@@ -59,7 +69,7 @@
     el.innerHTML = `
       <h3>
         <span>${c.id}</span>
-        <span class="pill">${c.EXPECTED_DATASET}</span>
+        <span class="pill">${c.EXPECTED_DATASET_ID || c.EXPECTED_DATASET}</span>
         <span class="status warn" id="status-${c.id}">PENDING</span>
       </h3>
       <div class="small">Checks: ${(c.EXPECTED_CHECKS || []).length}</div>
@@ -142,7 +152,12 @@
 
         $("out-"+sid).textContent = report;
 
-        const missing = evaluateChecks(report, c.EXPECTED_CHECKS || []);
+        const missing = evaluateChecks(
+          report,
+          c.EXPECTED_CHECKS || [],
+          resp?.json?.dataset_id || "",
+          c.EXPECTED_DATASET_ID || ""
+        );
         $("miss-"+sid).textContent = missing.length ? missing.join("\n") : "(none)";
 
         const ok = missing.length === 0;
@@ -158,9 +173,12 @@
           statusEl.className = "status good";
         }
 
+        // Legacy cases only have a human-readable EXPECTED_DATASET label. Keep
+        // their warning heuristic, but do not second-guess the exact ID check
+        // above when EXPECTED_DATASET_ID is supplied.
         const datasetId = (resp?.json?.dataset_id || "").toLowerCase();
         const expected = String(c.EXPECTED_DATASET || "").toLowerCase();
-        if (datasetId && expected && !datasetId.includes(expected)) {
+        if (!c.EXPECTED_DATASET_ID && datasetId && expected && !datasetId.includes(expected)) {
           warn += 1;
           statusEl.textContent = ok ? "PASS (dataset?)" : "FAIL (dataset?)";
           statusEl.className = "status warn";

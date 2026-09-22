@@ -1,0 +1,28 @@
+{
+  "title": "Colorectal local resection containing carcinoma",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "tumour_type": { "type": "string", "default": "Adenocarcinoma" },
+    "differentiation_worst_area": { "type": "string", "enum": ["Well/moderate", "Poor"], "default": "Well/moderate" },
+    "local_invasion": { "type": "string", "enum": ["pT1 (submucosa)"], "default": "pT1 (submucosa)" },
+    "maximum_invasive_thickness_mm": { "type": "string", "description": "Maximum thickness of invasive tumour from muscularis mucosae in mm; leave empty if not dictated." },
+    "invasive_tumour_width_mm": { "type": "string", "description": "Width of invasive tumour in mm; leave empty if not dictated." },
+    "haggitt_level": { "type": "string", "description": "Haggitt level for a polypoid tumour; leave empty if not applicable or not dictated." },
+    "kikuchi_level": { "type": "string", "description": "Kikuchi level for a sessile or flat tumour; leave empty if not applicable or not dictated." },
+    "number_of_lymph_nodes": { "type": "string", "default": "None" },
+    "number_of_tumour_deposits": { "type": "string", "default": "None" },
+    "venous_invasion_level": { "type": "string", "enum": ["None", "Intramural", "Extramural"], "default": "None" },
+    "lymphatic_invasion_level": { "type": "string", "enum": ["None", "Intramural", "Extramural"], "default": "None" },
+    "perineural_invasion_level": { "type": "string", "enum": ["None", "Intramural", "Extramural"], "default": "None" },
+    "tumour_budding": { "type": "string", "enum": ["Bd1 (low risk)", "Bd2 (intermediate risk)", "Bd3 (high risk)"], "default": "Bd1 (low risk)" },
+    "preoperative_therapy_response": { "type": "string", "default": "Not applicable" },
+    "background_adenoma": { "type": "string", "enum": ["Present", "Not identified"], "default": "Present" },
+    "peripheral_margin": { "type": "string", "description": "Carcinoma involvement of peripheral margin; required for completion and left visible if not dictated." },
+    "deep_margin": { "type": "string", "description": "Carcinoma involvement of deep margin; required for completion and left visible if not dictated." },
+    "carcinoma_to_deep_margin_mm": { "type": "string", "description": "Histological measurement from carcinoma to nearest deep excision margin in mm; leave empty if not dictated." },
+    "pathological_staging": { "type": "string", "default": "pT1 NX" },
+    "complete_resection_over_1mm": { "type": "string", "description": "Whether carcinoma is completely resected by more than 1 mm at all margins; leave empty if not dictated." },
+    "tumour_block": { "type": "string", "description": "Representative tumour block; leave empty if not dictated." }
+  }
+}

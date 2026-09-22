@@ -4,6 +4,7 @@ const SPECIMEN_TYPES = {
   oesophagus_resection_rcpath_v3_microscopy: 'Oesophagus resection',
   gastrectomy_resection_rcpath_v1_microscopy: 'Gastrectomy resection',
   colorectal_resection_rcpath_v1: 'Colorectal resection',
+  colorectal_local_resection_cancer_v1: 'Colorectal local resection',
   gist_resection_rcpath_v1: 'GIST resection',
   hepatocellular_carcinoma_proforma_v1: 'HCC proforma',
   colorectal_liver_metastasis_proforma_v1: 'CRLM proforma',

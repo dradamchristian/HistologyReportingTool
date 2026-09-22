@@ -1,0 +1,17 @@
+{
+  "id": "colorectal_local_resection_cancer_v1",
+  "kind": "local_proforma",
+  "match": {
+    "any": [
+      "colorectal local resection",
+      "colorectal local excision",
+      "rectal local resection",
+      "rectal local excision",
+      "colon polypectomy",
+      "rectal polypectomy"
+    ]
+  },
+  "pipeline": {
+    "mode": "schema_extract_then_rules"
+  }
+}

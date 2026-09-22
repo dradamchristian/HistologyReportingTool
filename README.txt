@@ -29,6 +29,13 @@ Benchmarking models for report generation
 - Model discovery/filtering is server-side in `netlify/functions/list-models.js` (OpenAI `/v1/models` + include/exclude rules + cache).
 - To adjust which models appear, edit `modelIsUsable()` and `FRIENDLY_LABELS` in `netlify/functions/list-models.js`.
 
+Colorectal local resection cancer proforma
+==========================================
+- Use explicit colorectal-site wording together with a local-procedure trigger.
+- Examples: `Colorectal local resection. Adenocarcinoma.`, `Rectal local excision containing adenocarcinoma.`, `Colon polypectomy containing carcinoma.`, or `Colorectal EMR/ESD/TEM/TAMIS containing adenocarcinoma.`
+- Recognised local-procedure triggers are: local resection, local excision, polypectomy, EMR, ESD, TEM and TAMIS.
+- `Colorectal adenocarcinoma` without one of those local-procedure triggers continues to use the full colorectal resection proforma.
+
 Pathology reference search
 ==========================
 - Reference questions use `gpt-4.1-mini` by default; set `REFERENCE_MODEL` to override it.
