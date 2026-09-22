@@ -15,6 +15,7 @@ const AUDIT_DATASETS = new Set([
   "oesophagus_resection_rcpath_v3_microscopy",
   "gastrectomy_resection_rcpath_v1_microscopy",
   "colorectal_resection_rcpath_v1",
+  "colorectal_local_resection_cancer_v1",
   "gist_resection_rcpath_v1",
   "hepatocellular_carcinoma_proforma_v1",
   "colorectal_liver_metastasis_proforma_v1",

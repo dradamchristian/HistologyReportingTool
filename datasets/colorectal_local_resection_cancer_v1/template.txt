@@ -1,0 +1,38 @@
+Tumour Type: {{tumour_type}}
+
+Differentiation by worst area: {{differentiation_worst_area}}
+
+Local Invasion: {{local_invasion}}
+
+For pT1 tumours:
+ Maximum thickness of invasive tumour from muscularis mucosae: {{maximum_invasive_thickness_mm}}
+ Width of invasive tumour: {{invasive_tumour_width_mm}}
+ Haggitt level (polypoid tumours): {{haggitt_level}}
+ Kikuchi level (for sessile/flat tumours): {{kikuchi_level}}
+
+Number of lymph nodes: {{number_of_lymph_nodes}}
+
+Number of tumour deposits: {{number_of_tumour_deposits}}
+
+Deepest level of venous invasion: {{venous_invasion_level}}
+
+Deepest level of lymphatic (small vessel) invasion: {{lymphatic_invasion_level}}
+
+Deepest level of perineural invasion: {{perineural_invasion_level}}
+
+Tumour budding: {{tumour_budding}}
+
+Preoperative therapy response: {{preoperative_therapy_response}}
+
+Background Adenoma: {{background_adenoma}}
+
+Involvement of margins by carcinoma:
+ Peripheral margins: {{peripheral_margin}}
+ Deep margin: {{deep_margin}}
+ Histological measurement from carcinoma to nearest deep excision margin: {{carcinoma_to_deep_margin_mm}}
+
+Pathological Staging: {{pathological_staging}}
+
+Complete resection (by >1mm) of CARCINOMA at all margins: {{complete_resection_over_1mm}}
+
+Tumour Block: {{tumour_block}}

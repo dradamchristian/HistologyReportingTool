@@ -420,6 +420,15 @@ function pickDataset(text, manifests) {
   const raw = String(text || "");
   const t = raw.toLowerCase();
 
+  // A malignant polyp/local excision has a deliberately smaller proforma than
+  // a bowel resection.  Require explicit local-resection wording so that an
+  // ordinary "colorectal adenocarcinoma" continues to select the full dataset.
+  if (/\b(?:colorectal|colon|rectal|rectum|sigmoid)\b/i.test(raw) &&
+      /\b(?:local\s+(?:resection|excision)|polypectomy|emr|esd|tem|tamis)\b/i.test(raw)) {
+    const hit = manifests.find(mm => mm.id === "colorectal_local_resection_cancer_v1");
+    if (hit) return { id: hit.id, manifest: hit, score: 1000 };
+  }
+
   // Hard routing for shorthand biopsy modes
   if (/^\s*lgi\s*:/i.test(raw)) {
     const hit = manifests.find(mm => mm.id === "lgi_biopsy_shorthand_v1");
@@ -467,6 +476,17 @@ function applyDefaults(schema, obj) {
   const props = schema?.properties || {};
   for (const [k, v] of Object.entries(props)) {
     if (out[k] === undefined && v && Object.prototype.hasOwnProperty.call(v, "default")) out[k] = v.default;
+  }
+  return out;
+}
+
+function applyDefaultsIncludingBlanks(schema, obj) {
+  const out = applyDefaults(schema, obj);
+  for (const [key, definition] of Object.entries(schema?.properties || {})) {
+    if (String(out[key] ?? "").trim() === "" &&
+        Object.prototype.hasOwnProperty.call(definition, "default")) {
+      out[key] = definition.default;
+    }
   }
   return out;
 }
@@ -1589,6 +1609,12 @@ exports.handler = async (event) => {
       }
 
       extracted = applyDefaults(schema, extracted0);
+      if (datasetId === "colorectal_local_resection_cancer_v1") {
+        // The extractor is asked to return every field and therefore represents
+        // unmentioned values as "". Restore only the proforma's documented
+        // standard answers; fields without a default remain visibly blank.
+        extracted = applyDefaultsIncludingBlanks(schema, extracted);
+      }
       normalizeTumourType(extracted, schema);
 
       const tumourBlock = extractTumourBlock(rawText);
@@ -2023,3 +2049,5 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
     return jsonResp(500, { error: e.message || "Server error" });
   }
 };
+
+exports._test = { pickDataset, applyDefaults, applyDefaultsIncludingBlanks, renderTemplate, listDatasetManifests };
