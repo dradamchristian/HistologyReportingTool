@@ -35,10 +35,17 @@
 
   function evaluateChecks(text, checks, actualDatasetId, expectedDatasetId) {
     const t = (text || "").toLowerCase();
+    const lines = String(text || "").split(/\r?\n/).map((line) => line.trimEnd().toLowerCase());
     const missing = [];
     for (const raw of (checks || [])) {
       const s = String(raw);
-      if (s.startsWith("! ")) {
+      if (s.startsWith("! LINE: ")) {
+        const expectedLine = s.slice(8).trimEnd().toLowerCase();
+        if (lines.includes(expectedLine)) missing.push(raw);
+      } else if (s.startsWith("LINE: ")) {
+        const expectedLine = s.slice(6).trimEnd().toLowerCase();
+        if (!lines.includes(expectedLine)) missing.push(raw);
+      } else if (s.startsWith("! ")) {
         const needle = s.slice(2).toLowerCase();
         if (needle && t.includes(needle)) missing.push(raw); // forbidden string present
       } else {
@@ -166,9 +173,12 @@
           statusEl.className = "status good";
         }
 
+        // Legacy cases only have a human-readable EXPECTED_DATASET label. Keep
+        // their warning heuristic, but do not second-guess the exact ID check
+        // above when EXPECTED_DATASET_ID is supplied.
         const datasetId = (resp?.json?.dataset_id || "").toLowerCase();
         const expected = String(c.EXPECTED_DATASET || "").toLowerCase();
-        if (datasetId && expected && !datasetId.includes(expected)) {
+        if (!c.EXPECTED_DATASET_ID && datasetId && expected && !datasetId.includes(expected)) {
           warn += 1;
           statusEl.textContent = ok ? "PASS (dataset?)" : "FAIL (dataset?)";
           statusEl.className = "status warn";

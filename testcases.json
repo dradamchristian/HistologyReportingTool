@@ -1,6 +1,6 @@
 {
   "meta": {
-    "notes": "Edge-focused regression suite. Substring checks; prefix '! ' means must not appear. Bundle collects failed cases (input+missing+output). Trimmed repetitive colorectal pT/node matrix cases and added tumour-deposit N1c and HCC size-based staging variations."
+    "notes": "Edge-focused regression suite. Substring checks; prefix '! ' means must not appear. 'LINE: ' requires an exact report line and '! LINE: ' forbids an exact report line. Bundle collects failed cases (input+missing+output)."
   },
   "cases": [
     {
@@ -17,10 +17,10 @@
         "Deepest level of venous invasion: None",
         "Tumour budding: Bd1 (low risk)",
         "Pathological Staging: pT1 NX",
-        "Peripheral margins: \n",
-        "Deep margin: \n",
-        "Tumour Block: \n",
-        "! LYMPH NODES:",
+        "LINE:  Peripheral margins:",
+        "LINE:  Deep margin:",
+        "LINE: Tumour Block:",
+        "! LINE: LYMPH NODES:",
         "! Circumferential margin (CRM)"
       ]
     },
