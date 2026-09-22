@@ -27,6 +27,13 @@ for (const prompt of [
   );
 }
 
+for (const trigger of ["colorectal emr", "colorectal esd", "colorectal tamis", "rectal emr", "rectal esd", "rectal tamis"]) {
+  assert.ok(
+    manifests.find((manifest) => manifest.id === "colorectal_local_resection_cancer_v1").match.any.includes(trigger),
+    `Expected the local resection manifest to advertise: ${trigger}`
+  );
+}
+
 const datasetPath = path.join(__dirname, "datasets", "colorectal_local_resection_cancer_v1");
 const schema = JSON.parse(fs.readFileSync(path.join(datasetPath, "schema.json"), "utf8"));
 const template = fs.readFileSync(path.join(datasetPath, "template.txt"), "utf8");
