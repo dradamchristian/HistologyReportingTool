@@ -10,6 +10,7 @@ const MODEL_MODES = [
   { id: "fast_higher_accuracy", label: "Fast / Higher accuracy" },
 ];
 const DEFAULT_MODEL_MODE = "auto_recommended";
+let benchmarkRuns = [];
 
 const AUDIT_DATASETS = new Set([
   "oesophagus_resection_rcpath_v3_microscopy",
@@ -193,7 +194,7 @@ function initThemeToggle(){
   });
 }
 
-function initModelSelector() {
+async function initModelSelector() {
   const sel = $("modelSelect");
   const hint = $("modelHint");
   if (!sel) return;
@@ -204,7 +205,23 @@ function initModelSelector() {
   sel.value = chosen;
   localStorage.setItem("reportModelMode", chosen);
   sel.addEventListener("change", () => localStorage.setItem("reportModelMode", sel.value));
-  if (hint) hint.textContent = "Auto recommended uses GPT-4.1 mini unless complexity rules route to GPT-4.1.";
+  if (hint) hint.textContent = "Checking which supported models this API key can access…";
+  try {
+    const res = await fetch("/.netlify/functions/list-models");
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || "Model lookup failed");
+    for (const model of data.models || []) {
+      const option = document.createElement("option");
+      option.value = model.id;
+      const prices = model.pricing_per_million;
+      option.textContent = `${model.label} — ${prices ? `$${prices.input}/$${prices.output} per 1M in/out` : "price unknown"}`;
+      sel.appendChild(option);
+    }
+    if (stored && Array.from(sel.options).some((option) => option.value === stored)) sel.value = stored;
+    if (hint) hint.textContent = `${data.models?.length || 0} directly selectable models available to this API key. Costs use metered tokens and the displayed rate card; verify invoices for cached/batch/fine-tuned pricing.`;
+  } catch (error) {
+    if (hint) hint.textContent = `Could not load account models (${error.message}). Automatic modes are still available.`;
+  }
 }
 
 function renderMetricsLine(metrics, isError=false, message="") {
@@ -215,6 +232,30 @@ function renderMetricsLine(metrics, isError=false, message="") {
   const cost = metrics.estimated_cost_usd != null ? `est. $${Number(metrics.estimated_cost_usd).toFixed(3)}` : "est. n/a";
   const base = `${metrics.model} in ${secs} · ${metrics.input_tokens ?? "?"} input tokens · ${metrics.output_tokens ?? "?"} output tokens · ${cost}`;
   el.textContent = isError ? `${base} · ${message}` : `Generated with ${base}`;
+}
+
+function recordBenchmark(metrics, ok=true) {
+  if (!metrics?.model) return;
+  benchmarkRuns.unshift({ at: new Date().toISOString(), ok, ...metrics });
+  benchmarkRuns = benchmarkRuns.slice(0, 25);
+  localStorage.setItem("reportBenchmarkRuns", JSON.stringify(benchmarkRuns));
+  renderBenchmarkRuns();
+}
+
+function renderBenchmarkRuns() {
+  const body = $("benchmarkRows");
+  if (!body) return;
+  body.innerHTML = benchmarkRuns.length ? benchmarkRuns.map((run) => `<tr><td>${run.model}</td><td>${run.duration_ms == null ? "—" : `${(run.duration_ms / 1000).toFixed(2)}s`}</td><td>${run.input_tokens ?? "—"} / ${run.output_tokens ?? "—"}</td><td>${run.estimated_cost_usd == null ? "—" : `$${Number(run.estimated_cost_usd).toFixed(6)}`}</td><td>${run.ok ? "✓" : "Failed"}</td></tr>`).join("") : '<tr><td colspan="5">Run a report to start comparing models.</td></tr>';
+}
+
+function initBenchmarkConsole() {
+  try { benchmarkRuns = JSON.parse(localStorage.getItem("reportBenchmarkRuns") || "[]"); } catch (_) { benchmarkRuns = []; }
+  renderBenchmarkRuns();
+  $("btnClearBenchmarks")?.addEventListener("click", () => {
+    benchmarkRuns = [];
+    localStorage.removeItem("reportBenchmarkRuns");
+    renderBenchmarkRuns();
+  });
 }
 
 function setAuditHint(msg, isError=false){
@@ -330,6 +371,7 @@ async function generate(){
       $("caveatsList").innerHTML = data.caveats.map(c => `<li>${c}</li>`).join("");
     }
     renderMetricsLine(data.metrics || {});
+    recordBenchmark(data.metrics || {}, true);
     const quickPanel = $("lgiQuickPanel");
     if (quickPanel) { quickPanel.dataset.generated = "true"; quickPanel.classList.remove("is-active"); }
     setStatus("Done.");
@@ -337,6 +379,7 @@ async function generate(){
     $("reportState").textContent = "Generation failed";
     const m = err?.metrics || {};
     renderMetricsLine(m, true, `Error: ${err.message || err}`);
+    recordBenchmark(m, false);
     setStatus(`Error: ${err.message || err}`, true);
   }
 }
@@ -487,6 +530,7 @@ if ($("btnAskReference")) $("btnAskReference").addEventListener("click", askRefe
 if ($("btnClearReference")) $("btnClearReference").addEventListener("click", () => { $("referenceQuestion").value = ""; $("referenceAnswer").hidden = true; $("referenceAnswerText").textContent = ""; $("referenceSources").innerHTML = ""; $("referenceStatus").textContent = ""; });
 initThemeToggle();
 initModelSelector();
+initBenchmarkConsole();
 initInputAcceleration();
 setMicPill();
 
