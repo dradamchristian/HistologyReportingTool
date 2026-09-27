@@ -22,7 +22,7 @@ Notes:
 Benchmarking models for report generation
 ========================================
 - Open **Model test console**, select a directly named model, and generate the same case with each option. The browser keeps the latest 25 results locally with latency, provider-reported token usage, estimated cost and success/failure.
-- The frontend dropdown is populated dynamically from `/.netlify/functions/list-models`. It shows compatible text/chat models visible to the configured API key, including newly discovered model IDs even when they do not yet have pricing metadata.
+- The frontend dropdown is populated dynamically from `/.netlify/functions/list-models`. It groups maintained, priced recommendations ahead of other accessible models, and hides dated snapshots when a stable alias is available.
 - Server-side model validation + default lives in `netlify/functions/generate-report.js` (`DEFAULT_MODEL` and `modelIsUsableForGeneration()`). Non-text model families are excluded and newer reasoning models use their compatible Chat Completions parameters.
 - Pricing constants live in `netlify/functions/generate-report.js` and `netlify/functions/list-models.js` (`MODEL_PRICING_PER_MILLION`); update both from the OpenAI pricing page when rates change. An accessible model without a verified rate remains selectable but displays `price unknown` and reports no estimated cost.
 - Estimated cost formula is:
@@ -30,6 +30,7 @@ Benchmarking models for report generation
 - Model discovery/filtering is server-side in `netlify/functions/list-models.js` (OpenAI `/v1/models` + include/exclude rules + cache).
 - To adjust which model families appear, edit `modelIsUsable()` and `FRIENDLY_LABELS` in `netlify/functions/list-models.js` and the matching server validation in `generate-report.js`.
 - Model-list visibility indicates that the API key can see a model, not a guarantee that every endpoint or parameter supports it. Cost is a token-rate estimate, not an invoice; cached input, Batch API, fine-tuning, tools and service tiers may be priced differently.
+- For an upgrade decision, run the same representative cases with **Best value**, **Lowest cost**, and **Highest accuracy**, review the clinical fields for accuracy, and compare the recorded latency and cost. Do not treat an unpriced model as cheaper: the Models API does not provide pricing, so its rate must be verified and added before making a cost comparison.
 
 Colorectal local resection cancer proforma
 ==========================================

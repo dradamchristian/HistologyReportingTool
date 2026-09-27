@@ -10,6 +10,13 @@ const FRIENDLY_LABELS = {
   'gpt-5.4-nano': 'Fast/cheapest (5.4 nano)',
 };
 
+const RECOMMENDATION_LABELS = {
+  'gpt-5.4-nano': 'Lowest cost',
+  'gpt-5.4-mini': 'Best value',
+  'gpt-5.4': 'Highest accuracy',
+  'gpt-4.1-mini': 'Reliable low cost',
+};
+
 // Prices are optional metadata, not an allowlist. Compatible new text models
 // discovered through the Models API should remain selectable even before a
 // price has been added here (their cost will be shown as unavailable).
@@ -32,11 +39,19 @@ function modelIsUsable(id) {
   const blocked = ['embed', 'image', 'audio', 'moderation', 'deprecated', 'realtime', 'transcribe', 'tts', 'search', 'codex'];
   if (blocked.some(x => m.includes(x))) return false;
   if (m.includes('vision')) return false;
+  // Dated snapshots duplicate their stable alias and make the selector noisy.
+  if (/-\d{4}-\d{2}-\d{2}$/.test(m) || /-\d{8}$/.test(m)) return false;
   return true;
 }
 
 function toOut(id) {
-  return { id, label: FRIENDLY_LABELS[id] || id, pricing_per_million: MODEL_PRICING_PER_MILLION[id] || null };
+  const pricing = MODEL_PRICING_PER_MILLION[id] || null;
+  return {
+    id,
+    label: FRIENDLY_LABELS[id] || id,
+    pricing_per_million: pricing,
+    recommendation: RECOMMENDATION_LABELS[id] || null,
+  };
 }
 
 exports.handler = async (event) => {

@@ -36,6 +36,11 @@ function resolveModel(requestedMode, rawText, datasetId) {
   if (textLen > 1200 || isComplexDataset(datasetId)) return "gpt-4.1";
   return DEFAULT_MODEL;
 }
+
+function usesModernCompletionParameters(model) {
+  const match = String(model || "").match(/^gpt-(\d+)/i);
+  return (match && Number(match[1]) >= 5) || /^o\d/i.test(String(model || ""));
+}
 const isMissingRelation = (err) => err?.code === '42P01' || String(err?.message || '').toLowerCase().includes('does not exist');
 
 async function logUsage(row) {
@@ -1548,7 +1553,7 @@ exports.handler = async (event) => {
 
       // Newer reasoning model families reject legacy token/temperature fields.
       // Chat Completions uses max_completion_tokens for these models.
-      if (/^(gpt-5|o\d)/i.test(model)) payload.max_completion_tokens = 900;
+      if (usesModernCompletionParameters(model)) payload.max_completion_tokens = 900;
       else {
         payload.temperature = 0.2;
         payload.max_tokens = 900;
@@ -2058,4 +2063,4 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
   }
 };
 
-exports._test = { pickDataset, applyDefaults, applyDefaultsIncludingBlanks, renderTemplate, listDatasetManifests, resolveModel, estimateCostUsd, modelIsUsableForGeneration };
+exports._test = { pickDataset, applyDefaults, applyDefaultsIncludingBlanks, renderTemplate, listDatasetManifests, resolveModel, estimateCostUsd, modelIsUsableForGeneration, usesModernCompletionParameters };

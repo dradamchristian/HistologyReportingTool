@@ -210,15 +210,25 @@ async function initModelSelector() {
     const res = await fetch("/.netlify/functions/list-models");
     const data = await res.json();
     if (!res.ok || !data.ok) throw new Error(data.error || "Model lookup failed");
-    for (const model of data.models || []) {
+    const pricedGroup = document.createElement("optgroup");
+    pricedGroup.label = "Recommended / priced";
+    const otherGroup = document.createElement("optgroup");
+    otherGroup.label = "Other accessible models (price unknown)";
+    const models = data.models || [];
+    const ranked = [...models].sort((a, b) => Number(Boolean(b.recommendation)) - Number(Boolean(a.recommendation)) || a.label.localeCompare(b.label));
+    for (const model of ranked) {
       const option = document.createElement("option");
       option.value = model.id;
       const prices = model.pricing_per_million;
-      option.textContent = `${model.label} — ${prices ? `$${prices.input}/$${prices.output} per 1M in/out` : "price unknown"}`;
-      sel.appendChild(option);
+      const prefix = model.recommendation ? `${model.recommendation}: ` : "";
+      option.textContent = `${prefix}${model.label} — ${prices ? `$${prices.input}/$${prices.output} per 1M in/out` : "price unknown"}`;
+      (prices ? pricedGroup : otherGroup).appendChild(option);
     }
+    if (pricedGroup.children.length) sel.appendChild(pricedGroup);
+    if (otherGroup.children.length) sel.appendChild(otherGroup);
     if (stored && Array.from(sel.options).some((option) => option.value === stored)) sel.value = stored;
-    if (hint) hint.textContent = `${data.models?.length || 0} compatible text models visible to this API key. “Price unknown” models can still be tested; add a verified rate before relying on cost comparisons.`;
+    const pricedCount = models.filter((model) => model.pricing_per_million).length;
+    if (hint) hint.textContent = `${pricedCount} priced recommendations, plus ${models.length - pricedCount} unpriced models. Start with Best value, then compare Lowest cost and Highest accuracy on the same case.`;
   } catch (error) {
     if (hint) hint.textContent = `Could not load account models (${error.message}). Automatic modes are still available.`;
   }
