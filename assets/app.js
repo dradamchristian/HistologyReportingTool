@@ -5,10 +5,11 @@ let finalText = "";
 let dictating = false;
 let lastGenerated = { dataset_id: "", extracted: {}, report_text: "", metrics: {}, staging_check: null };
 const MODEL_MODES = [
-  { id: "auto_recommended", label: "Auto recommended (GPT-5.4)" },
+  { id: "gpt-5.4-mini", label: "Default (GPT-5.4 mini)" },
+  { id: "fast_higher_accuracy", label: "Higher accuracy (GPT-5.4)" },
   { id: "backup", label: "Backup (GPT-4.1 mini)" },
 ];
-const DEFAULT_MODEL_MODE = "auto_recommended";
+const DEFAULT_MODEL_MODE = "gpt-5.4-mini";
 
 const AUDIT_DATASETS = new Set([
   "oesophagus_resection_rcpath_v3_microscopy",
@@ -215,7 +216,7 @@ function initModelSelector() {
   sel.value = chosen;
   localStorage.setItem("reportModelMode", chosen);
   sel.addEventListener("change", () => localStorage.setItem("reportModelMode", sel.value));
-  if (hint) hint.textContent = promoted ? `Using test-bed model ${promoted} when selected. Manage model comparisons on the regression test page.` : "GPT-5.4 is the default; use the regression test page to compare and promote other models.";
+  if (hint) hint.textContent = promoted ? `Using test-bed model ${promoted} when selected. Manage model comparisons on the regression test page.` : "GPT-5.4 mini is the default; use the regression test page to compare and promote other models.";
 }
 
 function renderMetricsLine(metrics, isError=false, message="") {
