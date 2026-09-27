@@ -10,21 +10,48 @@ const FRIENDLY_LABELS = {
   'gpt-5.4-nano': 'Fast/cheapest (5.4 nano)',
 };
 
+const RECOMMENDATION_LABELS = {
+  'gpt-5.4-nano': 'Lowest cost',
+  'gpt-5.4-mini': 'Best value',
+  'gpt-5.4': 'Highest accuracy',
+  'gpt-4.1-mini': 'Reliable low cost',
+};
+
+// Prices are optional metadata, not an allowlist. Compatible new text models
+// discovered through the Models API should remain selectable even before a
+// price has been added here (their cost will be shown as unavailable).
+const MODEL_PRICING_PER_MILLION = {
+  'gpt-4o-mini': { input: 0.15, output: 0.6 },
+  'gpt-4.1-mini': { input: 0.4, output: 1.6 },
+  'gpt-4.1': { input: 2.0, output: 8.0 },
+  'gpt-5.4-nano': { input: 0.05, output: 0.4 },
+  'gpt-5.4-mini': { input: 0.3, output: 2.5 },
+  'gpt-5.4': { input: 2.0, output: 10.0 },
+};
+
 function json(statusCode, payload) {
   return { statusCode, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) };
 }
 
 function modelIsUsable(id) {
   const m = String(id || '').toLowerCase();
-  if (!(m.startsWith('gpt') || m.startsWith('o'))) return false;
-  const blocked = ['embed', 'image', 'audio', 'moderation', 'deprecated'];
+  if (!(m.startsWith('gpt-') || m.startsWith('chatgpt-') || /^o\d/.test(m))) return false;
+  const blocked = ['embed', 'image', 'audio', 'moderation', 'deprecated', 'realtime', 'transcribe', 'tts', 'search', 'codex'];
   if (blocked.some(x => m.includes(x))) return false;
   if (m.includes('vision')) return false;
+  // Dated snapshots duplicate their stable alias and make the selector noisy.
+  if (/-\d{4}-\d{2}-\d{2}$/.test(m) || /-\d{8}$/.test(m)) return false;
   return true;
 }
 
 function toOut(id) {
-  return { id, label: FRIENDLY_LABELS[id] || id };
+  const pricing = MODEL_PRICING_PER_MILLION[id] || null;
+  return {
+    id,
+    label: FRIENDLY_LABELS[id] || id,
+    pricing_per_million: pricing,
+    recommendation: RECOMMENDATION_LABELS[id] || null,
+  };
 }
 
 exports.handler = async (event) => {
@@ -62,3 +89,5 @@ exports.handler = async (event) => {
     return json(500, { ok: false, error: err.message || String(err) });
   }
 };
+
+exports._test = { modelIsUsable, toOut };

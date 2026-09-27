@@ -3,14 +3,14 @@ const fs = require("fs");
 const path = require("path");
 const { getPool } = require("./_audit-db");
 
-const DEFAULT_MODEL = "gpt-4.1-mini";
-const ALLOWED_MODELS = new Set(["gpt-4.1-mini","gpt-4.1"]);
+const DEFAULT_MODEL = "gpt-5.4";
 const BLOCKED_MODEL_TERMS = ["embed", "image", "audio", "moderation", "deprecated", "vision"];
 
 function modelIsUsableForGeneration(id) {
   const m = String(id || "").trim().toLowerCase();
-  if (!(m.startsWith("gpt") || m.startsWith("o"))) return false;
+  if (!(m.startsWith("gpt-") || m.startsWith("chatgpt-") || /^o\d/.test(m))) return false;
   if (BLOCKED_MODEL_TERMS.some((x) => m.includes(x))) return false;
+  if (["realtime", "transcribe", "tts", "search", "codex"].some((x) => m.includes(x))) return false;
   return true;
 }
 
@@ -23,17 +23,18 @@ const MODEL_PRICING_PER_MILLION = {
   "gpt-4o-mini": { input: 0.15, output: 0.6 },
 };
 
-function isComplexDataset(datasetId) {
-  const id = String(datasetId || "").toLowerCase();
-  return id.includes("resection") || id.includes("oesophagectomy") || id.includes("gastrectomy") || id.includes("colorectal_resection");
-}
 function resolveModel(requestedMode, rawText, datasetId) {
   const mode = String(requestedMode || "auto_recommended").trim();
+  if (modelIsUsableForGeneration(mode)) return mode;
+  if (mode === "backup") return "gpt-4.1-mini";
   if (mode === "cheap_standard") return "gpt-4.1-mini";
-  if (mode === "fast_higher_accuracy") return "gpt-4.1";
-  const textLen = String(rawText || "").length;
-  if (textLen > 1200 || isComplexDataset(datasetId)) return "gpt-4.1";
+  if (mode === "fast_higher_accuracy") return "gpt-5.4";
   return DEFAULT_MODEL;
+}
+
+function usesModernCompletionParameters(model) {
+  const match = String(model || "").match(/^gpt-(\d+)/i);
+  return (match && Number(match[1]) >= 5) || /^o\d/i.test(String(model || ""));
 }
 const isMissingRelation = (err) => err?.code === '42P01' || String(err?.message || '').toLowerCase().includes('does not exist');
 
@@ -1543,9 +1544,15 @@ exports.handler = async (event) => {
               rawText
           }
         ],
-        temperature: 0.2,
-        max_tokens: 900
       };
+
+      // Newer reasoning model families reject legacy token/temperature fields.
+      // Chat Completions uses max_completion_tokens for these models.
+      if (usesModernCompletionParameters(model)) payload.max_completion_tokens = 900;
+      else {
+        payload.temperature = 0.2;
+        payload.max_tokens = 900;
+      }
 
       const startedAt = Date.now();
       async function doCall(modelToUse) {
@@ -1587,6 +1594,7 @@ exports.handler = async (event) => {
         total_tokens: Number.isFinite(totalTokens) ? totalTokens : null,
         estimated_cost_usd: Number.isFinite(estimatedCostUsd) ? Number(estimatedCostUsd.toFixed(6)) : null,
         cost_is_estimate: true,
+        pricing_per_million: MODEL_PRICING_PER_MILLION[actualModel] || null,
         benchmark_mode: Boolean(benchmark_mode),
       };
 
@@ -2050,4 +2058,4 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
   }
 };
 
-exports._test = { pickDataset, applyDefaults, applyDefaultsIncludingBlanks, renderTemplate, listDatasetManifests };
+exports._test = { pickDataset, applyDefaults, applyDefaultsIncludingBlanks, renderTemplate, listDatasetManifests, resolveModel, estimateCostUsd, modelIsUsableForGeneration, usesModernCompletionParameters };

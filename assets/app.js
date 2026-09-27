@@ -5,9 +5,8 @@ let finalText = "";
 let dictating = false;
 let lastGenerated = { dataset_id: "", extracted: {}, report_text: "", metrics: {}, staging_check: null };
 const MODEL_MODES = [
-  { id: "auto_recommended", label: "Auto recommended" },
-  { id: "cheap_standard", label: "Cheap / Standard" },
-  { id: "fast_higher_accuracy", label: "Fast / Higher accuracy" },
+  { id: "auto_recommended", label: "Auto recommended (GPT-5.4)" },
+  { id: "backup", label: "Backup (GPT-4.1 mini)" },
 ];
 const DEFAULT_MODEL_MODE = "auto_recommended";
 
@@ -198,13 +197,25 @@ function initModelSelector() {
   const hint = $("modelHint");
   if (!sel) return;
   sel.innerHTML = MODEL_MODES.map((m) => `<option value="${m.id}">${m.label}</option>`).join("");
-  const available = new Set(MODEL_MODES.map((m) => m.id));
+  const requestedPromotion = new URLSearchParams(window.location.search).get("model");
+  if (requestedPromotion && /^(gpt-|chatgpt-|o\d)/i.test(requestedPromotion)) {
+    localStorage.setItem("promotedReportModel", requestedPromotion);
+    localStorage.setItem("reportModelMode", requestedPromotion);
+  }
+  const promoted = localStorage.getItem("promotedReportModel");
+  if (promoted && /^(gpt-|chatgpt-|o\d)/i.test(promoted)) {
+    const option = document.createElement("option");
+    option.value = promoted;
+    option.textContent = `Test-bed choice (${promoted})`;
+    sel.appendChild(option);
+  }
+  const available = new Set(Array.from(sel.options).map((option) => option.value));
   const stored = localStorage.getItem("reportModelMode");
   const chosen = (stored && available.has(stored)) ? stored : DEFAULT_MODEL_MODE;
   sel.value = chosen;
   localStorage.setItem("reportModelMode", chosen);
   sel.addEventListener("change", () => localStorage.setItem("reportModelMode", sel.value));
-  if (hint) hint.textContent = "Auto recommended uses GPT-4.1 mini unless complexity rules route to GPT-4.1.";
+  if (hint) hint.textContent = promoted ? `Using test-bed model ${promoted} when selected. Manage model comparisons on the regression test page.` : "GPT-5.4 is the default; use the regression test page to compare and promote other models.";
 }
 
 function renderMetricsLine(metrics, isError=false, message="") {
@@ -216,6 +227,7 @@ function renderMetricsLine(metrics, isError=false, message="") {
   const base = `${metrics.model} in ${secs} · ${metrics.input_tokens ?? "?"} input tokens · ${metrics.output_tokens ?? "?"} output tokens · ${cost}`;
   el.textContent = isError ? `${base} · ${message}` : `Generated with ${base}`;
 }
+
 
 function setAuditHint(msg, isError=false){
   const el = $("auditHint");
