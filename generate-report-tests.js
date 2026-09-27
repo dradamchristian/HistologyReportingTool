@@ -5,11 +5,15 @@ const { _test } = require("./netlify/functions/generate-report");
 const modelList = require("./netlify/functions/list-models")._test;
 
 assert.equal(_test.resolveModel("gpt-4o-mini", "short case", "example"), "gpt-4o-mini");
+assert.equal(_test.resolveModel("gpt-5.5", "short case", "example"), "gpt-5.5");
 assert.equal(_test.resolveModel("not-a-supported-model", "short case", "example"), "gpt-4.1-mini");
 assert.equal(_test.estimateCostUsd("gpt-4.1-mini", 1_000_000, 1_000_000), 2);
 assert.equal(modelList.modelIsUsable("gpt-4.1"), true);
 assert.equal(modelList.modelIsUsable("gpt-image-1"), false);
+assert.equal(modelList.modelIsUsable("gpt-5.5"), true);
+assert.equal(modelList.modelIsUsable("gpt-realtime-1.5"), false);
 assert.deepEqual(modelList.toOut("gpt-4o-mini").pricing_per_million, { input: 0.15, output: 0.6 });
+assert.equal(modelList.toOut("gpt-5.5").pricing_per_million, null);
 
 const manifests = _test.listDatasetManifests();
 assert.equal(

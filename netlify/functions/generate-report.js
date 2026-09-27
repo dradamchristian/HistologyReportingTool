@@ -4,13 +4,13 @@ const path = require("path");
 const { getPool } = require("./_audit-db");
 
 const DEFAULT_MODEL = "gpt-4.1-mini";
-const ALLOWED_MODELS = new Set(["gpt-4o-mini", "gpt-4.1-mini", "gpt-4.1"]);
 const BLOCKED_MODEL_TERMS = ["embed", "image", "audio", "moderation", "deprecated", "vision"];
 
 function modelIsUsableForGeneration(id) {
   const m = String(id || "").trim().toLowerCase();
-  if (!(m.startsWith("gpt") || m.startsWith("o"))) return false;
+  if (!(m.startsWith("gpt-") || m.startsWith("chatgpt-") || /^o\d/.test(m))) return false;
   if (BLOCKED_MODEL_TERMS.some((x) => m.includes(x))) return false;
+  if (["realtime", "transcribe", "tts", "search", "codex"].some((x) => m.includes(x))) return false;
   return true;
 }
 
@@ -29,7 +29,7 @@ function isComplexDataset(datasetId) {
 }
 function resolveModel(requestedMode, rawText, datasetId) {
   const mode = String(requestedMode || "auto_recommended").trim();
-  if (ALLOWED_MODELS.has(mode)) return mode;
+  if (modelIsUsableForGeneration(mode)) return mode;
   if (mode === "cheap_standard") return "gpt-4.1-mini";
   if (mode === "fast_higher_accuracy") return "gpt-4.1";
   const textLen = String(rawText || "").length;
@@ -1544,9 +1544,15 @@ exports.handler = async (event) => {
               rawText
           }
         ],
-        temperature: 0.2,
-        max_tokens: 900
       };
+
+      // Newer reasoning model families reject legacy token/temperature fields.
+      // Chat Completions uses max_completion_tokens for these models.
+      if (/^(gpt-5|o\d)/i.test(model)) payload.max_completion_tokens = 900;
+      else {
+        payload.temperature = 0.2;
+        payload.max_tokens = 900;
+      }
 
       const startedAt = Date.now();
       async function doCall(modelToUse) {
@@ -2052,4 +2058,4 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
   }
 };
 
-exports._test = { pickDataset, applyDefaults, applyDefaultsIncludingBlanks, renderTemplate, listDatasetManifests, resolveModel, estimateCostUsd };
+exports._test = { pickDataset, applyDefaults, applyDefaultsIncludingBlanks, renderTemplate, listDatasetManifests, resolveModel, estimateCostUsd, modelIsUsableForGeneration };

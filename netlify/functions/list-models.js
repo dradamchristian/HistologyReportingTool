@@ -10,12 +10,16 @@ const FRIENDLY_LABELS = {
   'gpt-5.4-nano': 'Fast/cheapest (5.4 nano)',
 };
 
-// The Models API reports what the key can see; this catalogue limits the UI
-// to models that this app can call and cost consistently.
-const SUPPORTED_MODELS = {
+// Prices are optional metadata, not an allowlist. Compatible new text models
+// discovered through the Models API should remain selectable even before a
+// price has been added here (their cost will be shown as unavailable).
+const MODEL_PRICING_PER_MILLION = {
   'gpt-4o-mini': { input: 0.15, output: 0.6 },
   'gpt-4.1-mini': { input: 0.4, output: 1.6 },
   'gpt-4.1': { input: 2.0, output: 8.0 },
+  'gpt-5.4-nano': { input: 0.05, output: 0.4 },
+  'gpt-5.4-mini': { input: 0.3, output: 2.5 },
+  'gpt-5.4': { input: 2.0, output: 10.0 },
 };
 
 function json(statusCode, payload) {
@@ -24,15 +28,15 @@ function json(statusCode, payload) {
 
 function modelIsUsable(id) {
   const m = String(id || '').toLowerCase();
-  if (!(m.startsWith('gpt') || m.startsWith('o'))) return false;
-  const blocked = ['embed', 'image', 'audio', 'moderation', 'deprecated'];
+  if (!(m.startsWith('gpt-') || m.startsWith('chatgpt-') || /^o\d/.test(m))) return false;
+  const blocked = ['embed', 'image', 'audio', 'moderation', 'deprecated', 'realtime', 'transcribe', 'tts', 'search', 'codex'];
   if (blocked.some(x => m.includes(x))) return false;
   if (m.includes('vision')) return false;
-  return Object.hasOwn(SUPPORTED_MODELS, id);
+  return true;
 }
 
 function toOut(id) {
-  return { id, label: FRIENDLY_LABELS[id] || id, pricing_per_million: SUPPORTED_MODELS[id] };
+  return { id, label: FRIENDLY_LABELS[id] || id, pricing_per_million: MODEL_PRICING_PER_MILLION[id] || null };
 }
 
 exports.handler = async (event) => {

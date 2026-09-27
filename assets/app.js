@@ -205,7 +205,7 @@ async function initModelSelector() {
   sel.value = chosen;
   localStorage.setItem("reportModelMode", chosen);
   sel.addEventListener("change", () => localStorage.setItem("reportModelMode", sel.value));
-  if (hint) hint.textContent = "Checking which supported models this API key can access…";
+  if (hint) hint.textContent = "Checking which compatible text models this API key can access…";
   try {
     const res = await fetch("/.netlify/functions/list-models");
     const data = await res.json();
@@ -218,7 +218,7 @@ async function initModelSelector() {
       sel.appendChild(option);
     }
     if (stored && Array.from(sel.options).some((option) => option.value === stored)) sel.value = stored;
-    if (hint) hint.textContent = `${data.models?.length || 0} directly selectable models available to this API key. Costs use metered tokens and the displayed rate card; verify invoices for cached/batch/fine-tuned pricing.`;
+    if (hint) hint.textContent = `${data.models?.length || 0} compatible text models visible to this API key. “Price unknown” models can still be tested; add a verified rate before relying on cost comparisons.`;
   } catch (error) {
     if (hint) hint.textContent = `Could not load account models (${error.message}). Automatic modes are still available.`;
   }

@@ -22,13 +22,13 @@ Notes:
 Benchmarking models for report generation
 ========================================
 - Open **Model test console**, select a directly named model, and generate the same case with each option. The browser keeps the latest 25 results locally with latency, provider-reported token usage, estimated cost and success/failure.
-- The frontend dropdown is populated dynamically from `/.netlify/functions/list-models`. It intersects models visible to the configured API key with models this application's Chat Completions integration and rate card support.
-- Server-side model validation + default lives in `netlify/functions/generate-report.js` (`ALLOWED_MODELS`, `DEFAULT_MODEL`, and `modelIsUsableForGeneration()`).
-- Pricing constants live in `netlify/functions/generate-report.js` (`MODEL_PRICING_PER_MILLION`) and the public selector catalogue in `netlify/functions/list-models.js` (`SUPPORTED_MODELS`); update both from the OpenAI pricing page when rates change.
+- The frontend dropdown is populated dynamically from `/.netlify/functions/list-models`. It shows compatible text/chat models visible to the configured API key, including newly discovered model IDs even when they do not yet have pricing metadata.
+- Server-side model validation + default lives in `netlify/functions/generate-report.js` (`DEFAULT_MODEL` and `modelIsUsableForGeneration()`). Non-text model families are excluded and newer reasoning models use their compatible Chat Completions parameters.
+- Pricing constants live in `netlify/functions/generate-report.js` and `netlify/functions/list-models.js` (`MODEL_PRICING_PER_MILLION`); update both from the OpenAI pricing page when rates change. An accessible model without a verified rate remains selectable but displays `price unknown` and reports no estimated cost.
 - Estimated cost formula is:
   (input_tokens / 1_000_000 * input_price_per_million) + (output_tokens / 1_000_000 * output_price_per_million)
 - Model discovery/filtering is server-side in `netlify/functions/list-models.js` (OpenAI `/v1/models` + include/exclude rules + cache).
-- To adjust which models appear, edit `modelIsUsable()` and `FRIENDLY_LABELS` in `netlify/functions/list-models.js`.
+- To adjust which model families appear, edit `modelIsUsable()` and `FRIENDLY_LABELS` in `netlify/functions/list-models.js` and the matching server validation in `generate-report.js`.
 - Model-list visibility indicates that the API key can see a model, not a guarantee that every endpoint or parameter supports it. Cost is a token-rate estimate, not an invoice; cached input, Batch API, fine-tuning, tools and service tiers may be priced differently.
 
 Colorectal local resection cancer proforma
