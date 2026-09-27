@@ -3,6 +3,7 @@
 
   let cases = [];
   let stopRequested = false;
+  let benchmarkRateCards = [];
 
   function setRunState(msg) { $("runState").textContent = msg; }
   function resetUI() {
@@ -103,6 +104,7 @@
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
       const preferred = new Set(["gpt-4.1-mini", "gpt-5.4-mini", "gpt-5.4"]);
+      benchmarkRateCards = (data.models || []).filter((model) => model.pricing_per_million);
       select.innerHTML = (data.models || []).map((model) => {
         const price = model.pricing_per_million;
         const priceText = price ? `$${price.input}/$${price.output} per 1M` : "price unknown";
@@ -112,6 +114,19 @@
     } catch (error) {
       $("benchmarkState").textContent = `Model load failed: ${error.message}`;
     }
+  }
+
+  function estimateUnknownCost(model, inputTokens, outputTokens) {
+    if (!inputTokens && !outputTokens) return null;
+    const tier = model.includes("nano") ? "nano" : model.includes("mini") ? "mini" : "full";
+    const comparable = benchmarkRateCards.filter((item) => {
+      if (tier === "nano") return item.id.includes("nano");
+      if (tier === "mini") return item.id.includes("mini") && !item.id.includes("nano");
+      return !item.id.includes("mini") && !item.id.includes("nano");
+    });
+    const scenarios = comparable.map((item) => (inputTokens / 1_000_000 * item.pricing_per_million.input) + (outputTokens / 1_000_000 * item.pricing_per_million.output));
+    if (!scenarios.length) return null;
+    return { low: Math.min(...scenarios), high: Math.max(...scenarios) };
   }
 
   async function runModelBenchmark() {
@@ -149,8 +164,12 @@
         }
       }
       const averageMs = attempts ? duration / attempts : 0;
+      const estimatedRange = hasUnknownCost ? estimateUnknownCost(model, inputTokens, outputTokens) : null;
+      const totalCostText = hasUnknownCost ? (estimatedRange ? `Est. $${estimatedRange.low.toFixed(6)}–$${estimatedRange.high.toFixed(6)}` : "No successful usage") : `$${cost.toFixed(6)}`;
+      const perReportText = hasUnknownCost ? (estimatedRange && attempts ? `Est. $${(estimatedRange.low / attempts).toFixed(6)}–$${(estimatedRange.high / attempts).toFixed(6)}` : "—") : (attempts ? `$${(cost / attempts).toFixed(6)}` : "—");
+      const promote = passed === attempts ? `<button class="btn promote-model" type="button" data-model="${escapeHtml(model)}">Set front-page default</button>` : "Must pass all checks";
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${escapeHtml(model)}</td><td>${passed}/${attempts} (${attempts ? Math.round(passed / attempts * 100) : 0}%)</td><td>${(averageMs / 1000).toFixed(2)}s</td><td>${inputTokens} / ${outputTokens}</td><td>${hasUnknownCost ? "Unknown" : `$${cost.toFixed(6)}`}</td><td>${hasUnknownCost || !attempts ? "Unknown" : `$${(cost / attempts).toFixed(6)}`}</td><td><button class="btn promote-model" type="button" data-model="${escapeHtml(model)}">Set front-page default</button></td>`;
+      tr.innerHTML = `<td>${escapeHtml(model)}</td><td>${passed}/${attempts} (${attempts ? Math.round(passed / attempts * 100) : 0}%)</td><td>${(averageMs / 1000).toFixed(2)}s</td><td>${inputTokens} / ${outputTokens}</td><td>${totalCostText}</td><td>${perReportText}</td><td>${promote}</td>`;
       rows.appendChild(tr);
     }
     $("benchmarkState").textContent = `Done: ${benchmarkCases.length} reports × ${repeats} runs`;

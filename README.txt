@@ -26,6 +26,7 @@ Benchmarking models for report generation
 - The test-bed model picker is populated dynamically from `/.netlify/functions/list-models`. The production front page stays intentionally short: default, backup, and an optional model promoted from the test bed.
 - Server-side model validation + default lives in `netlify/functions/generate-report.js` (`DEFAULT_MODEL` and `modelIsUsableForGeneration()`). Non-text model families are excluded and newer reasoning models use their compatible Chat Completions parameters.
 - Pricing constants live in `netlify/functions/generate-report.js` and `netlify/functions/list-models.js` (`MODEL_PRICING_PER_MILLION`); update both from the OpenAI pricing page when rates change. An accessible model without a verified rate remains selectable but displays `price unknown` and reports no estimated cost.
+- For an unpriced model that returns token usage, the test bed displays a clearly labelled estimate range calculated from maintained models in the same broad tier (full, mini or nano). This is a planning range, not the model's official price. A failed call with zero usage cannot be costed.
 - Estimated cost formula is:
   (input_tokens / 1_000_000 * input_price_per_million) + (output_tokens / 1_000_000 * output_price_per_million)
 - Model discovery/filtering is server-side in `netlify/functions/list-models.js` (OpenAI `/v1/models` + include/exclude rules + cache).
@@ -33,7 +34,7 @@ Benchmarking models for report generation
 - Model-list visibility indicates that the API key can see a model, not a guarantee that every endpoint or parameter supports it. Cost is a token-rate estimate, not an invoice; cached input, Batch API, fine-tuning, tools and service tiers may be priced differently.
 - For an upgrade decision, run the same representative cases with **Best value**, **Lowest cost**, and **Highest accuracy**, review the clinical fields for accuracy, and compare the recorded latency and cost. Do not treat an unpriced model as cheaper: the Models API does not provide pricing, so its rate must be verified and added before making a cost comparison.
 - The full regression accuracy runner is unchanged. The shorter model benchmark reuses its existing expected-substring and dataset checks, rather than treating API success as accuracy.
-- A successful benchmark row can be promoted with **Set front-page default**. The test page opens the configured front-page origin with a promotion link, which stores the choice there and adds that model beside the production default and backup; it does not silently change the deployed server default for every user.
+- A model that passes every benchmark check can be promoted with **Set front-page default**. Failed or partially correct models cannot be promoted. The test page opens the configured front-page origin with a promotion link, which stores the choice there and adds that model beside the production default and backup; it does not silently change the deployed server default for every user.
 - For a small weekly workload, compare models on a fixed set of representative reports and run each model three times before judging speed; individual API latency varies. Prefer the fastest model whose structured fields remain correct, and treat extra unsolicited commentary as an accuracy issue rather than an improvement.
 
 Colorectal local resection cancer proforma
