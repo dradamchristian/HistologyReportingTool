@@ -246,7 +246,7 @@ function renderMetricsLine(metrics, isError=false, message="") {
 
 function recordBenchmark(metrics, ok=true) {
   if (!metrics?.model) return;
-  benchmarkRuns.unshift({ at: new Date().toISOString(), ok, ...metrics });
+  benchmarkRuns.unshift({ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, at: new Date().toISOString(), ok, accuracy: "", ...metrics });
   benchmarkRuns = benchmarkRuns.slice(0, 25);
   localStorage.setItem("reportBenchmarkRuns", JSON.stringify(benchmarkRuns));
   renderBenchmarkRuns();
@@ -255,12 +255,28 @@ function recordBenchmark(metrics, ok=true) {
 function renderBenchmarkRuns() {
   const body = $("benchmarkRows");
   if (!body) return;
-  body.innerHTML = benchmarkRuns.length ? benchmarkRuns.map((run) => `<tr><td>${run.model}</td><td>${run.duration_ms == null ? "—" : `${(run.duration_ms / 1000).toFixed(2)}s`}</td><td>${run.input_tokens ?? "—"} / ${run.output_tokens ?? "—"}</td><td>${run.estimated_cost_usd == null ? "—" : `$${Number(run.estimated_cost_usd).toFixed(6)}`}</td><td>${run.ok ? "✓" : "Failed"}</td></tr>`).join("") : '<tr><td colspan="5">Run a report to start comparing models.</td></tr>';
+  const knownCosts = benchmarkRuns.filter((run) => run.estimated_cost_usd != null).map((run) => Number(run.estimated_cost_usd)).filter((cost) => Number.isFinite(cost) && cost > 0);
+  const cheapest = knownCosts.length ? Math.min(...knownCosts) : null;
+  body.innerHTML = benchmarkRuns.length ? benchmarkRuns.map((run, index) => {
+    const hasCost = run.estimated_cost_usd != null && Number.isFinite(Number(run.estimated_cost_usd));
+    const cost = hasCost ? Number(run.estimated_cost_usd) : null;
+    const comparison = cheapest && cost > 0 ? `${(cost / cheapest).toFixed(1)}×` : "Unknown";
+    const rating = String(run.accuracy || "");
+    return `<tr><td>${run.model}</td><td>${run.duration_ms == null ? "—" : `${(run.duration_ms / 1000).toFixed(2)}s`}</td><td>${run.input_tokens ?? "—"} / ${run.output_tokens ?? "—"}</td><td>${hasCost ? `$${cost.toFixed(6)}` : "Unknown"}</td><td>${comparison}</td><td><select class="benchmark-rating" data-run-index="${index}" aria-label="Accuracy rating for ${run.model}"><option value=""${rating === "" ? " selected" : ""}>Not rated</option><option value="good"${rating === "good" ? " selected" : ""}>Good</option><option value="issues"${rating === "issues" ? " selected" : ""}>Has issues</option><option value="bad"${rating === "bad" ? " selected" : ""}>Unusable</option></select></td><td>${run.ok ? "✓" : "Failed"}</td></tr>`;
+  }).join("") : '<tr><td colspan="7">Run a report to start comparing models.</td></tr>';
 }
 
 function initBenchmarkConsole() {
   try { benchmarkRuns = JSON.parse(localStorage.getItem("reportBenchmarkRuns") || "[]"); } catch (_) { benchmarkRuns = []; }
   renderBenchmarkRuns();
+  $("benchmarkRows")?.addEventListener("change", (event) => {
+    const select = event.target.closest(".benchmark-rating");
+    if (!select) return;
+    const run = benchmarkRuns[Number(select.dataset.runIndex)];
+    if (!run) return;
+    run.accuracy = select.value;
+    localStorage.setItem("reportBenchmarkRuns", JSON.stringify(benchmarkRuns));
+  });
   $("btnClearBenchmarks")?.addEventListener("click", () => {
     benchmarkRuns = [];
     localStorage.removeItem("reportBenchmarkRuns");

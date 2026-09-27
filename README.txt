@@ -31,6 +31,7 @@ Benchmarking models for report generation
 - To adjust which model families appear, edit `modelIsUsable()` and `FRIENDLY_LABELS` in `netlify/functions/list-models.js` and the matching server validation in `generate-report.js`.
 - Model-list visibility indicates that the API key can see a model, not a guarantee that every endpoint or parameter supports it. Cost is a token-rate estimate, not an invoice; cached input, Batch API, fine-tuning, tools and service tiers may be priced differently.
 - For an upgrade decision, run the same representative cases with **Best value**, **Lowest cost**, and **Highest accuracy**, review the clinical fields for accuracy, and compare the recorded latency and cost. Do not treat an unpriced model as cheaper: the Models API does not provide pricing, so its rate must be verified and added before making a cost comparison.
+- The console checkmark records API success only. Use the manual accuracy rating after reviewing each generated report; the console also shows each known cost as a multiple of the cheapest priced run in the current table.
 
 Colorectal local resection cancer proforma
 ==========================================
