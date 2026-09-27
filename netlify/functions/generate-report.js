@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const { getPool } = require("./_audit-db");
 
-const DEFAULT_MODEL = "gpt-5.4";
+const DEFAULT_MODEL = "gpt-5.4-mini";
 const BLOCKED_MODEL_TERMS = ["embed", "image", "audio", "moderation", "deprecated", "vision"];
 
 function modelIsUsableForGeneration(id) {

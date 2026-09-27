@@ -21,7 +21,7 @@ Notes:
 
 Benchmarking models for report generation
 ========================================
-- `gpt-5.4` is the current front-page default and `gpt-4.1-mini` is the visible backup.
+- `gpt-5.4-mini` is the current front-page default; `gpt-5.4` remains available as the higher-accuracy option and `gpt-4.1-mini` as the backup.
 - Open `tests.html` for model comparisons. Its separate benchmark runs 3 or 5 representative reports through selected models 2 or 3 times each and summarizes existing accuracy checks, average latency, tokens and cost.
 - The test-bed model picker is populated dynamically from `/.netlify/functions/list-models`. The production front page stays intentionally short: default, backup, and an optional model promoted from the test bed.
 - Server-side model validation + default lives in `netlify/functions/generate-report.js` (`DEFAULT_MODEL` and `modelIsUsableForGeneration()`). Non-text model families are excluded and newer reasoning models use their compatible Chat Completions parameters.

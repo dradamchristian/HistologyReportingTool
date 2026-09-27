@@ -6,12 +6,13 @@ const modelList = require("./netlify/functions/list-models")._test;
 
 assert.equal(_test.resolveModel("gpt-4o-mini", "short case", "example"), "gpt-4o-mini");
 assert.equal(_test.resolveModel("gpt-5.5", "short case", "example"), "gpt-5.5");
-assert.equal(_test.resolveModel("auto_recommended", "short case", "example"), "gpt-5.4");
+assert.equal(_test.resolveModel("gpt-5.4-mini", "short case", "example"), "gpt-5.4-mini");
+assert.equal(_test.resolveModel("auto_recommended", "short case", "example"), "gpt-5.4-mini");
 assert.equal(_test.resolveModel("fast_higher_accuracy", "short case", "example"), "gpt-5.4");
 assert.equal(_test.resolveModel("backup", "short case", "example"), "gpt-4.1-mini");
 assert.equal(_test.usesModernCompletionParameters("gpt-6-astra"), true);
 assert.equal(_test.usesModernCompletionParameters("gpt-4.1-mini"), false);
-assert.equal(_test.resolveModel("not-a-supported-model", "short case", "example"), "gpt-5.4");
+assert.equal(_test.resolveModel("not-a-supported-model", "short case", "example"), "gpt-5.4-mini");
 assert.equal(_test.estimateCostUsd("gpt-4.1-mini", 1_000_000, 1_000_000), 2);
 assert.equal(modelList.modelIsUsable("gpt-4.1"), true);
 assert.equal(modelList.modelIsUsable("gpt-image-1"), false);
