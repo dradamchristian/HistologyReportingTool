@@ -6,11 +6,9 @@ let dictating = false;
 let lastGenerated = { dataset_id: "", extracted: {}, report_text: "", metrics: {}, staging_check: null };
 const MODEL_MODES = [
   { id: "auto_recommended", label: "Auto recommended (GPT-5.4)" },
-  { id: "cheap_standard", label: "Cheap / Standard" },
-  { id: "fast_higher_accuracy", label: "Fast / Higher accuracy (GPT-5.4)" },
+  { id: "backup", label: "Backup (GPT-4.1 mini)" },
 ];
 const DEFAULT_MODEL_MODE = "auto_recommended";
-let benchmarkRuns = [];
 
 const AUDIT_DATASETS = new Set([
   "oesophagus_resection_rcpath_v3_microscopy",
@@ -194,44 +192,30 @@ function initThemeToggle(){
   });
 }
 
-async function initModelSelector() {
+function initModelSelector() {
   const sel = $("modelSelect");
   const hint = $("modelHint");
   if (!sel) return;
   sel.innerHTML = MODEL_MODES.map((m) => `<option value="${m.id}">${m.label}</option>`).join("");
-  const available = new Set(MODEL_MODES.map((m) => m.id));
+  const requestedPromotion = new URLSearchParams(window.location.search).get("model");
+  if (requestedPromotion && /^(gpt-|chatgpt-|o\d)/i.test(requestedPromotion)) {
+    localStorage.setItem("promotedReportModel", requestedPromotion);
+    localStorage.setItem("reportModelMode", requestedPromotion);
+  }
+  const promoted = localStorage.getItem("promotedReportModel");
+  if (promoted && /^(gpt-|chatgpt-|o\d)/i.test(promoted)) {
+    const option = document.createElement("option");
+    option.value = promoted;
+    option.textContent = `Test-bed choice (${promoted})`;
+    sel.appendChild(option);
+  }
+  const available = new Set(Array.from(sel.options).map((option) => option.value));
   const stored = localStorage.getItem("reportModelMode");
   const chosen = (stored && available.has(stored)) ? stored : DEFAULT_MODEL_MODE;
   sel.value = chosen;
   localStorage.setItem("reportModelMode", chosen);
   sel.addEventListener("change", () => localStorage.setItem("reportModelMode", sel.value));
-  if (hint) hint.textContent = "Checking which compatible text models this API key can access…";
-  try {
-    const res = await fetch("/.netlify/functions/list-models");
-    const data = await res.json();
-    if (!res.ok || !data.ok) throw new Error(data.error || "Model lookup failed");
-    const pricedGroup = document.createElement("optgroup");
-    pricedGroup.label = "Recommended / priced";
-    const otherGroup = document.createElement("optgroup");
-    otherGroup.label = "Other accessible models (price unknown)";
-    const models = data.models || [];
-    const ranked = [...models].sort((a, b) => Number(Boolean(b.recommendation)) - Number(Boolean(a.recommendation)) || a.label.localeCompare(b.label));
-    for (const model of ranked) {
-      const option = document.createElement("option");
-      option.value = model.id;
-      const prices = model.pricing_per_million;
-      const prefix = model.recommendation ? `${model.recommendation}: ` : "";
-      option.textContent = `${prefix}${model.label} — ${prices ? `$${prices.input}/$${prices.output} per 1M in/out` : "price unknown"}`;
-      (prices ? pricedGroup : otherGroup).appendChild(option);
-    }
-    if (pricedGroup.children.length) sel.appendChild(pricedGroup);
-    if (otherGroup.children.length) sel.appendChild(otherGroup);
-    if (stored && Array.from(sel.options).some((option) => option.value === stored)) sel.value = stored;
-    const pricedCount = models.filter((model) => model.pricing_per_million).length;
-    if (hint) hint.textContent = `${pricedCount} priced recommendations, plus ${models.length - pricedCount} unpriced models. Start with Best value, then compare Lowest cost and Highest accuracy on the same case.`;
-  } catch (error) {
-    if (hint) hint.textContent = `Could not load account models (${error.message}). Automatic modes are still available.`;
-  }
+  if (hint) hint.textContent = promoted ? `Using test-bed model ${promoted} when selected. Manage model comparisons on the regression test page.` : "GPT-5.4 is the default; use the regression test page to compare and promote other models.";
 }
 
 function renderMetricsLine(metrics, isError=false, message="") {
@@ -244,45 +228,6 @@ function renderMetricsLine(metrics, isError=false, message="") {
   el.textContent = isError ? `${base} · ${message}` : `Generated with ${base}`;
 }
 
-function recordBenchmark(metrics, ok=true) {
-  if (!metrics?.model) return;
-  benchmarkRuns.unshift({ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, at: new Date().toISOString(), ok, accuracy: "", ...metrics });
-  benchmarkRuns = benchmarkRuns.slice(0, 25);
-  localStorage.setItem("reportBenchmarkRuns", JSON.stringify(benchmarkRuns));
-  renderBenchmarkRuns();
-}
-
-function renderBenchmarkRuns() {
-  const body = $("benchmarkRows");
-  if (!body) return;
-  const knownCosts = benchmarkRuns.filter((run) => run.estimated_cost_usd != null).map((run) => Number(run.estimated_cost_usd)).filter((cost) => Number.isFinite(cost) && cost > 0);
-  const cheapest = knownCosts.length ? Math.min(...knownCosts) : null;
-  body.innerHTML = benchmarkRuns.length ? benchmarkRuns.map((run, index) => {
-    const hasCost = run.estimated_cost_usd != null && Number.isFinite(Number(run.estimated_cost_usd));
-    const cost = hasCost ? Number(run.estimated_cost_usd) : null;
-    const comparison = cheapest && cost > 0 ? `${(cost / cheapest).toFixed(1)}×` : "Unknown";
-    const rating = String(run.accuracy || "");
-    return `<tr><td>${run.model}</td><td>${run.duration_ms == null ? "—" : `${(run.duration_ms / 1000).toFixed(2)}s`}</td><td>${run.input_tokens ?? "—"} / ${run.output_tokens ?? "—"}</td><td>${hasCost ? `$${cost.toFixed(6)}` : "Unknown"}</td><td>${comparison}</td><td><select class="benchmark-rating" data-run-index="${index}" aria-label="Accuracy rating for ${run.model}"><option value=""${rating === "" ? " selected" : ""}>Not rated</option><option value="good"${rating === "good" ? " selected" : ""}>Good</option><option value="issues"${rating === "issues" ? " selected" : ""}>Has issues</option><option value="bad"${rating === "bad" ? " selected" : ""}>Unusable</option></select></td><td>${run.ok ? "✓" : "Failed"}</td></tr>`;
-  }).join("") : '<tr><td colspan="7">Run a report to start comparing models.</td></tr>';
-}
-
-function initBenchmarkConsole() {
-  try { benchmarkRuns = JSON.parse(localStorage.getItem("reportBenchmarkRuns") || "[]"); } catch (_) { benchmarkRuns = []; }
-  renderBenchmarkRuns();
-  $("benchmarkRows")?.addEventListener("change", (event) => {
-    const select = event.target.closest(".benchmark-rating");
-    if (!select) return;
-    const run = benchmarkRuns[Number(select.dataset.runIndex)];
-    if (!run) return;
-    run.accuracy = select.value;
-    localStorage.setItem("reportBenchmarkRuns", JSON.stringify(benchmarkRuns));
-  });
-  $("btnClearBenchmarks")?.addEventListener("click", () => {
-    benchmarkRuns = [];
-    localStorage.removeItem("reportBenchmarkRuns");
-    renderBenchmarkRuns();
-  });
-}
 
 function setAuditHint(msg, isError=false){
   const el = $("auditHint");
@@ -397,7 +342,6 @@ async function generate(){
       $("caveatsList").innerHTML = data.caveats.map(c => `<li>${c}</li>`).join("");
     }
     renderMetricsLine(data.metrics || {});
-    recordBenchmark(data.metrics || {}, true);
     const quickPanel = $("lgiQuickPanel");
     if (quickPanel) { quickPanel.dataset.generated = "true"; quickPanel.classList.remove("is-active"); }
     setStatus("Done.");
@@ -405,7 +349,6 @@ async function generate(){
     $("reportState").textContent = "Generation failed";
     const m = err?.metrics || {};
     renderMetricsLine(m, true, `Error: ${err.message || err}`);
-    recordBenchmark(m, false);
     setStatus(`Error: ${err.message || err}`, true);
   }
 }
@@ -556,7 +499,6 @@ if ($("btnAskReference")) $("btnAskReference").addEventListener("click", askRefe
 if ($("btnClearReference")) $("btnClearReference").addEventListener("click", () => { $("referenceQuestion").value = ""; $("referenceAnswer").hidden = true; $("referenceAnswerText").textContent = ""; $("referenceSources").innerHTML = ""; $("referenceStatus").textContent = ""; });
 initThemeToggle();
 initModelSelector();
-initBenchmarkConsole();
 initInputAcceleration();
 setMicPill();
 

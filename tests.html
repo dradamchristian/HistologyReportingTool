@@ -16,6 +16,7 @@
     label { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
     input[type="text"]{ width:100%; box-sizing:border-box; padding:10px 10px; border-radius:10px; border:1px solid var(--border); background:rgba(0,0,0,0.2); color:var(--text); outline:none; }
     input[type="file"]{ width:100%; color:var(--muted); }
+    select{ width:100%; box-sizing:border-box; padding:9px; border-radius:10px; border:1px solid var(--border); background:#0b1020; color:var(--text); }
     .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,0.06); color:var(--text); cursor:pointer; user-select:none; font-weight:600; }
     .btn:disabled{ opacity:0.55; cursor:not-allowed; }
     .btn.primary{ background:linear-gradient(90deg, rgba(46,229,157,0.22), rgba(46,229,157,0.08)); border-color:rgba(46,229,157,0.35); }
@@ -31,6 +32,7 @@
     textarea{ width:100%; min-height:180px; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(0,0,0,0.2); color:var(--text); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px; box-sizing:border-box;}
     .kpi{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; align-items:center;}
     .toggle{ display:flex; gap:8px; align-items:center; color:var(--muted); font-size:12px; }
+    .benchmark-table-wrap{overflow-x:auto;margin-top:10px}.benchmark-table{width:100%;border-collapse:collapse;font-size:12px}.benchmark-table th,.benchmark-table td{padding:8px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}.benchmark-table th{color:#dbe6ff}.control-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}@media(max-width:700px){.control-grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -74,6 +76,19 @@
         Tip: DevTools → Network → click generate-report → Response to see full JSON.
       </div>
     </div>
+
+      <div class="card" style="margin-top:12px;">
+        <div class="pill">Model benchmark</div>
+        <p class="small" style="margin-top:8px;">Runs a short subset without changing the full accuracy suite above. Select 2–3 models and repeat each case to smooth out latency variation.</p>
+        <div class="control-grid">
+          <div><label for="benchmarkModels">Models (Ctrl/Cmd-click for several)</label><select id="benchmarkModels" multiple size="6"></select></div>
+          <div><label for="benchmarkCaseCount">Test reports</label><select id="benchmarkCaseCount"><option value="3">3 reports</option><option value="5">5 reports</option></select></div>
+          <div><label for="benchmarkRepeats">Runs per report</label><select id="benchmarkRepeats"><option value="2">2 runs</option><option value="3" selected>3 runs</option></select></div>
+        </div>
+        <div class="kpi"><button id="benchmarkBtn" class="btn primary" type="button">⚡ Run model benchmark</button><span id="benchmarkState" class="pill">Load models to begin</span></div>
+        <div class="benchmark-table-wrap"><table class="benchmark-table"><thead><tr><th>Model</th><th>Accuracy</th><th>Average speed</th><th>Tokens in/out</th><th>Total cost</th><th>Per report</th><th>Action</th></tr></thead><tbody id="benchmarkResults"><tr><td colspan="7">No benchmark run yet.</td></tr></tbody></table></div>
+        <p class="small" style="margin-top:8px;">Accuracy is the existing substring/dataset check rate. “Set front-page default” opens the configured front page and stores the winning model in that site's browser storage; the production fallback remains GPT-4.1 mini.</p>
+      </div>
 
 
       <div class="card" style="margin-top:12px;">

@@ -84,8 +84,8 @@
     $("kpi").textContent = `${passed} passed • ${failed} failed • ${warn} warnings`;
   }
 
-  async function callFunction(url, input) {
-    const body = JSON.stringify({ text: input });
+  async function callFunction(url, input, requestedMode="") {
+    const body = JSON.stringify({ text: input, ...(requestedMode ? { requested_mode: requestedMode, benchmark_mode: true } : {}) });
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -93,6 +93,68 @@
     });
     const json = await res.json();
     return { status: res.status, json };
+  }
+
+  async function loadBenchmarkModels() {
+    const select = $("benchmarkModels");
+    try {
+      const url = normalizeUrl($("baseUrl").value, "/.netlify/functions/list-models");
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      const preferred = new Set(["gpt-4.1-mini", "gpt-5.4-mini", "gpt-5.4"]);
+      select.innerHTML = (data.models || []).map((model) => {
+        const price = model.pricing_per_million;
+        const priceText = price ? `$${price.input}/$${price.output} per 1M` : "price unknown";
+        return `<option value="${escapeHtml(model.id)}"${preferred.has(model.id) ? " selected" : ""}>${escapeHtml(model.label)} — ${priceText}</option>`;
+      }).join("");
+      $("benchmarkState").textContent = `${data.models?.length || 0} models available`;
+    } catch (error) {
+      $("benchmarkState").textContent = `Model load failed: ${error.message}`;
+    }
+  }
+
+  async function runModelBenchmark() {
+    const models = Array.from($("benchmarkModels").selectedOptions).map((option) => option.value);
+    if (!models.length) { alert("Select at least one model."); return; }
+    if (!cases.length) cases = await fetchDefaultCases();
+    const caseCount = Number($("benchmarkCaseCount").value) || 3;
+    const repeats = Number($("benchmarkRepeats").value) || 3;
+    const benchmarkCases = cases.slice(0, caseCount);
+    const url = normalizeUrl($("baseUrl").value, $("fnPath").value);
+    const rows = $("benchmarkResults");
+    const button = $("benchmarkBtn");
+    button.disabled = true;
+    rows.innerHTML = "";
+
+    for (let modelIndex = 0; modelIndex < models.length; modelIndex += 1) {
+      const model = models[modelIndex];
+      $("benchmarkState").textContent = `Testing ${model} (${modelIndex + 1}/${models.length})…`;
+      let passed = 0, attempts = 0, duration = 0, inputTokens = 0, outputTokens = 0, cost = 0, hasUnknownCost = false;
+      for (const testCase of benchmarkCases) {
+        for (let repeat = 0; repeat < repeats; repeat += 1) {
+          attempts += 1;
+          try {
+            const resp = await callFunction(url, testCase.INPUT, model);
+            const report = resp?.json?.report_text || resp?.json?.report || "";
+            const missing = evaluateChecks(report, testCase.EXPECTED_CHECKS || [], resp?.json?.dataset_id || "", testCase.EXPECTED_DATASET_ID || "");
+            if (resp.status < 400 && missing.length === 0) passed += 1;
+            const metrics = resp?.json?.metrics || {};
+            duration += Number(metrics.duration_ms || 0);
+            inputTokens += Number(metrics.input_tokens || 0);
+            outputTokens += Number(metrics.output_tokens || 0);
+            if (metrics.estimated_cost_usd == null) hasUnknownCost = true;
+            else cost += Number(metrics.estimated_cost_usd || 0);
+          } catch (_) { hasUnknownCost = true; }
+        }
+      }
+      const averageMs = attempts ? duration / attempts : 0;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${escapeHtml(model)}</td><td>${passed}/${attempts} (${attempts ? Math.round(passed / attempts * 100) : 0}%)</td><td>${(averageMs / 1000).toFixed(2)}s</td><td>${inputTokens} / ${outputTokens}</td><td>${hasUnknownCost ? "Unknown" : `$${cost.toFixed(6)}`}</td><td>${hasUnknownCost || !attempts ? "Unknown" : `$${(cost / attempts).toFixed(6)}`}</td><td><button class="btn promote-model" type="button" data-model="${escapeHtml(model)}">Set front-page default</button></td>`;
+      rows.appendChild(tr);
+    }
+    $("benchmarkState").textContent = `Done: ${benchmarkCases.length} reports × ${repeats} runs`;
+    button.disabled = false;
   }
 
   function appendToBundle({id, input, report, missing, ok}) {
@@ -209,6 +271,16 @@
     $("runBtn").addEventListener("click", run);
     $("stopBtn").addEventListener("click", () => { stopRequested = true; setRunState("Stopping…"); });
     $("resetBtn").addEventListener("click", resetUI);
+    $("benchmarkBtn").addEventListener("click", runModelBenchmark);
+    $("benchmarkResults").addEventListener("click", (event) => {
+      const button = event.target.closest(".promote-model");
+      if (!button) return;
+      const frontPage = new URL($("baseUrl").value);
+      frontPage.searchParams.set("model", button.dataset.model);
+      window.open(frontPage.toString(), "_blank", "noopener");
+      $("benchmarkState").textContent = `Opened the front page to confirm ${button.dataset.model} as its browser default`;
+    });
+    $("baseUrl").addEventListener("change", loadBenchmarkModels);
 
     $("file").addEventListener("change", async (ev) => {
       const file = ev.target.files?.[0];
@@ -221,6 +293,7 @@
         alert("Failed to load JSON: " + e.message);
       }
     });
+    await loadBenchmarkModels();
   }
 
   init();

@@ -26,6 +26,7 @@ const MODEL_PRICING_PER_MILLION = {
 function resolveModel(requestedMode, rawText, datasetId) {
   const mode = String(requestedMode || "auto_recommended").trim();
   if (modelIsUsableForGeneration(mode)) return mode;
+  if (mode === "backup") return "gpt-4.1-mini";
   if (mode === "cheap_standard") return "gpt-4.1-mini";
   if (mode === "fast_higher_accuracy") return "gpt-5.4";
   return DEFAULT_MODEL;

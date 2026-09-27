@@ -8,6 +8,7 @@ assert.equal(_test.resolveModel("gpt-4o-mini", "short case", "example"), "gpt-4o
 assert.equal(_test.resolveModel("gpt-5.5", "short case", "example"), "gpt-5.5");
 assert.equal(_test.resolveModel("auto_recommended", "short case", "example"), "gpt-5.4");
 assert.equal(_test.resolveModel("fast_higher_accuracy", "short case", "example"), "gpt-5.4");
+assert.equal(_test.resolveModel("backup", "short case", "example"), "gpt-4.1-mini");
 assert.equal(_test.usesModernCompletionParameters("gpt-6-astra"), true);
 assert.equal(_test.usesModernCompletionParameters("gpt-4.1-mini"), false);
 assert.equal(_test.resolveModel("not-a-supported-model", "short case", "example"), "gpt-5.4");
