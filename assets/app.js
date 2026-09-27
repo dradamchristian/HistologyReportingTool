@@ -5,9 +5,9 @@ let finalText = "";
 let dictating = false;
 let lastGenerated = { dataset_id: "", extracted: {}, report_text: "", metrics: {}, staging_check: null };
 const MODEL_MODES = [
-  { id: "auto_recommended", label: "Auto recommended" },
+  { id: "auto_recommended", label: "Auto recommended (GPT-5.4)" },
   { id: "cheap_standard", label: "Cheap / Standard" },
-  { id: "fast_higher_accuracy", label: "Fast / Higher accuracy" },
+  { id: "fast_higher_accuracy", label: "Fast / Higher accuracy (GPT-5.4)" },
 ];
 const DEFAULT_MODEL_MODE = "auto_recommended";
 let benchmarkRuns = [];

@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const { getPool } = require("./_audit-db");
 
-const DEFAULT_MODEL = "gpt-4.1-mini";
+const DEFAULT_MODEL = "gpt-5.4";
 const BLOCKED_MODEL_TERMS = ["embed", "image", "audio", "moderation", "deprecated", "vision"];
 
 function modelIsUsableForGeneration(id) {
@@ -23,17 +23,11 @@ const MODEL_PRICING_PER_MILLION = {
   "gpt-4o-mini": { input: 0.15, output: 0.6 },
 };
 
-function isComplexDataset(datasetId) {
-  const id = String(datasetId || "").toLowerCase();
-  return id.includes("resection") || id.includes("oesophagectomy") || id.includes("gastrectomy") || id.includes("colorectal_resection");
-}
 function resolveModel(requestedMode, rawText, datasetId) {
   const mode = String(requestedMode || "auto_recommended").trim();
   if (modelIsUsableForGeneration(mode)) return mode;
   if (mode === "cheap_standard") return "gpt-4.1-mini";
-  if (mode === "fast_higher_accuracy") return "gpt-4.1";
-  const textLen = String(rawText || "").length;
-  if (textLen > 1200 || isComplexDataset(datasetId)) return "gpt-4.1";
+  if (mode === "fast_higher_accuracy") return "gpt-5.4";
   return DEFAULT_MODEL;
 }
 
