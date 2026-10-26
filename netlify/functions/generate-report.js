@@ -662,6 +662,14 @@ function renderTemplate(template, data) {
     out = next;
   }
 
+  out = out.replace(/\{\{\s*mm\s+([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) => {
+    const value = data[key];
+    if (value === undefined || value === null) return "";
+    const text = String(value).trim();
+    if (!text || /\bmm$/i.test(text) || !/^-?\d+(?:\.\d+)?$/.test(text)) return text;
+    return `${text} mm`;
+  });
+
   out = out.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) => {
     const v = data[key];
     return (v === undefined || v === null) ? "" : String(v);
@@ -2068,4 +2076,4 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
   }
 };
 
-exports._test = { pickDataset, applyDefaults, applyDefaultsIncludingBlanks, renderTemplate, listDatasetManifests, resolveModel, estimateCostUsd, modelIsUsableForGeneration, usesModernCompletionParameters };
+exports._test = { pickDataset, applyDefaults, applyDefaultsIncludingBlanks, renderTemplate, listDatasetManifests, finalizeStaging };

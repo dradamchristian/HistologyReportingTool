@@ -1,6 +1,6 @@
 LOCAL EXCISION – COLORECTAL CARCINOMA
 
-Maximum tumour diameter: {{maximum_tumour_diameter_mm}}
+Maximum tumour diameter: {{mm maximum_tumour_diameter_mm}}
 
 Tumour type: {{tumour_type}}
 If other or adenocarcinoma variant, specify: {{other_tumour_type}}
@@ -10,10 +10,17 @@ Differentiation by worst area: {{differentiation_worst_area}}
 Local invasion: {{local_invasion}}
 
 For pT1 tumours only:
- Maximum depth of invasive tumour from muscularis mucosae: {{maximum_invasive_depth_mm}}
- Width of invasive tumour: {{invasive_tumour_width_mm}}
+ Maximum depth of invasive tumour from muscularis mucosae: {{mm maximum_invasive_depth_mm}}
+ Width of invasive tumour: {{mm invasive_tumour_width_mm}}
  Haggitt level (polypoid tumours): {{haggitt_level}}
+  Level 1: invasion into the polyp head
+  Level 2: invasion into the polyp neck
+  Level 3: invasion into the polyp stalk
+  Level 4: invasion into submucosa below the stalk but above muscularis propria
  Kikuchi level (sessile tumours): {{kikuchi_level}}
+  sm1: invasion into the upper third of the submucosa
+  sm2: invasion into the middle third of the submucosa
+  sm3: invasion into the lower third of the submucosa
 
 Number of lymph nodes: {{nodes_examined}}
 Number of involved lymph nodes: {{nodes_positive}}
@@ -39,8 +46,7 @@ Background adenoma: {{background_adenoma}}
 Involvement of margins by carcinoma:
  Peripheral margin: {{peripheral_margin_involvement}}
  Deep margin: {{deep_margin_involvement}}
- Histological measurement from carcinoma to nearest deep excision margin: {{carcinoma_to_deep_margin_mm}}
- Not assessable may be used when the specimen is received piecemeal.
+ Histological measurement from carcinoma to nearest deep excision margin: {{mm carcinoma_to_deep_margin_mm}}
 
 Resection status: {{resection_status}}
 

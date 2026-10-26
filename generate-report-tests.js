@@ -72,31 +72,49 @@ assert.deepEqual(schema.properties.local_invasion.enum, [
   "Muscularis propria (pT2)", "Beyond muscularis propria (pT3)",
 ]);
 assert.deepEqual(schema.properties.differentiation_worst_area.enum, ["Well/moderate", "Poor", "Not applicable"]);
+assert.equal(schema.properties.differentiation_worst_area.default, "Well/moderate");
 assert.deepEqual(schema.properties.resection_status.enum, ["R0", "R1", "R2", "Not assessable"]);
 assert.equal(schema.properties.preoperative_therapy_response.enum.length, 5);
 
 const report = _test.renderTemplate(template, {
-  maximum_tumour_diameter_mm: "12 mm", tumour_type: "Adenocarcinoma",
+  maximum_tumour_diameter_mm: "12", tumour_type: "Adenocarcinoma",
   other_tumour_type: "", differentiation_worst_area: "Well/moderate",
-  local_invasion: "Submucosa (pT1)", maximum_invasive_depth_mm: "2 mm",
-  invasive_tumour_width_mm: "6 mm", haggitt_level: "Not applicable", kikuchi_level: "sm1",
+  local_invasion: "Submucosa (pT1)", maximum_invasive_depth_mm: "2",
+  invasive_tumour_width_mm: "6", haggitt_level: "Not applicable", kikuchi_level: "sm1",
   nodes_examined: "0", nodes_positive: "0", tumour_deposits: "0", venous_invasion_level: "Not identified",
   lymphatic_invasion_level: "Not identified", perineural_invasion_level: "Not identified", tumour_bud_count: "3",
   tumour_budding_grade: "Bd1 (<5 buds)", preoperative_therapy_response: "Not applicable",
   background_adenoma: "Yes", peripheral_margin_involvement: "No", deep_margin_involvement: "No",
-  carcinoma_to_deep_margin_mm: "2 mm", resection_status: "R0", tnm_prefix: "No prefix",
+  carcinoma_to_deep_margin_mm: "2", resection_status: "R0", tnm_prefix: "No prefix",
   pT: "T1", pN: "NX", pM: "MX", tumour_block: "A1",
 });
 assert.match(report, /^LOCAL EXCISION – COLORECTAL CARCINOMA/);
 assert.match(report, /Maximum tumour diameter: 12 mm/);
+assert.match(report, /Maximum depth of invasive tumour from muscularis mucosae: 2 mm/);
+assert.match(report, /Width of invasive tumour: 6 mm/);
 assert.match(report, /Number of involved lymph nodes: 0/);
 assert.match(report, /Number of buds identified: 3/);
 assert.match(report, /Preoperative therapy response \(tumour regression score\): Not applicable/);
 assert.match(report, /Peripheral margin: No/);
+assert.match(report, /Histological measurement from carcinoma to nearest deep excision margin: 2 mm/);
 assert.match(report, /Resection status: R0/);
 assert.match(report, /TNM \(8th edition\):[\s\S]*pT: T1[\s\S]*pN: NX[\s\S]*pM: MX/);
 assert.match(report, /Grade criteria: Bd1 \(<5 buds\); Bd2 \(5-9 buds\); Bd3 \(>9 buds\)\./);
+assert.match(report, /Level 1: invasion into the polyp head/);
+assert.match(report, /Level 4: invasion into submucosa below the stalk but above muscularis propria/);
+assert.match(report, /sm1: invasion into the upper third of the submucosa/);
+assert.match(report, /sm3: invasion into the lower third of the submucosa/);
+assert.doesNotMatch(report, /Not assessable may be used/);
 assert.match(report, /Tumour Block: A1/);
+
+const unassessableMeasurements = _test.renderTemplate(template, {
+  maximum_tumour_diameter_mm: "Not identified",
+  maximum_invasive_depth_mm: "Not assessable",
+  invasive_tumour_width_mm: "Not assessable",
+  carcinoma_to_deep_margin_mm: "Not assessable",
+});
+assert.match(unassessableMeasurements, /Maximum tumour diameter: Not identified/);
+assert.doesNotMatch(unassessableMeasurements, /Not (?:identified|assessable) mm/);
 
 const localDefaults = _test.applyDefaultsIncludingBlanks(
   schema,
@@ -104,6 +122,7 @@ const localDefaults = _test.applyDefaultsIncludingBlanks(
 );
 assert.deepEqual(
   {
+    differentiation_worst_area: localDefaults.differentiation_worst_area,
     nodes_examined: localDefaults.nodes_examined,
     nodes_positive: localDefaults.nodes_positive,
     tumour_deposits: localDefaults.tumour_deposits,
@@ -116,6 +135,7 @@ assert.deepEqual(
     pN: localDefaults.pN,
   },
   {
+    differentiation_worst_area: "Well/moderate",
     nodes_examined: "0",
     nodes_positive: "0",
     tumour_deposits: "0",
