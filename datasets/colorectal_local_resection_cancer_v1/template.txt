@@ -1,18 +1,24 @@
-Tumour Type: {{tumour_type}}
+LOCAL EXCISION – COLORECTAL CARCINOMA
+
+Maximum tumour diameter: {{maximum_tumour_diameter_mm}}
+
+Tumour type: {{tumour_type}}
+If other or adenocarcinoma variant, specify: {{other_tumour_type}}
 
 Differentiation by worst area: {{differentiation_worst_area}}
 
-Local Invasion: {{local_invasion}}
+Local invasion: {{local_invasion}}
 
-For pT1 tumours:
- Maximum thickness of invasive tumour from muscularis mucosae: {{maximum_invasive_thickness_mm}}
+For pT1 tumours only:
+ Maximum depth of invasive tumour from muscularis mucosae: {{maximum_invasive_depth_mm}}
  Width of invasive tumour: {{invasive_tumour_width_mm}}
  Haggitt level (polypoid tumours): {{haggitt_level}}
- Kikuchi level (for sessile/flat tumours): {{kikuchi_level}}
+ Kikuchi level (sessile tumours): {{kikuchi_level}}
 
-Number of lymph nodes: {{number_of_lymph_nodes}}
+Number of lymph nodes: {{nodes_examined}}
+Number of involved lymph nodes: {{nodes_positive}}
 
-Number of tumour deposits: {{number_of_tumour_deposits}}
+Number of tumour deposits: {{tumour_deposits}}
 
 Deepest level of venous invasion: {{venous_invasion_level}}
 
@@ -20,19 +26,28 @@ Deepest level of lymphatic (small vessel) invasion: {{lymphatic_invasion_level}}
 
 Deepest level of perineural invasion: {{perineural_invasion_level}}
 
-Tumour budding: {{tumour_budding}}
+Tumour budding grade:
+ Number of buds identified: {{tumour_bud_count}}
+ Grade: {{tumour_budding_grade}}
+ Grade criteria: Bd1 (<5 buds); Bd2 (5-9 buds); Bd3 (>9 buds).
+ Buds counted on H&E within a 0.785 mm2 hotspot.
 
-Preoperative therapy response: {{preoperative_therapy_response}}
+Preoperative therapy response (tumour regression score): {{preoperative_therapy_response}}
 
-Background Adenoma: {{background_adenoma}}
+Background adenoma: {{background_adenoma}}
 
 Involvement of margins by carcinoma:
- Peripheral margins: {{peripheral_margin}}
- Deep margin: {{deep_margin}}
+ Peripheral margin: {{peripheral_margin_involvement}}
+ Deep margin: {{deep_margin_involvement}}
  Histological measurement from carcinoma to nearest deep excision margin: {{carcinoma_to_deep_margin_mm}}
+ Not assessable may be used when the specimen is received piecemeal.
 
-Pathological Staging: {{pathological_staging}}
+Resection status: {{resection_status}}
 
-Complete resection (by >1mm) of CARCINOMA at all margins: {{complete_resection_over_1mm}}
+TNM (8th edition):
+ Prefix: {{tnm_prefix}}
+ pT: {{pT}}
+ pN: {{pN}}
+ pM: {{pM}}
 
 Tumour Block: {{tumour_block}}

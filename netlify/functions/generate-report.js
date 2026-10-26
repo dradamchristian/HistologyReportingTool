@@ -976,10 +976,20 @@ function finalizeStaging(schema, extracted) {
     (extracted.number_positive != null) ? extracted.number_positive :
     null;
 
-  if (nPos == null) return;
+  if (nPos == null || String(nPos).trim() === "") return;
+
+  const nExamined =
+    (extracted.nodes_examined != null) ? extracted.nodes_examined :
+    (extracted.nodes_total != null) ? extracted.nodes_total :
+    null;
+  const stageEnums = props.stage_pN?.enum || props.pN?.enum || [];
+  if (nExamined != null && String(nExamined).trim() !== "" && Number(nExamined) === 0 && stageEnums.includes("NX")) {
+    if (props.pN) extracted.pN = "NX";
+    if (props.stage_pN) extracted.stage_pN = "NX";
+    return;
+  }
 
   const hasTumourDeposits = Number(extracted.tumour_deposits || 0) > 0;
-  const stageEnums = props.stage_pN?.enum || props.pN?.enum || [];
   if (Number(nPos) === 0 && hasTumourDeposits && stageEnums.includes("N1c")) {
     if (props.pN) extracted.pN = "N1c";
     if (props.stage_pN) extracted.stage_pN = "N1c";
@@ -2050,4 +2060,4 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
   }
 };
 
-exports._test = { pickDataset, applyDefaults, applyDefaultsIncludingBlanks, renderTemplate, listDatasetManifests };
+exports._test = { pickDataset, applyDefaults, applyDefaultsIncludingBlanks, renderTemplate, listDatasetManifests, finalizeStaging };
