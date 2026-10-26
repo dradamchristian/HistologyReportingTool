@@ -8,7 +8,13 @@
       "rectal local resection",
       "rectal local excision",
       "colon polypectomy",
-      "rectal polypectomy"
+      "rectal polypectomy",
+      "colorectal emr",
+      "colorectal esd",
+      "colorectal tamis",
+      "rectal emr",
+      "rectal esd",
+      "rectal tamis"
     ]
   },
   "pipeline": {
