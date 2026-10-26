@@ -177,6 +177,11 @@ body.lcars-mode .qrbox{border:3px solid var(--accent-2);border-radius:24px 0 24p
       <div class="ghost-completion" id="ghostCompletion" style="display:none;"></div>
     </div>
     <div class="input-assist" id="inputAssist" aria-live="polite"></div>
+    <aside class="lgi-quick-panel" id="colorectalLocalPanel" aria-live="polite" aria-label="Colorectal local excision grading guide">
+      <h3>Colorectal local excision — grading reminder</h3>
+      <ul id="colorectalLocalNotes"></ul>
+      <p class="small">Appears for colorectal, colon, rectal, rectum or sigmoid plus ESD, EMR, TEM, TAMIS, polypectomy, local excision or local resection. Guidance is retained in assumptions/defaults and excluded from Copy.</p>
+    </aside>
     <aside class="lgi-quick-panel" id="lgiQuickPanel" aria-live="polite" aria-label="Lower GI quick shorthand guide">
       <h3>Lower GI quickhand</h3><p class="small">Click a shortcut to add it at the cursor. Press Enter for the next specimen letter.</p>
       <div class="quick-group"><div class="quick-group-title">Sites</div><div class="quick-chips">
@@ -332,6 +337,7 @@ body.lcars-mode .qrbox{border:3px solid var(--accent-2);border-radius:24px 0 24p
 
 <footer class="page-note">© AC Pathology <span id="currentYear"></span></footer>
 
+<script defer src="assets/colorectal-local-guide.js"></script>
 <script defer src="assets/app.js"></script>
 <script defer src="assets/phone-bridge.js"></script>
 </body>
