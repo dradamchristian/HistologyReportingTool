@@ -67,7 +67,7 @@ function mapAuditFields(datasetId, extracted = {}) {
     lymphatic_invasion_level: extracted.lymphatic_invasion_level || null,
     perineural_invasion_level: extracted.perineural_invasion_level || null,
     neoadjuvant_given: extracted.neoadjuvant_therapy_history ?? extracted.neoadjuvant_therapy_given,
-    tumour_block: extracted.tumour_block || null,
+    tumour_block: extracted.tumour_block || extracted.representative_molecular_blocks || null,
   };
 
   out.tumour_site = extracted.site_of_tumour || extracted.tumour_site || extracted.site || extracted.anatomical_site || null;
