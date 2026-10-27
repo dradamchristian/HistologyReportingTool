@@ -103,6 +103,8 @@ function updateInputAssists(){
     ghost.innerHTML = activeCompletion ? `Tab/→: <strong>${activeCompletion.completion}</strong>` : "";
   }
   if (!assist || !el) return;
+  const localPanel = $("colorectalLocalPanel");
+  if (localPanel) localPanel.classList.toggle("is-active", ColorectalLocalGuide.matches(el.value) && !localPanel.dataset.generated);
   const lgi = isLgiMode(el.value);
   const quickPanel = $("lgiQuickPanel");
   if (quickPanel) quickPanel.classList.toggle("is-active", lgi && !quickPanel.dataset.generated);
@@ -123,7 +125,13 @@ function updateInputAssists(){
 function initInputAcceleration(){
   const el = getInputTextArea();
   if (!el) return;
-  el.addEventListener("input", () => { const panel = $("lgiQuickPanel"); if (panel) delete panel.dataset.generated; maybeSeedLgiFirstPart(el); updateInputAssists(); });
+  const notes = $("colorectalLocalNotes");
+  if (notes) for (const note of ColorectalLocalGuide.notes) {
+    const item = document.createElement("li");
+    item.textContent = note;
+    notes.appendChild(item);
+  }
+  el.addEventListener("input", () => { const localPanel = $("colorectalLocalPanel"); if (localPanel) delete localPanel.dataset.generated; const panel = $("lgiQuickPanel"); if (panel) delete panel.dataset.generated; maybeSeedLgiFirstPart(el); updateInputAssists(); });
   el.addEventListener("click", updateInputAssists);
   el.addEventListener("keyup", updateInputAssists);
   el.addEventListener("keydown", (event) => {
@@ -345,6 +353,8 @@ async function generate(){
     renderMetricsLine(data.metrics || {});
     const quickPanel = $("lgiQuickPanel");
     if (quickPanel) { quickPanel.dataset.generated = "true"; quickPanel.classList.remove("is-active"); }
+    const localPanel = $("colorectalLocalPanel");
+    if (localPanel) { localPanel.dataset.generated = "true"; localPanel.classList.remove("is-active"); }
     setStatus("Done.");
   }catch(err){
     $("reportState").textContent = "Generation failed";

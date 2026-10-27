@@ -53,3 +53,12 @@ Pathology reference search
 - Each response records token counts; the answer status displays its web-search call count and estimated cost when pricing is known.
 - The estimate uses the model token prices in `netlify/functions/ask-reference.js` and a default web-search tool price of $10 per 1,000 calls.
 - Set `REFERENCE_WEB_SEARCH_COST_PER_1000` if the current price on your OpenAI account differs. Pricing is deliberately configurable because provider prices can change.
+
+Colorectal local excision grading guide
+The input guide uses the same trigger as local-excision report routing: a whole-word
+site (colorectal, colon, rectal, rectum, sigmoid) plus a whole-word procedure (ESD,
+EMR, TEM, TAMIS, polypectomy, local excision, local resection), in either order and
+case-insensitively. Procedure alone does not trigger it. Example: Rectal ESD.
+Haggitt, Kikuchi and tumour budding guidance appears while composing, hides after
+successful generation, and is retained in assumptions/defaults outside copied report
+text. Editing the input shows the guide again when the trigger still matches.

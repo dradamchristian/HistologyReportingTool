@@ -1,3 +1,4 @@
+const colorectalLocalGuide = require("../../assets/colorectal-local-guide");
 const ENGINE_VERSION = "benchmark-model-metrics-v1";
 const fs = require("fs");
 const path = require("path");
@@ -424,8 +425,7 @@ function pickDataset(text, manifests) {
   // A malignant polyp/local excision has a deliberately smaller proforma than
   // a bowel resection.  Require explicit local-resection wording so that an
   // ordinary "colorectal adenocarcinoma" continues to select the full dataset.
-  if (/\b(?:colorectal|colon|rectal|rectum|sigmoid)\b/i.test(raw) &&
-      /\b(?:local\s+(?:resection|excision)|polypectomy|emr|esd|tem|tamis)\b/i.test(raw)) {
+  if (colorectalLocalGuide.matches(raw)) {
     const hit = manifests.find(mm => mm.id === "colorectal_local_resection_cancer_v1");
     if (hit) return { id: hit.id, manifest: hit, score: 1000 };
   }
@@ -1097,6 +1097,7 @@ function mandardDescriptor(rules, trg) {
 
 function buildCaveats(extracted, datasetId) {
   const c = [];
+  if (datasetId === "colorectal_local_resection_cancer_v1") c.push(...colorectalLocalGuide.notes);
   c.push(`Dataset selected: ${datasetId}.`);
   c.push("Defaults applied for unmentioned fields (per dataset schema).");
   if (extracted.pT) c.push(`pT set as ${extracted.pT}.`);
@@ -2076,4 +2077,4 @@ extracted.r_status = computeRStatusFromRules(rules, extracted);
   }
 };
 
-exports._test = { pickDataset, applyDefaults, applyDefaultsIncludingBlanks, renderTemplate, listDatasetManifests, finalizeStaging };
+exports._test = { buildCaveats, pickDataset, applyDefaults, applyDefaultsIncludingBlanks, renderTemplate, listDatasetManifests, finalizeStaging };

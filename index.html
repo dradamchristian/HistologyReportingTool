@@ -34,7 +34,13 @@ border-radius:12px;padding:12px;color:var(--text);outline:none;font-size:14px;li
 .ghost-completion strong{color:#dbe6ff;}
 .input-assist{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px;}
 .lgi-quick-panel{display:none;margin:12px 0 0;padding:20px;border:1px solid rgba(122,162,255,.5);border-radius:16px;background:rgba(11,18,32,.98);box-shadow:0 18px 44px rgba(0,0,0,.45);z-index:6}.lgi-quick-panel.is-active{display:block}.lgi-quick-panel h3{margin:0;font-size:19px;color:#eef4ff}.lgi-quick-panel p{margin:7px 0 16px;font-size:14px;line-height:1.5}.quick-group{margin-top:17px}.quick-group-title{margin-bottom:10px;color:#c8d4ee;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}.quick-chips{display:flex;flex-wrap:wrap;gap:8px}.quick-chip{padding:9px 11px;border-radius:9px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;line-height:1.35;text-align:left}.quick-chip span{color:#c5d0e7;font-family:ui-sans-serif,system-ui,sans-serif;font-size:13px;font-weight:500}
-.input-card{position:relative}@media(min-width:1600px){.lgi-quick-panel.is-active{position:absolute;right:calc(100% + 18px);top:0;width:480px;margin:0}}
+.input-card{position:relative}
+.lgi-quick-panel{max-width:100%;min-width:0;overflow-wrap:anywhere;}
+#colorectalLocalPanel{padding:12px 14px;}
+#colorectalLocalPanel h3{font-size:15px;}
+#colorectalLocalPanel ul{margin:8px 0;padding-left:18px;font-size:13px;line-height:1.45;}
+#colorectalLocalPanel li + li{margin-top:6px;}
+#colorectalLocalPanel p{margin:8px 0 0;font-size:12px;}
 .site-chip{padding:6px 9px;border-radius:999px;border:1px solid rgba(122,162,255,.28);background:rgba(122,162,255,.12);color:var(--text);font-size:12px;cursor:pointer;}
 .site-chip:hover{background:rgba(122,162,255,.22);}
 textarea:focus{border-color:rgba(122,162,255,.55);box-shadow:0 0 0 3px rgba(122,162,255,.18);}
@@ -177,6 +183,11 @@ body.lcars-mode .qrbox{border:3px solid var(--accent-2);border-radius:24px 0 24p
       <div class="ghost-completion" id="ghostCompletion" style="display:none;"></div>
     </div>
     <div class="input-assist" id="inputAssist" aria-live="polite"></div>
+    <aside class="lgi-quick-panel" id="colorectalLocalPanel" aria-live="polite" aria-label="Colorectal local excision grading guide">
+      <h3>Colorectal local excision — grading reminder</h3>
+      <ul id="colorectalLocalNotes"></ul>
+      <p class="small">Appears for colorectal, colon, rectal, rectum or sigmoid plus ESD, EMR, TEM, TAMIS, polypectomy, local excision or local resection. Guidance is retained in assumptions/defaults and excluded from Copy.</p>
+    </aside>
     <aside class="lgi-quick-panel" id="lgiQuickPanel" aria-live="polite" aria-label="Lower GI quick shorthand guide">
       <h3>Lower GI quickhand</h3><p class="small">Click a shortcut to add it at the cursor. Press Enter for the next specimen letter.</p>
       <div class="quick-group"><div class="quick-group-title">Sites</div><div class="quick-chips">
@@ -332,6 +343,7 @@ body.lcars-mode .qrbox{border:3px solid var(--accent-2);border-radius:24px 0 24p
 
 <footer class="page-note">© AC Pathology <span id="currentYear"></span></footer>
 
+<script defer src="assets/colorectal-local-guide.js"></script>
 <script defer src="assets/app.js"></script>
 <script defer src="assets/phone-bridge.js"></script>
 </body>
